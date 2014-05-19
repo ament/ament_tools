@@ -1,6 +1,5 @@
-from ament_package import package_exists_at
 from ament_package import parse_package
-from ament_package import PACKAGE_MANIFEST_FILENAME
+from ament_tools.commands.helper import argparse_existing_package
 import argparse
 import os
 
@@ -14,7 +13,7 @@ def main(args):
     parser.add_argument(
         'path',
         nargs='?',
-        type=existing_dir,
+        type=argparse_existing_package,
         default=os.curdir,
         help='Path to the package',
     )
@@ -22,18 +21,6 @@ def main(args):
 
     package = parse_package(args.path)
     print(package.version)
-
-
-def existing_dir(path):
-    if not os.path.exists(path):
-        raise argparse.ArgumentTypeError("Path '%s' does not exist" % path)
-    if not os.path.isdir(path):
-        raise argparse.ArgumentTypeError("Path '%s' is not a directory" % path)
-    if not package_exists_at(path):
-        raise argparse.ArgumentTypeError(
-            "Path '%s' does not contain a '%s' file" %
-            (path, PACKAGE_MANIFEST_FILENAME))
-    return path
 
 
 # meta information of the entry point
