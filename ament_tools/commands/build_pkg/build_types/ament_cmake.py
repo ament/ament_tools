@@ -12,11 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ament_tools.commands.build_pkg import build_pkg_parser, run_command
 import multiprocessing
 import os
 import re
 import subprocess
+
+from ament_tools.commands.build_pkg import build_pkg_parser
+from ament_tools.commands.build_pkg import run_command
 
 
 def main(args):
@@ -31,13 +33,15 @@ def main(args):
         nargs='*',
         default=[],
         help='Arbitrary arguments which are passed to CMake. '
-             'It must be passed after other arguments since it collects all following options.')
+             'It must be passed after other arguments since it collects all '
+             'following options.')
     parser.add_argument(
         '--make-args',
         nargs='*',
         default=[],
         help='Arbitrary arguments which are passed to make. '
-             'It must be passed after other arguments since it collects all following options.')
+             'It must be passed after other arguments since it collects all '
+             'following options.')
 
     args, cmake_args, make_args = extract_cmake_and_make_arguments(args)
     ns = parser.parse_args(args)
@@ -52,7 +56,9 @@ def main(args):
     try:
         # consider invoking cmake
         makefile = os.path.join(build_prefix, 'Makefile')
-        if not os.path.exists(makefile) or ns.force_cmake or cmake_input_changed(build_prefix, cmake_args):
+        if not os.path.exists(makefile) or \
+                ns.force_cmake or \
+                cmake_input_changed(build_prefix, cmake_args):
             cmd = [
                 'cmake',
                 pkg_path,
@@ -137,7 +143,8 @@ def handle_make_arguments(input_make_args):
     # if no -j/--jobs/-l/--load-average flags are in make_args
     if not extract_jobs_flags(' '.join(make_args)):
         # if -j/--jobs/-l/--load-average are in MAKEFLAGS
-        if 'MAKEFLAGS' in os.environ and extract_jobs_flags(os.environ['MAKEFLAGS']):
+        if 'MAKEFLAGS' in os.environ and \
+                extract_jobs_flags(os.environ['MAKEFLAGS']):
             # do not extend make arguments, let MAKEFLAGS set things
             pass
         else:
@@ -148,7 +155,7 @@ def handle_make_arguments(input_make_args):
                 make_args.append('-j{0}'.format(jobs))
                 make_args.append('-l{0}'.format(jobs))
             except NotImplementedError:
-                # if the number of cores cannot be determined, do not extend args
+                # the number of cores cannot be determined, do not extend args
                 pass
     return make_args
 
@@ -156,7 +163,8 @@ def handle_make_arguments(input_make_args):
 def extract_jobs_flags(mflags):
     regex = r'(?:^|\s)(-?(?:j|l)(?:\s*[0-9]+|\s|$))' + \
             r'|' + \
-            r'(?:^|\s)((?:--)?(?:jobs|load-average)(?:(?:=|\s+)[0-9]+|(?:\s|$)))'
+            r'(?:^|\s)((?:--)?(?:jobs|load-average)' + \
+            r'(?:(?:=|\s+)[0-9]+|(?:\s|$)))'
     matches = re.findall(regex, mflags) or []
     matches = [m[0] or m[1] for m in matches]
     return ' '.join([m.strip() for m in matches]) if matches else None

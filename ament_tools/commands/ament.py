@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ament_tools.commands import AMENT_COMMANDS_ENTRY_POINT
 from pkg_resources import iter_entry_points
 import sys
+
+from . import AMENT_COMMANDS_ENTRY_POINT
 
 
 def main(args=None):

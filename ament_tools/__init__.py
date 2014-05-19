@@ -20,3 +20,5 @@ try:
         __version__ = 'unset'
 except (ImportError, OSError):
     __version__ = 'unset'
+finally:
+    del pkg_resources

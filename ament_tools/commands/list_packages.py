@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ament_tools.commands.helper import argparse_existing_dir
-from ament_tools.packages import find_package_paths
 import argparse
 import os
+
+from ament_tools.packages import find_package_paths
+
+from .helper import argparse_existing_dir
 
 
 def main(args):

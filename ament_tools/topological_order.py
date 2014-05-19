@@ -15,7 +15,6 @@
 from __future__ import print_function
 
 import copy
-import sys
 
 from .packages import find_unique_packages
 

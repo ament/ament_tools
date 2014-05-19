@@ -14,39 +14,46 @@
 
 from __future__ import print_function
 
-from ament_package import package_exists_at
-from ament_package import parse_package
-from ament_package import PACKAGE_MANIFEST_FILENAME
 import argparse
 import os
 from pkg_resources import iter_entry_points
 import subprocess
 import sys
 
-AMENT_COMMAND_BUILD_PKG_BUILD_TYPES_ENTRY_POINT = 'ament.command.build_pkg.build_types'
+from ament_package import package_exists_at
+from ament_package import PACKAGE_MANIFEST_FILENAME
+from ament_package import parse_package
+
+AMENT_COMMAND_BUILD_PKG_BUILD_TYPES_ENTRY_POINT = \
+    'ament.command.build_pkg.build_types'
 
 
 def main(args):
     parser = build_pkg_parser()
     ns, unknown_args = parser.parse_known_args(args)
 
-    package = parse_package(ns.path)
-    build_type = get_build_type(package)
+    build_type = get_build_type(ns.path)
 
-    entry_points = list(iter_entry_points(group=AMENT_COMMAND_BUILD_PKG_BUILD_TYPES_ENTRY_POINT, name=build_type))
+    entry_points = list(iter_entry_points(
+        group=AMENT_COMMAND_BUILD_PKG_BUILD_TYPES_ENTRY_POINT,
+        name=build_type))
     assert len(entry_points) <= 1
     if not entry_points:
-        print("The '%s' file in '%s' exports an unknown build types: %s" % (PACKAGE_MANIFEST_FILENAME, ns.path, build_type), file=sys.stderr)
+        print("The '%s' file in '%s' exports an unknown build types: %s" %
+              (PACKAGE_MANIFEST_FILENAME, ns.path, build_type),
+              file=sys.stderr)
         return 1
     entry_point = entry_points[0]
 
     return entry_point.load()(args)
 
 
-def get_build_type(package):
+def get_build_type(path):
+    package = parse_package(path)
     build_types = [e for e in package.exports if e.tagname == 'build_type']
     if len(build_types) > 1:
-        print("The '%s' file in '%s' exports multiple build types" % (PACKAGE_MANIFEST_FILENAME, ns.path), file=sys.stderr)
+        print("The '%s' file in '%s' exports multiple build types" %
+              (PACKAGE_MANIFEST_FILENAME, path), file=sys.stderr)
     if not build_types:
         build_types.append('ament_cmake')
     return build_types[0]

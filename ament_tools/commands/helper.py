@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ament_package import package_exists_at
-from ament_package import PACKAGE_MANIFEST_FILENAME
 import argparse
 import os
+
+from ament_package import package_exists_at
+from ament_package import PACKAGE_MANIFEST_FILENAME
 
 
 def argparse_existing_dir(path):

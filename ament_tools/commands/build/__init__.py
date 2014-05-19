@@ -14,11 +14,12 @@
 
 from __future__ import print_function
 
+import argparse
+import os
+
 from ament_tools.commands.build_pkg import main as build_pkg_main
 from ament_tools.commands.helper import argparse_existing_dir
 from ament_tools.topological_order import topological_order
-import argparse
-import os
 
 
 def main(args):
