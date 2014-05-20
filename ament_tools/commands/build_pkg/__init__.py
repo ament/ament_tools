@@ -50,13 +50,18 @@ def main(args):
 
 def get_build_type(path):
     package = parse_package(path)
-    build_types = [e for e in package.exports if e.tagname == 'build_type']
-    if len(build_types) > 1:
+
+    build_type_exports = [e for e in package.exports
+                          if e.tagname == 'build_type']
+    if len(build_type_exports) > 1:
         print("The '%s' file in '%s' exports multiple build types" %
               (PACKAGE_MANIFEST_FILENAME, path), file=sys.stderr)
-    if not build_types:
-        build_types.append('ament_cmake')
-    return build_types[0]
+
+    default_build_type = 'ament_cmake'
+    if not build_type_exports:
+        return default_build_type
+
+    return build_type_exports[0].get('type', default_build_type)
 
 
 def build_pkg_parser(build_type=None):
