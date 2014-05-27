@@ -37,9 +37,14 @@ and provides tooling to build these federated packages together.''',
             'list_packages = ament_tools.commands.list_packages:entry_point_data',
             'package_name = ament_tools.commands.package_name:entry_point_data',
             'package_version = ament_tools.commands.package_version:entry_point_data',
+            'test = ament_tools.commands.test:entry_point_data',
+            'test_pkg = ament_tools.commands.test_pkg:entry_point_data',
         ],
         'ament.command.build_pkg.build_types': [
             'ament_cmake = ament_tools.commands.build_pkg.build_types.ament_cmake:main',
+        ],
+        'ament.command.test_pkg.build_types': [
+            'ament_cmake = ament_tools.commands.test_pkg.build_types.ament_cmake:main',
         ],
     }
 )
