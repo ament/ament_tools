@@ -17,8 +17,8 @@ import os
 import re
 import subprocess
 
-from ament_tools.commands.build_pkg import build_pkg_parser
-from ament_tools.commands.build_pkg import run_command
+from ament_tools.verbs.build_pkg import build_pkg_parser
+from ament_tools.verbs.build_pkg import run_command
 
 
 def main(args):

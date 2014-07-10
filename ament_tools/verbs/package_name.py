@@ -17,7 +17,7 @@ import os
 
 from ament_package import parse_package
 
-from .helper import argparse_existing_package
+from ament_tools.helper import argparse_existing_package
 
 
 def main(args):

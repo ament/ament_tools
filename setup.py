@@ -31,20 +31,20 @@ and provides tooling to build these federated packages together.''',
         'console_scripts': [
             'ament = ament_tools.commands.ament:main',
         ],
-        'ament.commands': [
-            'build = ament_tools.commands.build:entry_point_data',
-            'build_pkg = ament_tools.commands.build_pkg:entry_point_data',
-            'list_packages = ament_tools.commands.list_packages:entry_point_data',
-            'package_name = ament_tools.commands.package_name:entry_point_data',
-            'package_version = ament_tools.commands.package_version:entry_point_data',
-            'test = ament_tools.commands.test:entry_point_data',
-            'test_pkg = ament_tools.commands.test_pkg:entry_point_data',
+        'ament.verbs': [
+            'build = ament_tools.verbs.build:entry_point_data',
+            'build_pkg = ament_tools.verbs.build_pkg:entry_point_data',
+            'list_packages = ament_tools.verbs.list_packages:entry_point_data',
+            'package_name = ament_tools.verbs.package_name:entry_point_data',
+            'package_version = ament_tools.verbs.package_version:entry_point_data',
+            'test = ament_tools.verbs.test:entry_point_data',
+            'test_pkg = ament_tools.verbs.test_pkg:entry_point_data',
         ],
-        'ament.command.build_pkg.build_types': [
-            'ament_cmake = ament_tools.commands.build_pkg.build_types.ament_cmake:main',
+        'ament.verb.build_pkg.build_types': [
+            'ament_cmake = ament_tools.verbs.build_pkg.build_types.ament_cmake:main',
         ],
-        'ament.command.test_pkg.build_types': [
-            'ament_cmake = ament_tools.commands.test_pkg.build_types.ament_cmake:main',
+        'ament.verb.test_pkg.build_types': [
+            'ament_cmake = ament_tools.verbs.test_pkg.build_types.ament_cmake:main',
         ],
     }
 )

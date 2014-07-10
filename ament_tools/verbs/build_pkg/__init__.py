@@ -24,18 +24,18 @@ from ament_package import package_exists_at
 from ament_package import PACKAGE_MANIFEST_FILENAME
 from ament_package import parse_package
 
-AMENT_COMMAND_TEST_PKG_BUILD_TYPES_ENTRY_POINT = \
-    'ament.command.test_pkg.build_types'
+AMENT_VERB_BUILD_PKG_BUILD_TYPES_ENTRY_POINT = \
+    'ament.verb.build_pkg.build_types'
 
 
 def main(args):
-    parser = test_pkg_parser()
+    parser = build_pkg_parser()
     ns, unknown_args = parser.parse_known_args(args)
 
     build_type = get_build_type(ns.path)
 
     entry_points = list(iter_entry_points(
-        group=AMENT_COMMAND_TEST_PKG_BUILD_TYPES_ENTRY_POINT,
+        group=AMENT_VERB_BUILD_PKG_BUILD_TYPES_ENTRY_POINT,
         name=build_type))
     assert len(entry_points) <= 1
     if not entry_points:
@@ -64,9 +64,9 @@ def get_build_type(path):
     return build_type_exports[0].get('type', default_build_type)
 
 
-def test_pkg_parser(build_type=None):
+def build_pkg_parser(build_type=None):
     description = entry_point_data['description']
-    prog = 'ament test_pkg'
+    prog = 'ament build_pkg'
     if build_type:
         description += " with build type '%s'" % build_type
         prog += '_%s' % build_type
@@ -117,6 +117,6 @@ def run_command(cmd, cwd=None):
 
 # meta information of the entry point
 entry_point_data = dict(
-    description='Test a package',
+    description='Build a package',
     main=main,
 )

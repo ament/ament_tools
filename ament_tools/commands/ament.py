@@ -15,7 +15,7 @@
 from pkg_resources import iter_entry_points
 import sys
 
-from . import AMENT_COMMANDS_ENTRY_POINT
+from . import AMENT_VERBS_ENTRY_POINT
 
 
 def main(args=None):
@@ -23,7 +23,7 @@ def main(args=None):
         args = sys.argv[1:]
 
     commands = {}
-    for entry_point in iter_entry_points(group=AMENT_COMMANDS_ENTRY_POINT):
+    for entry_point in iter_entry_points(group=AMENT_VERBS_ENTRY_POINT):
         commands[entry_point.name] = entry_point.load()
 
     if len(args) == 0 or \

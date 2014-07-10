@@ -15,32 +15,33 @@
 import argparse
 import os
 
-from ament_package import parse_package
+from ament_tools.packages import find_package_paths
 
-from .helper import argparse_existing_package
+from ament_tools.helper import argparse_existing_dir
 
 
 def main(args):
     parser = argparse.ArgumentParser(
         description=entry_point_data['description'],
-        prog='ament package_version',
+        prog='ament list_packages',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        'path',
+        'basepath',
         nargs='?',
-        type=argparse_existing_package,
+        type=argparse_existing_dir,
         default=os.curdir,
-        help='Path to the package',
+        help='Base paths to recursively crawl for packages',
     )
     args = parser.parse_args(args)
 
-    package = parse_package(args.path)
-    print(package.version)
+    package_paths = sorted(find_package_paths(args.basepath))
+    for package_path in package_paths:
+        print(package_path)
 
 
 # meta information of the entry point
 entry_point_data = dict(
-    description='Output the version of a package',
+    description='List relative paths of packages',
     main=main,
 )

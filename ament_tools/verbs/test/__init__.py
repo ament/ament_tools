@@ -17,15 +17,15 @@ from __future__ import print_function
 import argparse
 import os
 
-from ament_tools.commands.build_pkg import main as build_pkg_main
-from ament_tools.commands.helper import argparse_existing_dir
+from ament_tools.verbs.test_pkg import main as test_pkg_main
+from ament_tools.verbs.helper import argparse_existing_dir
 from ament_tools.topological_order import topological_order
 
 
 def main(args):
     parser = argparse.ArgumentParser(
         description=entry_point_data['description'],
-        prog='ament build',
+        prog='ament test',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
@@ -59,20 +59,19 @@ def main(args):
         pkg_path = os.path.join(ns.basepath, path)
 
         print('')
-        print('# Building: %s' % package.name)
+        print('# Testing: %s' % package.name)
         print('')
-        rc = build_pkg_main([
+        rc = test_pkg_main([
             pkg_path,
             '--build-prefix', os.path.join(ns.build_prefix, package.name),
             '--install-prefix', ns.install_prefix,
-            ] +
-            unknown_args)
+        ] + unknown_args)
         if rc:
             return rc
 
 
 # meta information of the entry point
 entry_point_data = dict(
-    description='Build a set of packages',
+    description='Test a set of packages',
     main=main,
 )
