@@ -18,7 +18,7 @@ import argparse
 import os
 
 from ament_tools.verbs.test_pkg import main as test_pkg_main
-from ament_tools.verbs.helper import argparse_existing_dir
+from ament_tools.helper import argparse_existing_dir
 from ament_tools.topological_order import topological_order
 
 
