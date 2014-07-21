@@ -12,111 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
+from .cli import argument_preprocessor
+from .cli import main
+from .cli import prepare_arguments
+from .cli import run_command
 
-import argparse
-import os
-from pkg_resources import iter_entry_points
-import subprocess
-import sys
-
-from ament_package import package_exists_at
-from ament_package import PACKAGE_MANIFEST_FILENAME
-from ament_package import parse_package
-
-AMENT_VERB_BUILD_PKG_BUILD_TYPES_ENTRY_POINT = \
-    'ament.verb.build_pkg.build_types'
-
-
-def main(args):
-    parser = build_pkg_parser()
-    ns, unknown_args = parser.parse_known_args(args)
-
-    build_type = get_build_type(ns.path)
-
-    entry_points = list(iter_entry_points(
-        group=AMENT_VERB_BUILD_PKG_BUILD_TYPES_ENTRY_POINT,
-        name=build_type))
-    assert len(entry_points) <= 1
-    if not entry_points:
-        print("The '%s' file in '%s' exports an unknown build types: %s" %
-              (PACKAGE_MANIFEST_FILENAME, ns.path, build_type),
-              file=sys.stderr)
-        return 1
-    entry_point = entry_points[0]
-
-    return entry_point.load()(args)
-
-
-def get_build_type(path):
-    package = parse_package(path)
-
-    build_type_exports = [e for e in package.exports
-                          if e.tagname == 'build_type']
-    if len(build_type_exports) > 1:
-        print("The '%s' file in '%s' exports multiple build types" %
-              (PACKAGE_MANIFEST_FILENAME, path), file=sys.stderr)
-
-    default_build_type = 'ament_cmake'
-    if not build_type_exports:
-        return default_build_type
-
-    return build_type_exports[0].get('type', default_build_type)
-
-
-def build_pkg_parser(build_type=None):
-    description = entry_point_data['description']
-    prog = 'ament build_pkg'
-    if build_type:
-        description += " with build type '%s'" % build_type
-        prog += '_%s' % build_type
-    parser = argparse.ArgumentParser(
-        description=description,
-        prog=prog,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
-    parser.add_argument(
-        'path',
-        nargs='?',
-        type=existing_package,
-        default=os.curdir,
-        help='Path to the package',
-    )
-    parser.add_argument(
-        '--build-prefix',
-        default='/tmp/ament_build_pkg/build',
-        help='Path to the build prefix',
-    )
-    parser.add_argument(
-        '--install-prefix',
-        default='/tmp/ament_build_pkg/install',
-        help='Path to the install prefix',
-    )
-    return parser
-
-
-def existing_package(path):
-    if not os.path.exists(path):
-        raise argparse.ArgumentTypeError("Path '%s' does not exist" % path)
-    if not os.path.isdir(path):
-        raise argparse.ArgumentTypeError("Path '%s' is not a directory" % path)
-    if not package_exists_at(path):
-        raise argparse.ArgumentTypeError(
-            "Path '%s' does not contain a '%s' file" %
-            (path, PACKAGE_MANIFEST_FILENAME))
-    return path
-
-
-def run_command(cmd, cwd=None):
-    msg = '# Invoking: %s' % ' '.join(cmd)
-    if cwd:
-        msg += ' (in %s)' % cwd
-    print(msg)
-    return subprocess.check_call(cmd, cwd=cwd)
-
+__all__ = ['entry_point_data', 'run_command']
 
 # meta information of the entry point
 entry_point_data = dict(
+    verb='build_pkg',
     description='Build a package',
+    # Called for execution, given parsed arguments object
     main=main,
+    # Called first to setup argparse, given argparse parser
+    prepare_arguments=prepare_arguments,
+    # Called after prepare_arguments, but before argparse.parse_args
+    argument_preprocessor=argument_preprocessor,
 )

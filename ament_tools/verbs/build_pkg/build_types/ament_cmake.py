@@ -16,102 +16,27 @@ import multiprocessing
 import os
 import re
 import subprocess
+import sys
 
-from ament_tools.verbs.build_pkg import build_pkg_parser
 from ament_tools.verbs.build_pkg import run_command
 
 
-def main(args):
-    parser = build_pkg_parser('ament_cmake')
-
-    parser.add_argument(
-        '--force-cmake',
-        action='store_true',
-        help="Invoke 'cmake' even if it has been executed before")
-    parser.add_argument(
-        '--cmake-args',
-        nargs='*',
-        default=[],
-        help='Arbitrary arguments which are passed to CMake. '
-             'It must be passed after other arguments since it collects all '
-             'following options.')
-    parser.add_argument(
-        '--make-args',
-        nargs='*',
-        default=[],
-        help='Arbitrary arguments which are passed to make. '
-             'It must be passed after other arguments since it collects all '
-             'following options.')
-
+def argument_preprocessor(args):
+    """Process the args for the build verb, before being passed to argparse"""
+    # CMake/make pass-through flags collect dashed options. They require special
+    # handling or argparse will complain about unrecognized options.
+    args = sys.argv[1:] if args is None else args
     args, cmake_args, make_args = extract_cmake_and_make_arguments(args)
-    ns = parser.parse_args(args)
-
-    pkg_path = os.path.abspath(ns.path)
-    build_prefix = os.path.abspath(ns.build_prefix)
-    install_prefix = os.path.abspath(ns.install_prefix)
-
-    if not os.path.exists(build_prefix):
-        os.makedirs(build_prefix)
-
-    try:
-        # consider invoking cmake
-        makefile = os.path.join(build_prefix, 'Makefile')
-        if not os.path.exists(makefile) or \
-                ns.force_cmake or \
-                cmake_input_changed(build_prefix, cmake_args):
-            cmd = [
-                'cmake',
-                pkg_path,
-                '-DCMAKE_INSTALL_PREFIX=%s' % install_prefix,
-            ]
-            cmd += cmake_args
-            run_command(cmd, cwd=build_prefix)
-
-        # invoke make
-        cmd = [
-            'make',
-        ]
-        cmd += make_args
-        run_command(cmd, cwd=build_prefix)
-
-        # invoke make install
-        cmd = [
-            'make',
-            'install',
-        ]
-        cmd += handle_make_arguments(make_args)
-        run_command(cmd, cwd=build_prefix)
-    except subprocess.CalledProcessError:
-        return 1
-
-
-def extract_cmake_and_make_arguments(args):
-    cmake_args = []
-    make_args = []
-
-    arg_types = {
-        '--cmake-args': cmake_args,
-        '--make-args': make_args
+    # Extract make jobs flags.
+    jobs_flags = extract_jobs_flags(' '.join(args))
+    if jobs_flags:
+        args = re.sub(jobs_flags, '', ' '.join(args)).split()
+        jobs_flags = jobs_flags.split()
+    extras = {
+        'cmake_args': cmake_args,
+        'make_args': make_args + (jobs_flags or []),
     }
-
-    arg_indexes = {}
-    for k in arg_types.keys():
-        if k in args:
-            arg_indexes[args.index(k)] = k
-
-    for index in reversed(sorted(arg_indexes.keys())):
-        arg_type = arg_indexes[index]
-        args, specific_args = split_arguments(args, arg_type)
-        arg_types[arg_type].extend(specific_args)
-
-    return args, cmake_args, make_args
-
-
-def split_arguments(args, splitter_name, default=None):
-    if splitter_name not in args:
-        return args, default
-    index = args.index(splitter_name)
-    return args[0:index], args[index + 1:]
+    return args, extras
 
 
 def cmake_input_changed(build_prefix, cmake_args=None, filename='cmake_args'):
@@ -137,6 +62,44 @@ def cmake_input_changed(build_prefix, cmake_args=None, filename='cmake_args'):
     return changed
 
 
+def extract_cmake_and_make_arguments(args):
+    cmake_args = []
+    make_args = []
+
+    arg_types = {
+        '--cmake-args': cmake_args,
+        '--make-args': make_args
+    }
+
+    arg_indexes = {}
+    for k in arg_types.keys():
+        if k in args:
+            arg_indexes[args.index(k)] = k
+
+    def split_arguments(args, splitter_name, default=None):
+        if splitter_name not in args:
+            return args, default
+        index = args.index(splitter_name)
+        return args[0:index], args[index + 1:]
+
+    for index in reversed(sorted(arg_indexes.keys())):
+        arg_type = arg_indexes[index]
+        args, specific_args = split_arguments(args, arg_type)
+        arg_types[arg_type].extend(specific_args)
+
+    return args, cmake_args, make_args
+
+
+def extract_jobs_flags(mflags):
+    regex = r'(?:^|\s)(-?(?:j|l)(?:\s*[0-9]+|\s|$))' + \
+            r'|' + \
+            r'(?:^|\s)((?:--)?(?:jobs|load-average)' + \
+            r'(?:(?:=|\s+)[0-9]+|(?:\s|$)))'
+    matches = re.findall(regex, mflags) or []
+    matches = [m[0] or m[1] for m in matches]
+    return ' '.join([m.strip() for m in matches]) if matches else None
+
+
 def handle_make_arguments(input_make_args):
     make_args = list(input_make_args)
 
@@ -160,11 +123,70 @@ def handle_make_arguments(input_make_args):
     return make_args
 
 
-def extract_jobs_flags(mflags):
-    regex = r'(?:^|\s)(-?(?:j|l)(?:\s*[0-9]+|\s|$))' + \
-            r'|' + \
-            r'(?:^|\s)((?:--)?(?:jobs|load-average)' + \
-            r'(?:(?:=|\s+)[0-9]+|(?:\s|$)))'
-    matches = re.findall(regex, mflags) or []
-    matches = [m[0] or m[1] for m in matches]
-    return ' '.join([m.strip() for m in matches]) if matches else None
+def prepare_arguments(parser):
+    parser.add_argument(
+        '--force-cmake',
+        action='store_true',
+        help="Invoke 'cmake' even if it has been executed before")
+    parser.add_argument(
+        '--cmake-args',
+        nargs='*',
+        default=[],
+        help='Arbitrary arguments which are passed to CMake. '
+             'It must be passed after other arguments since it collects all '
+             'following options.')
+    parser.add_argument(
+        '--make-args',
+        nargs='*',
+        default=[],
+        help='Arbitrary arguments which are passed to make. '
+             'It must be passed after other arguments since it collects all '
+             'following options.')
+
+
+def main(opts):
+    pkg_path = os.path.abspath(opts.path)
+    build_prefix = os.path.abspath(opts.build_prefix)
+    install_prefix = os.path.abspath(opts.install_prefix)
+
+    if not os.path.exists(build_prefix):
+        os.makedirs(build_prefix)
+
+    try:
+        # consider invoking cmake
+        makefile = os.path.join(build_prefix, 'Makefile')
+        if not os.path.exists(makefile) or \
+                opts.force_cmake or \
+                cmake_input_changed(build_prefix, opts.cmake_args):
+            cmd = [
+                'cmake',
+                pkg_path,
+                '-DCMAKE_INSTALL_PREFIX=%s' % install_prefix,
+            ]
+            cmd += opts.cmake_args
+            run_command(cmd, cwd=build_prefix)
+
+        # invoke make
+        cmd = [
+            'make',
+        ]
+        cmd += opts.make_args
+        run_command(cmd, cwd=build_prefix)
+
+        # invoke make install
+        cmd = [
+            'make',
+            'install',
+        ]
+        cmd += handle_make_arguments(opts.make_args)
+        run_command(cmd, cwd=build_prefix)
+    except subprocess.CalledProcessError:
+        return 1
+
+entry_point_data = dict(
+    build_type='ament_cmake',
+    description='ament package built with cmake',
+    main=main,
+    prepare_arguments=prepare_arguments,
+    argument_preprocessor=argument_preprocessor,
+)
