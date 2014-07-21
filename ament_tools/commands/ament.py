@@ -12,29 +12,74 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pkg_resources import iter_entry_points
+from __future__ import print_function
+
+import argparse
 import sys
 
-from . import AMENT_VERBS_ENTRY_POINT
+from osrf_pycommon.cli_utils.verb_pattern import create_subparsers
+from osrf_pycommon.cli_utils.verb_pattern import list_verbs
+from osrf_pycommon.cli_utils.verb_pattern import split_arguments_by_verb
+
+COMMAND_NAME = 'ament'
+
+VERBS_ENTRY_POINT = '{0}.verbs'.format(COMMAND_NAME)
 
 
-def main(args=None):
-    if args is None:
-        args = sys.argv[1:]
+def main(sysargs=None):
+    # Assign sysargs if not set
+    sysargs = sys.argv[1:] if sysargs is None else sysargs
 
-    commands = {}
-    for entry_point in iter_entry_points(group=AMENT_VERBS_ENTRY_POINT):
-        commands[entry_point.name] = entry_point.load()
+    # Create a top level parser
+    parser = argparse.ArgumentParser(
+        description="{0} command".format(COMMAND_NAME)
+    )
 
-    if len(args) == 0 or \
-            (len(args) == 1 and args[0] in ['help', '-h', '--help']) or \
-            args[0] not in commands.keys():
-        print('usage: ament <command>')
-        print('')
-        print('The available commands are:')
-        max_length = max([len(name) for name in commands.keys()])
-        for name, data in commands.items():
-            print('  %s %s' % (name.ljust(max_length), data['description']))
-        return
+    # Generate a list of verbs available
+    verbs = list_verbs(VERBS_ENTRY_POINT)
 
-    commands[args[0]]['main'](args[1:])
+    # Create the subparsers for each verb and collect the arg preprocessors
+    argument_preprocessors, verb_subparsers = create_subparsers(
+        parser,
+        COMMAND_NAME,
+        verbs,
+        VERBS_ENTRY_POINT,
+        sysargs,
+    )
+
+    # Determine the verb, splitting arguments into pre and post verb
+    verb, pre_verb_args, post_verb_args = split_arguments_by_verb(sysargs)
+
+    # Short circuit -h and --help
+    if '-h' in pre_verb_args or '--help' in pre_verb_args:
+        parser.print_help()
+        sys.exit(0)
+
+    # Short circuit -h and --help for verbs
+    if '-h' in post_verb_args or '--help' in post_verb_args:
+        verb_subparsers[verb].print_help()
+        sys.exit(0)
+
+    # Error on no verb provided
+    if verb is None:
+        print(parser.format_usage())
+        sys.exit("Error: No verb provided.")
+    # Error on unknown verb provided
+    if verb not in verbs:
+        print(parser.format_usage())
+        sys.exit("Error: Unknown verb '{0}' provided.".format(verb))
+
+    # First allow the verb's argument preprocessor to strip any args
+    # and return any "extra" information it wants as a dict
+    processed_post_verb_args, extras = \
+        argument_preprocessors[verb](post_verb_args)
+    # Then allow argparse to process the left over post-verb arguments along
+    # with the pre-verb arguments and the verb itself
+    args = parser.parse_args(pre_verb_args + [verb] + processed_post_verb_args)
+    # Extend the argparse result with the extras from the preprocessor
+    for key, value in extras.items():
+        setattr(args, key, value)
+
+    # Finally call the subparser's main function with the processed args
+    # and the extras which the preprocessor may have returned
+    sys.exit(args.main(args) or 0)
