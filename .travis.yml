@@ -10,6 +10,11 @@ install:
   - cd ament_package
   - python setup.py install
   - cd ..
+# Also install a special branch of osrf_pycommon
+  - git clone https://github.com/osrf/osrf_pycommon.git -b cli_utils
+  - cd osrf_pycommon
+  - python setup.py install
+  - cd ..
 script:
   - python setup.py nosetests -s
 notifications:
