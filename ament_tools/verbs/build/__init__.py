@@ -14,20 +14,14 @@
 
 from __future__ import print_function
 
-import argparse
 import os
 
-from ament_tools.verbs.build_pkg import main as build_pkg_main
 from ament_tools.helper import argparse_existing_dir
 from ament_tools.topological_order import topological_order
+from ament_tools.verbs.build_pkg import main as build_pkg_main
 
 
-def main(args):
-    parser = argparse.ArgumentParser(
-        description=entry_point_data['description'],
-        prog='ament build',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
+def prepare_arguments(parser):
     parser.add_argument(
         'basepath',
         nargs='?',
@@ -45,9 +39,10 @@ def main(args):
         default='/tmp/ament_build_pkg/install',
         help='Path to the install prefix',
     )
-    ns, unknown_args = parser.parse_known_args(args)
 
-    packages = topological_order(ns.basepath)
+
+def main(opts):
+    packages = topological_order(opts.basepath)
 
     print('')
     print('# Topologoical order')
@@ -56,22 +51,24 @@ def main(args):
     print('')
 
     for (path, package) in packages:
-        pkg_path = os.path.join(ns.basepath, path)
+        pkg_path = os.path.join(opts.basepath, path)
 
         print('')
         print('# Building: %s' % package.name)
         print('')
         rc = build_pkg_main([
             pkg_path,
-            '--build-prefix', os.path.join(ns.build_prefix, package.name),
-            '--install-prefix', ns.install_prefix,
-        ] + unknown_args)
+            '--build-prefix', os.path.join(opts.build_prefix, package.name),
+            '--install-prefix', opts.install_prefix,
+        ])
         if rc:
             return rc
 
 
 # meta information of the entry point
 entry_point_data = dict(
+    verb='build',
     description='Build a set of packages',
     main=main,
+    prepare_arguments=prepare_arguments,
 )

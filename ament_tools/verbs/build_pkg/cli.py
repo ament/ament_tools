@@ -15,6 +15,7 @@
 from __future__ import print_function
 
 import argparse
+import inspect
 import os
 import pkg_resources
 import subprocess
@@ -23,6 +24,8 @@ import sys
 from ament_package import package_exists_at
 from ament_package import PACKAGE_MANIFEST_FILENAME
 from ament_package import parse_package
+
+from ament_tools.context import Context
 
 from osrf_pycommon.cli_utils.verb_pattern import call_prepare_arguments
 
@@ -64,9 +67,9 @@ def argument_preprocessor(args):
     except (MissingPluginError, ValueError) as exc:
         sys.exit("{0}".format(exc))
     build_type = get_build_type(path)
-    entry_point = get_entry_point_for_build_type(build_type)
+    build_type_impl = get_class_for_build_type(build_type)()
     # Let detected build type plugin do argument preprocessing
-    args, extras = entry_point['argument_preprocessor'](args)
+    args, extras = build_type_impl.argument_preprocessor(args)
     return args, extras
 
 
@@ -118,12 +121,12 @@ def prepare_arguments(parser, args):
         # Get the build_type from the package manifest
         build_type = get_build_type(path)
         # Find an entry point which supports this build type
-        entry_point = get_entry_point_for_build_type(build_type)
+        build_type_impl = get_class_for_build_type(build_type)()
         # Let the detected build type plugin add arguments
         group = parser.add_argument_group(
-            "{0} (detected) options".format(entry_point['build_type']))
+            "{0} (detected) options".format(build_type_impl.build_type))
         call_prepare_arguments(
-            entry_point['prepare_arguments'],
+            build_type_impl.prepare_arguments,
             group,
             args,
         )
@@ -147,11 +150,11 @@ class MissingPluginError(Exception):
     pass
 
 
-def get_entry_point_for_build_type(build_type):
-    """Gets the entry_point for a given package build type.
+def get_class_for_build_type(build_type):
+    """Gets the class for a given package build type.
 
     :param str build_type: name of build_type plugin, e.g. 'ament_cmake'
-    :returns: entry point for the requirest build_type plugin
+    :returns: class for the requirest build_type plugin
     :raises: RuntimeError if there are more than one plugins for a requested
         build type.
     :raises: MissingPluginError if there is no plugin for the requested
@@ -168,6 +171,15 @@ def get_entry_point_for_build_type(build_type):
         )
     return entry_points[0].load()
 
+package_manifest_cache_ = {}
+
+
+def __get_cached_package_manifest(path):
+    global package_manifest_cache_
+    if path not in package_manifest_cache_:
+        package_manifest_cache_[path] = parse_package(path)
+    return package_manifest_cache_[path]
+
 
 def get_build_type(path):
     """Extract the build_type from the package manifest at the given path.
@@ -178,7 +190,7 @@ def get_build_type(path):
     :param str path: path to a package manifest file
     :returns: build_type as a string
     """
-    package = parse_package(path)
+    package = __get_cached_package_manifest(path)
 
     build_type_exports = [e for e in package.exports
                           if e.tagname == 'build_type']
@@ -215,12 +227,19 @@ def validate_package_manifest_path(path):
     return p
 
 
-def run_command(cmd, cwd=None):
-    msg = '# Invoking: %s' % ' '.join(cmd)
-    if cwd:
-        msg += ' (in %s)' % cwd
-    print(msg)
-    return subprocess.check_call(cmd, cwd=cwd)
+def handle_build_action(build_action_ret, context):
+    build_action_ret
+    if not inspect.isgenerator(build_action_ret):
+        return
+    for build_action in build_action_ret:
+        if build_action.type == 'command':
+            print("==> '{0}'".format(" ".join(build_action.cmd)))
+            subprocess.check_call(build_action.cmd, cwd=context.build_space)
+        elif build_action.type == 'function':
+            raise NotImplementedError
+        else:
+            raise RuntimeError("Unknown BuildAction type '{0}'"
+                               .format(build_action.type))
 
 
 def main(opts):
@@ -228,6 +247,40 @@ def main(opts):
         opts.path = validate_package_manifest_path(opts.path)
     except ValueError as exc:
         sys.exit("Error: {0}".format(exc))
+    # Load up build type plugin class
     build_type = get_build_type(opts.path)
-    entry_point = get_entry_point_for_build_type(build_type).load()
-    return entry_point['main'](opts)
+    build_type_impl = get_class_for_build_type(build_type)()
+    # Setup build_pkg common context
+    context = Context()
+    context.source_space = os.path.abspath(os.path.normpath(opts.path))
+    context.package_manifest = __get_cached_package_manifest(opts.path)
+    pkg_name = context.package_manifest.name
+    context.build_space = os.path.join(opts.build_prefix, pkg_name)
+    context.install_space = opts.install_prefix
+    context.install = True
+    context.isolated_install = False
+    context.symbolic_link_install = False
+    context.make_flags = []
+    context.dry_run = False
+    print("Build package '{0}' with context:".format(pkg_name))
+    print("-" * 80)
+    keys = ['source_space', 'build_space', 'install_space', 'make_flags']
+    max_key_len = str(max([len(k) for k in keys]))
+    for key in keys:
+        value = context[key]
+        if isinstance(value, list):
+            value = ", ".join(value) if value else "None"
+        print(("{0:>" + max_key_len + "} => {1}").format(key, value))
+    print("-" * 80)
+    # Allow the build type plugin to process options into a context extender
+    ce = build_type_impl.extend_context(opts)
+    # Extend the context with the context extender
+    ce.apply_to_context(context)
+    # Run the build command
+    print("+++ Building '{0}'".format(pkg_name))
+    on_build_ret = build_type_impl.on_build(context)
+    handle_build_action(on_build_ret, context)
+    # Run the install command
+    print("+++ Installing '{0}'".format(pkg_name))
+    on_install_ret = build_type_impl.on_install(context)
+    handle_build_action(on_install_ret, context)

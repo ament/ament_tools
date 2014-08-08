@@ -15,9 +15,8 @@
 from .cli import argument_preprocessor
 from .cli import main
 from .cli import prepare_arguments
-from .cli import run_command
 
-__all__ = ['entry_point_data', 'run_command']
+__all__ = ['entry_point_data']
 
 # meta information of the entry point
 entry_point_data = dict(

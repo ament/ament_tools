@@ -39,10 +39,7 @@ and provides tooling to build these federated packages together.""",
             # 'test_pkg = ament_tools.verbs.test_pkg:entry_point_data',
         ],
         'ament.verb.build_pkg.build_types': [
-            'ament_cmake = ament_tools.verbs.build_pkg.build_types.ament_cmake:entry_point_data',
-        ],
-        'ament.verb.test_pkg.build_types': [
-            'ament_cmake = ament_tools.verbs.test_pkg.build_types.ament_cmake:main',
+            'ament_cmake = ament_tools.verbs.build_pkg.build_types.ament_cmake:AmentCmakeBuildType',
         ],
     }
 )
