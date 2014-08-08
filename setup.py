@@ -38,8 +38,8 @@ and provides tooling to build these federated packages together.""",
             # 'test = ament_tools.verbs.test:entry_point_data',
             # 'test_pkg = ament_tools.verbs.test_pkg:entry_point_data',
         ],
-        'ament.verb.build_pkg.build_types': [
-            'ament_cmake = ament_tools.verbs.build_pkg.build_types.ament_cmake:AmentCmakeBuildType',
+        'ament.build_types': [
+            'ament_cmake = ament_tools.build_types.ament_cmake:AmentCmakeBuildType',
         ],
     }
 )

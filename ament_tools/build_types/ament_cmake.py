@@ -19,12 +19,12 @@ from ament_tools.build_type import BuildType
 
 from ament_tools.context import ContextExtender
 
-from .cmake_common import makefile_exists_at
-from .cmake_common import CMAKE_EXECUTABLE
-from .cmake_common import MAKE_EXECUTABLE
+from ament_tools.build_types.cmake_common import makefile_exists_at
+from ament_tools.build_types.cmake_common import CMAKE_EXECUTABLE
+from ament_tools.build_types.cmake_common import MAKE_EXECUTABLE
 
-from .common import get_cached_config
-from .common import set_cached_config
+from ament_tools.build_types.common import get_cached_config
+from ament_tools.build_types.common import set_cached_config
 
 
 class AmentCmakeBuildType(BuildType):

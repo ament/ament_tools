@@ -17,7 +17,6 @@ from __future__ import print_function
 import argparse
 import inspect
 import os
-import pkg_resources
 import subprocess
 import sys
 
@@ -25,11 +24,12 @@ from ament_package import package_exists_at
 from ament_package import PACKAGE_MANIFEST_FILENAME
 from ament_package import parse_package
 
+from ament_tools.build_type_discovery import MissingPluginError
+from ament_tools.build_type_discovery import get_class_for_build_type
+
 from ament_tools.context import Context
 
 from osrf_pycommon.cli_utils.verb_pattern import call_prepare_arguments
-
-AMENT_BUILD_PKG_BUILD_TYPES_ENTRY_POINT = 'ament.verb.build_pkg.build_types'
 
 
 def add_path_argument(parser):
@@ -95,14 +95,14 @@ def prepare_arguments(parser, args):
     # Add verb arguments
     add_path_argument(parser)
     parser.add_argument(
-        '--build-prefix',
+        '--build-space',
         default='/tmp/ament_build_pkg/build',
-        help='Path to the build prefix',
+        help='Path to the build space',
     )
     parser.add_argument(
-        '--install-prefix',
+        '--install-space',
         default='/tmp/ament_build_pkg/install',
-        help='Path to the install prefix',
+        help='Path to the install space',
     )
 
     # Detected build type if possible
@@ -137,39 +137,6 @@ def prepare_arguments(parser, args):
         if '-h' in args or '--help' in args:
             print("Error: Could not detect package build type:", exc)
     return parser
-
-
-def yield_supported_build_types(name=None):
-    return pkg_resources.iter_entry_points(
-        group=AMENT_BUILD_PKG_BUILD_TYPES_ENTRY_POINT,
-        name=name,
-    )
-
-
-class MissingPluginError(Exception):
-    pass
-
-
-def get_class_for_build_type(build_type):
-    """Gets the class for a given package build type.
-
-    :param str build_type: name of build_type plugin, e.g. 'ament_cmake'
-    :returns: class for the requirest build_type plugin
-    :raises: RuntimeError if there are more than one plugins for a requested
-        build type.
-    :raises: MissingPluginError if there is no plugin for the requested
-        build type.
-    """
-    entry_points = list(yield_supported_build_types(build_type))
-    if len(entry_points) > 1:
-        # Shouldn't happen, defensive
-        raise RuntimeError("More than one build_type entry_point.")
-    if len(entry_points) == 0:
-        raise MissingPluginError(
-            "No plugin to handle a package with build_type '{0}'"
-            .format(build_type)
-        )
-    return entry_points[0].load()
 
 package_manifest_cache_ = {}
 
@@ -255,8 +222,8 @@ def main(opts):
     context.source_space = os.path.abspath(os.path.normpath(opts.path))
     context.package_manifest = __get_cached_package_manifest(opts.path)
     pkg_name = context.package_manifest.name
-    context.build_space = os.path.join(opts.build_prefix, pkg_name)
-    context.install_space = opts.install_prefix
+    context.build_space = os.path.join(opts.build_space, pkg_name)
+    context.install_space = opts.install_space
     context.install = True
     context.isolated_install = False
     context.symbolic_link_install = False
