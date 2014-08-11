@@ -89,7 +89,7 @@ def prepare_arguments(parser, args):
     :param parser: ArgumentParser object to which arguments are added
     :type parser: :py:class:`argparse.ArgumentParser`
     :param list args: list of arguments as str's
-    :returns: original parser given
+    :returns: modified version of the original parser given
     :rtype: :py:class:`argparse.ArgumentParser`
     """
     # Add verb arguments
@@ -194,14 +194,23 @@ def validate_package_manifest_path(path):
     return p
 
 
+def run_command(build_action, context):
+    print("==> '{0}'".format(" ".join(build_action.cmd)))
+    try:
+        subprocess.check_call(build_action.cmd, cwd=context.build_space)
+    except subprocess.CalledProcessError as exc:
+        print()
+        sys.exit("<== Command '{0}' failed with exit code '{1}'"
+                 .format(' '.join(exc.cmd), exc.returncode))
+
+
 def handle_build_action(build_action_ret, context):
     build_action_ret
     if not inspect.isgenerator(build_action_ret):
         return
     for build_action in build_action_ret:
         if build_action.type == 'command':
-            print("==> '{0}'".format(" ".join(build_action.cmd)))
-            subprocess.check_call(build_action.cmd, cwd=context.build_space)
+            run_command(build_action, context)
         elif build_action.type == 'function':
             raise NotImplementedError
         else:
