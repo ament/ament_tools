@@ -14,33 +14,35 @@
 
 import argparse
 import os
+import sys
 
 from ament_package import parse_package
 
 from ament_tools.helper import argparse_existing_package
 
 
-def main(args):
-    parser = argparse.ArgumentParser(
-        description=entry_point_data['description'],
-        prog='ament package_version',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
+def prepare_arguments(parser):
     parser.add_argument(
         'path',
         nargs='?',
-        type=argparse_existing_package,
-        default=os.curdir,
         help='Path to the package',
     )
-    args = parser.parse_args(args)
 
-    package = parse_package(args.path)
+
+def main(options):
+    path = os.curdir if options.path is None else options.path
+    try:
+        path = argparse_existing_package(path)
+    except argparse.ArgumentTypeError as exc:
+        sys.exit("Error: {0}".format(exc))
+    package = parse_package(path)
     print(package.version)
 
 
 # meta information of the entry point
 entry_point_data = dict(
+    verb='package_version',
     description='Output the version of a package',
     main=main,
+    prepare_arguments=prepare_arguments,
 )
