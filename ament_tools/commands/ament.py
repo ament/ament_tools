@@ -55,11 +55,6 @@ def main(sysargs=None):
         parser.print_help()
         sys.exit(0)
 
-    # Short circuit -h and --help for verbs
-    if '-h' in post_verb_args or '--help' in post_verb_args:
-        verb_subparsers[verb].print_help()
-        sys.exit(0)
-
     # Error on no verb provided
     if verb is None:
         print(parser.format_usage())
@@ -68,6 +63,11 @@ def main(sysargs=None):
     if verb not in verbs:
         print(parser.format_usage())
         sys.exit("Error: Unknown verb '{0}' provided.".format(verb))
+
+    # Short circuit -h and --help for verbs
+    if '-h' in post_verb_args or '--help' in post_verb_args:
+        verb_subparsers[verb].print_help()
+        sys.exit(0)
 
     # First allow the verb's argument preprocessor to strip any args
     # and return any "extra" information it wants as a dict
