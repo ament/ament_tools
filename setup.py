@@ -32,7 +32,7 @@ and provides tooling to build these federated packages together.""",
         'ament.verbs': [
             'build = ament_tools.verbs.build:entry_point_data',
             'build_pkg = ament_tools.verbs.build_pkg:entry_point_data',
-            # 'list_packages = ament_tools.verbs.list_packages:entry_point_data',
+            'list_packages = ament_tools.verbs.list_packages:entry_point_data',
             # 'package_name = ament_tools.verbs.package_name:entry_point_data',
             # 'package_version = ament_tools.verbs.package_version:entry_point_data',
             # 'test = ament_tools.verbs.test:entry_point_data',
