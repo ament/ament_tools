@@ -14,16 +14,28 @@
 
 from __future__ import print_function
 
-from .cli import main
+import os
 
-from ament_tools.verbs.build_pkg import argument_preprocessor
-from ament_tools.verbs.build_pkg import prepare_arguments
+from ament_tools.verbs.test_pkg import main as test_pkg_main
+from ament_tools.topological_order import topological_order
 
-# meta information of the entry point
-entry_point_data = dict(
-    verb='test',
-    description='Test a package',
-    main=main,
-    prepare_arguments=prepare_arguments,
-    argument_preprocessor=argument_preprocessor,
-)
+
+def main(options):
+    packages = topological_order(options.basepath)
+
+    print('')
+    print('# Topologoical order')
+    for (path, package) in packages:
+        print(' - %s' % package.name)
+    print('')
+
+    for (path, package) in packages:
+        pkg_path = os.path.join(options.basepath, path)
+
+        print('')
+        print('# Testing: %s' % package.name)
+        print('')
+        options.path = pkg_path
+        rc = test_pkg_main(options)
+        if rc:
+            return rc

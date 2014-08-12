@@ -12,20 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .cli import argument_preprocessor
-from .cli import main
-from .cli import prepare_arguments
+import os
+import re
+import subprocess
 
-__all__ = ['entry_point_data']
+from osrf_pycommon.process_utils import which
 
-# meta information of the entry point
-entry_point_data = dict(
-    verb='build_pkg',
-    description='Build a package',
-    # Called for execution, given parsed arguments object
-    main=main,
-    # Called first to setup argparse, given argparse parser
-    prepare_arguments=prepare_arguments,
-    # Called after prepare_arguments, but before argparse.parse_args
-    argument_preprocessor=argument_preprocessor,
-)
+CMAKE_EXECUTABLE = which('cmake')
+MAKE_EXECUTABLE = which('make')
+
+__target_re = re.compile(r'^([a-zA-Z0-9][a-zA-Z0-9_\.]*):')
+
+
+def has_make_target(path, target):
+    global __target_re
+    output = subprocess.check_output([MAKE_EXECUTABLE, '-pn'], cwd=path)
+    lines = output.splitlines()
+    targets = [m.group(1) for m in [__target_re.match(l) for l in lines] if m]
+    return target in targets
+
+
+def makefile_exists_at(path):
+    makefile = os.path.join(path, 'Makefile')
+    return os.path.exists(makefile)

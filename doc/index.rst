@@ -4,6 +4,8 @@
 .. toctree::
    :hidden:
 
+   development/build_types
+
 This Python package provides command line tools for working with ament packages and ament workspaces.
 
 The ``ament`` command
