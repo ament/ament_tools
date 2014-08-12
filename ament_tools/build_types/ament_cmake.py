@@ -14,6 +14,8 @@
 
 """Implements the BuildType support for cmake based ament packages."""
 
+import os
+
 from ament_tools.build_type import BuildAction
 from ament_tools.build_type import BuildType
 
@@ -67,6 +69,13 @@ class AmentCmakeBuildType(BuildType):
         ce.add('ament_cmake_args', options.ament_cmake_args)
         return ce
 
+    def get_command_prefix(self, context):
+        prefix = []
+        local_setup = os.path.join(context.install_space, 'local_setup.sh')
+        if os.path.isfile(local_setup):
+            prefix = ['.', local_setup, '&&']
+        return prefix
+
     def on_build(self, context):
         # Reguardless of dry-run, try to determine if CMake should be invoked
         should_run_configure = False
@@ -88,6 +97,8 @@ class AmentCmakeBuildType(BuildType):
         # Store the ament_cmake_args for next invocation
         set_cached_config(context.build_space, 'ament_cmake_args',
                           ament_cmake_config)
+        # Figure out if there is a setup file to source
+        prefix = self.get_command_prefix(context)
         # Execute the configure step
         # (either cmake or the cmake_check_build_system make target)
         if should_run_configure:
@@ -96,16 +107,18 @@ class AmentCmakeBuildType(BuildType):
             cmake_args += ["-DCMAKE_INSTALL_PREFIX=" + context.install_space]
             if context.testing:
                 cmake_args += ["-DAMENT_ENABLE_TESTING=1"]
-            yield BuildAction([CMAKE_EXECUTABLE] + cmake_args)
+            yield BuildAction(prefix + [CMAKE_EXECUTABLE] + cmake_args)
         else:
-            yield BuildAction([MAKE_EXECUTABLE, 'cmake_check_build_system'])
+            yield BuildAction(prefix + [MAKE_EXECUTABLE, 'cmake_check_build_system'])
         # Now execute the build step
-        yield BuildAction([MAKE_EXECUTABLE] + context.make_flags)
+        yield BuildAction(prefix + [MAKE_EXECUTABLE] + context.make_flags)
 
     def on_test(self, context):
         assert context.testing
+        # Figure out if there is a setup file to source
+        prefix = self.get_command_prefix(context)
         if has_make_target(context.build_space, 'test') or context.dry_run:
-            yield BuildAction([MAKE_EXECUTABLE, 'test'])
+            yield BuildAction(prefix + [MAKE_EXECUTABLE, 'test'])
         else:
             self.warn("Could not run test for ament_cmake package because it "
                       "has no 'test' target")
@@ -113,5 +126,8 @@ class AmentCmakeBuildType(BuildType):
     def on_install(self, context):
         # TODO: Check for, and act on, the symbolic install option
 
+        # Figure out if there is a setup file to source
+        prefix = self.get_command_prefix(context)
+
         # Assumption: install target exists
-        yield BuildAction([MAKE_EXECUTABLE, 'install'])
+        yield BuildAction(prefix + [MAKE_EXECUTABLE, 'install'])

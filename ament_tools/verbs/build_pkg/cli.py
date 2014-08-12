@@ -17,6 +17,7 @@ from __future__ import print_function
 import argparse
 import inspect
 import os
+import shlex
 import subprocess
 import sys
 
@@ -203,11 +204,16 @@ def validate_package_manifest_path(path):
 def run_command(build_action, context):
     print("==> '{0}'".format(" ".join(build_action.cmd)))
     try:
-        subprocess.check_call(build_action.cmd, cwd=context.build_space)
+        cmd = build_action.cmd
+        cmd = ' '.join([(shlex.quote(c) if c != '&&' else c) for c in cmd])
+        subprocess.check_call(cmd, shell=True, cwd=context.build_space)
     except subprocess.CalledProcessError as exc:
         print()
+        cmd_msg = exc.cmd
+        if isinstance(cmd_msg, list):
+            cmd_msg = ' '.join(cmd_msg)
         sys.exit("<== Command '{0}' failed with exit code '{1}'"
-                 .format(' '.join(exc.cmd), exc.returncode))
+                 .format(cmd_msg, exc.returncode))
 
 
 def handle_build_action(build_action_ret, context):
