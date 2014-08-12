@@ -24,7 +24,7 @@ def main(options):
     packages = topological_order(options.basepath)
 
     print('')
-    print('# Topologoical order')
+    print('# Topological order')
     for (path, package) in packages:
         print(' - %s' % package.name)
     print('')

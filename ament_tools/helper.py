@@ -34,3 +34,11 @@ def argparse_existing_package(path):
             "Path '%s' does not contain a '%s' file" %
             (path, PACKAGE_MANIFEST_FILENAME))
     return path
+
+
+def determine_path_argument(cwd, base_path, argument, default):
+    if argument is None:
+        # if no argument is passed the default is relative to the base_path
+        return os.path.join(base_path, default)
+    # if an argument is passed it is relative to cwd (or absolute)
+    return os.path.abspath(os.path.join(cwd, argument))

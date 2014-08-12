@@ -29,6 +29,7 @@ from ament_tools.build_type_discovery import MissingPluginError
 from ament_tools.build_type_discovery import get_class_for_build_type
 
 from ament_tools.context import Context
+from ament_tools.helper import determine_path_argument
 
 from osrf_pycommon.cli_utils.verb_pattern import call_prepare_arguments
 
@@ -97,13 +98,11 @@ def prepare_arguments(parser, args):
     add_path_argument(parser)
     parser.add_argument(
         '--build-space',
-        default='/tmp/ament_build_pkg/build',
-        help='Path to the build space',
+        help="Path to the build space (default 'CWD/build')",
     )
     parser.add_argument(
         '--install-space',
-        default='/tmp/ament_build_pkg/install',
-        help='Path to the install space',
+        help="Path to the install space (default 'CWD/build')",
     )
     parser.add_argument(
         '--test',
@@ -202,7 +201,8 @@ def validate_package_manifest_path(path):
 
 
 def run_command(build_action, context):
-    print("==> '{0}'".format(" ".join(build_action.cmd)))
+    print("==> '{0}' in '{1}'".format(
+        " ".join(build_action.cmd), context.build_space))
     try:
         cmd = build_action.cmd
         cmd = ' '.join([(shlex.quote(c) if c != '&&' else c) for c in cmd])
@@ -231,6 +231,18 @@ def handle_build_action(build_action_ret, context):
 
 
 def main(opts):
+    # use PWD in order to work when being invoked in a symlinked location
+    cwd = os.getenv('PWD', os.curdir)
+    # no -C / --directory argument yet
+    # opts.directory = os.path.abspath(os.path.join(cwd, opts.directory))
+    opts.directory = cwd
+    opts.path = determine_path_argument(cwd, opts.directory, opts.path,
+                                        os.curdir)
+    opts.build_space = determine_path_argument(cwd, opts.directory,
+                                               opts.build_space, 'build')
+    opts.install_space = determine_path_argument(cwd, opts.directory,
+                                                 opts.install_space, 'install')
+
     try:
         opts.path = validate_package_manifest_path(opts.path)
     except ValueError as exc:

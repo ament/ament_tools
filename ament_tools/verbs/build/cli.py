@@ -18,6 +18,7 @@ import os
 
 from ament_tools.build_type_discovery import yield_supported_build_types
 from ament_tools.helper import argparse_existing_dir
+from ament_tools.helper import determine_path_argument
 from ament_tools.topological_order import topological_order
 from ament_tools.verbs.build_pkg import main as build_pkg_main
 
@@ -61,21 +62,24 @@ def prepare_arguments(parser, args):
     """
     # Add verb arguments
     parser.add_argument(
+        '-C', '--directory',
+        default=os.curdir,
+        help="The base path of the workspace (default '%s')" % os.curdir
+    )
+    parser.add_argument(
         'basepath',
         nargs='?',
         type=argparse_existing_dir,
         default=os.curdir,
-        help='Base path to the packages',
+        help="Base path to the packages (default 'CWD')",
     )
     parser.add_argument(
         '--build-space',
-        default='/tmp/ament_build_pkg/build',
-        help='Path to the build space',
+        help="Path to the build space (default 'CWD/build')",
     )
     parser.add_argument(
         '--install-space',
-        default='/tmp/ament_build_pkg/install',
-        help='Path to the install space',
+        help="Path to the install space (default 'CWD/install')",
     )
     parser.add_argument(
         '--test',
@@ -95,10 +99,21 @@ def prepare_arguments(parser, args):
 
 
 def main(opts):
+    # use PWD in order to work when being invoked in a symlinked location
+    cwd = os.getenv('PWD', os.curdir)
+    opts.directory = os.path.abspath(os.path.join(cwd, opts.directory))
+    if not os.path.exists(opts.basepath):
+        raise RuntimeError("The specified base path '%s' does not exist" %
+                           opts.basepath)
+    opts.build_space = determine_path_argument(cwd, opts.directory,
+                                               opts.build_space, 'build')
+    opts.install_space = determine_path_argument(cwd, opts.directory,
+                                                 opts.install_space, 'install')
+
     packages = topological_order(opts.basepath)
 
     print('')
-    print('# Topologoical order')
+    print('# Topological order')
     for (path, package) in packages:
         print(' - %s' % package.name)
     print('')
