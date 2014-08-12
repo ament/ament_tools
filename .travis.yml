@@ -11,7 +11,7 @@ install:
   - python setup.py install
   - cd ..
 # Also install a special branch of osrf_pycommon
-  - git clone https://github.com/osrf/osrf_pycommon.git -b cli_utils
+  - git clone https://github.com/osrf/osrf_pycommon.git
   - cd osrf_pycommon
   - python setup.py install
   - cd ..
