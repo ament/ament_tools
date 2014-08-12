@@ -234,7 +234,6 @@ def main(opts):
     # use PWD in order to work when being invoked in a symlinked location
     cwd = os.getenv('PWD', os.curdir)
     # no -C / --directory argument yet
-    # opts.directory = os.path.abspath(os.path.join(cwd, opts.directory))
     opts.directory = cwd
     opts.path = determine_path_argument(cwd, opts.directory, opts.path,
                                         os.curdir)

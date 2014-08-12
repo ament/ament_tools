@@ -15,6 +15,7 @@
 from __future__ import print_function
 
 import os
+import sys
 
 from ament_tools.build_type_discovery import yield_supported_build_types
 from ament_tools.helper import argparse_existing_dir
@@ -87,6 +88,10 @@ def prepare_arguments(parser, args):
         default=False,
         help='Enable testing of packages',
     )
+    parser.add_argument(
+        '--start-with',
+        help='Start with a particular package',
+    )
 
     # Allow all available build_type's to provide additional arguments
     for build_type in yield_supported_build_types():
@@ -111,14 +116,31 @@ def main(opts):
                                                  opts.install_space, 'install')
 
     packages = topological_order(opts.basepath)
+    package_names = [p.name for _, p in packages]
+
+    if opts.start_with and opts.start_with not in package_names:
+        sys.exit("Package '{0}' specified with --start-with was not found."
+                 .format(opts.start_with))
 
     print('')
     print('# Topological order')
+    start_with_found = False
     for (path, package) in packages:
-        print(' - %s' % package.name)
+        if package.name == opts.start_with:
+            start_with_found = True
+        if not start_with_found:
+            print(' skip %s' % package.name)
+        else:
+            print(' -    %s' % package.name)
     print('')
 
+    start_with_found = False
     for (path, package) in packages:
+        if package.name == opts.start_with:
+            start_with_found = True
+        else:
+            print('# Skipping: %s' % package.name)
+            continue
         pkg_path = os.path.join(opts.basepath, path)
 
         print('')
