@@ -104,6 +104,12 @@ def prepare_arguments(parser, args):
         default='/tmp/ament_build_pkg/install',
         help='Path to the install space',
     )
+    parser.add_argument(
+        '--test',
+        action='store_true',
+        default=False,
+        help='Enable testing of packages',
+    )
 
     # Detected build type if possible
     try:
@@ -238,9 +244,16 @@ def main(opts):
     context.symbolic_link_install = False
     context.make_flags = []
     context.dry_run = False
+    context.testing = opts.test
     print("Build package '{0}' with context:".format(pkg_name))
     print("-" * 80)
-    keys = ['source_space', 'build_space', 'install_space', 'make_flags']
+    keys = [
+        'source_space',
+        'build_space',
+        'install_space',
+        'make_flags',
+        'testing',
+    ]
     max_key_len = str(max([len(k) for k in keys]))
     for key in keys:
         value = context[key]
@@ -256,6 +269,11 @@ def main(opts):
     print("+++ Building '{0}'".format(pkg_name))
     on_build_ret = build_type_impl.on_build(context)
     handle_build_action(on_build_ret, context)
+    if context.testing:
+        # Run the install command
+        print("+++ Testing '{0}'".format(pkg_name))
+        on_test_ret = build_type_impl.on_test(context)
+        handle_build_action(on_test_ret, context)
     # Run the install command
     print("+++ Installing '{0}'".format(pkg_name))
     on_install_ret = build_type_impl.on_install(context)

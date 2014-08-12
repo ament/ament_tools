@@ -77,6 +77,12 @@ def prepare_arguments(parser, args):
         default='/tmp/ament_build_pkg/install',
         help='Path to the install space',
     )
+    parser.add_argument(
+        '--test',
+        action='store_true',
+        default=False,
+        help='Enable testing of packages',
+    )
 
     # Allow all available build_type's to provide additional arguments
     for build_type in yield_supported_build_types():

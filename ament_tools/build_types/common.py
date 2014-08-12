@@ -16,6 +16,13 @@ import json
 import os
 
 
+def extract_argument_group(args, delimiting_option):
+    if delimiting_option not in args:
+        return args, []
+    index = args.index(delimiting_option)
+    return args[0:index], args[index + 1:]
+
+
 def get_cached_config(build_space, name):
     path = os.path.join(build_space, '{name}.cache'.format(name=name))
     if not os.path.isfile(path):

@@ -12,26 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import re
-import subprocess
+from __future__ import print_function
 
-from osrf_pycommon.process_utils import which
-
-CMAKE_EXECUTABLE = which('cmake')
-MAKE_EXECUTABLE = which('make')
-
-__target_re = re.compile(r'^([a-zA-Z0-9][a-zA-Z0-9_\.]*):')
+from ament_tools.verbs.build_pkg.cli import main as build_pkg_main
 
 
-def has_make_target(path, target):
-    global __target_re
-    output = subprocess.check_output([MAKE_EXECUTABLE, '-pn'], cwd=path)
-    lines = output.splitlines()
-    targets = [m.group(1) for m in [__target_re.match(l) for l in lines] if m]
-    return target in targets
-
-
-def makefile_exists_at(path):
-    makefile = os.path.join(path, 'Makefile')
-    return os.path.exists(makefile)
+def main(options):
+    options.test = True
+    return build_pkg_main(options)

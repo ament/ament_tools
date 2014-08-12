@@ -19,10 +19,12 @@ from ament_tools.build_type import BuildType
 
 from ament_tools.context import ContextExtender
 
+from ament_tools.build_types.cmake_common import has_make_target
 from ament_tools.build_types.cmake_common import makefile_exists_at
 from ament_tools.build_types.cmake_common import CMAKE_EXECUTABLE
 from ament_tools.build_types.cmake_common import MAKE_EXECUTABLE
 
+from ament_tools.build_types.common import extract_argument_group
 from ament_tools.build_types.common import get_cached_config
 from ament_tools.build_types.common import set_cached_config
 
@@ -73,33 +75,44 @@ class AmentCmakeBuildType(BuildType):
         elif not makefile_exists_at(context.build_space):
             # If the Makefile does not exist, we must configure
             should_run_configure = True
-        cached_ament_cmake_args = get_cached_config(context.build_space,
-                                                    'ament_cmake_args')
-        if context.ament_cmake_args != cached_ament_cmake_args:
+        cached_ament_cmake_config = get_cached_config(context.build_space,
+                                                      'ament_cmake_args')
+        ament_cmake_config = {
+            'ament_cmake_args': context.ament_cmake_args,
+            'testing': context.testing,
+        }
+        if ament_cmake_config != cached_ament_cmake_config:
             should_run_configure = True
-            self.warn("Running cmake because 'ament cmake args' have changed.")
+            self.warn(
+                "Running cmake because arguments have changed.")
         # Store the ament_cmake_args for next invocation
         set_cached_config(context.build_space, 'ament_cmake_args',
-                          context.ament_cmake_args)
+                          ament_cmake_config)
         # Execute the configure step
         # (either cmake or the cmake_check_build_system make target)
         if should_run_configure:
             cmake_args = [context.source_space]
             cmake_args += context.ament_cmake_args
             cmake_args += ["-DCMAKE_INSTALL_PREFIX=" + context.install_space]
+            if context.testing:
+                cmake_args += ["-DAMENT_ENABLE_TESTING=1"]
             yield BuildAction([CMAKE_EXECUTABLE] + cmake_args)
         else:
             yield BuildAction([MAKE_EXECUTABLE, 'cmake_check_build_system'])
         # Now execute the build step
         yield BuildAction([MAKE_EXECUTABLE] + context.make_flags)
 
+    def on_test(self, context):
+        assert context.testing
+        if has_make_target(context.build_space, 'test') or context.dry_run:
+            yield BuildAction([MAKE_EXECUTABLE, 'test'])
+        else:
+            self.warn("Could not run test for ament_cmake package because it "
+                      "has no 'test' target")
+
     def on_install(self, context):
         # TODO: Check for, and act on, the symbolic install option
+
+        # Assumption: install target exists
+        # if has_make_target(context.build_space, 'install') or context.dry_run:
         yield BuildAction([MAKE_EXECUTABLE, 'install'])
-
-
-def extract_argument_group(args, delimiting_option):
-    if delimiting_option not in args:
-        return args, []
-    index = args.index(delimiting_option)
-    return args[0:index], args[index + 1:]
