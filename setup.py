@@ -5,7 +5,7 @@ setup(
     name='ament_tools',
     version='0.0.0',
     packages=find_packages(exclude=['test']),
-    install_requires=['ament-package'],
+    install_requires=['ament-package', 'osrf_pycommon'],
     author='Dirk Thomas, William Woodall',
     author_email='dthomas@osrfoundation.org, william@osrfoundation.org',
     maintainer='William Woodall',
