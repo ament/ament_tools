@@ -114,5 +114,4 @@ class AmentCmakeBuildType(BuildType):
         # TODO: Check for, and act on, the symbolic install option
 
         # Assumption: install target exists
-        # if has_make_target(context.build_space, 'install') or context.dry_run:
         yield BuildAction([MAKE_EXECUTABLE, 'install'])
