@@ -124,7 +124,7 @@ def main(opts):
 
     print('')
     print('# Topological order')
-    start_with_found = False if opts.start_with else True
+    start_with_found = not opts.start_with
     for (path, package) in packages:
         if package.name == opts.start_with:
             start_with_found = True
@@ -134,7 +134,7 @@ def main(opts):
             print(' -    %s' % package.name)
     print('')
 
-    start_with_found = False if opts.start_with else True
+    start_with_found = not opts.start_with
     for (path, package) in packages:
         if package.name == opts.start_with:
             start_with_found = True
