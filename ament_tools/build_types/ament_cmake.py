@@ -21,12 +21,13 @@ from ament_tools.build_type import BuildType
 
 from ament_tools.context import ContextExtender
 
+from ament_tools.helper import extract_argument_group
+
 from ament_tools.build_types.cmake_common import has_make_target
 from ament_tools.build_types.cmake_common import makefile_exists_at
 from ament_tools.build_types.cmake_common import CMAKE_EXECUTABLE
 from ament_tools.build_types.cmake_common import MAKE_EXECUTABLE
 
-from ament_tools.build_types.common import extract_argument_group
 from ament_tools.build_types.common import get_cached_config
 from ament_tools.build_types.common import set_cached_config
 
@@ -109,7 +110,8 @@ class AmentCmakeBuildType(BuildType):
                 cmake_args += ["-DAMENT_ENABLE_TESTING=1"]
             yield BuildAction(prefix + [CMAKE_EXECUTABLE] + cmake_args)
         else:
-            yield BuildAction(prefix + [MAKE_EXECUTABLE, 'cmake_check_build_system'])
+            cmd = prefix + [MAKE_EXECUTABLE, 'cmake_check_build_system']
+            yield BuildAction(cmd)
         # Now execute the build step
         yield BuildAction(prefix + [MAKE_EXECUTABLE] + context.make_flags)
 

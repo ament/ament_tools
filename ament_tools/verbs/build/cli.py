@@ -17,13 +17,15 @@ from __future__ import print_function
 import os
 import sys
 
+from osrf_pycommon.cli_utils.verb_pattern import call_prepare_arguments
+
 from ament_tools.build_type_discovery import yield_supported_build_types
 from ament_tools.helper import argparse_existing_dir
+from ament_tools.helper import combine_make_flags
 from ament_tools.helper import determine_path_argument
+from ament_tools.helper import extract_argument_group
 from ament_tools.topological_order import topological_order
 from ament_tools.verbs.build_pkg import main as build_pkg_main
-
-from osrf_pycommon.cli_utils.verb_pattern import call_prepare_arguments
 
 
 def argument_preprocessor(args):
@@ -38,11 +40,16 @@ def argument_preprocessor(args):
     """
     extras = {}
 
+    # Extract make arguments
+    args, make_flags = extract_argument_group(args, '--make-flags')
+
     # For each available build_type plugin, let it run the preprocessor
     for build_type in yield_supported_build_types():
         build_type_impl = build_type.load()()
         args, tmp_extras = build_type_impl.argument_preprocessor(args)
         extras.update(tmp_extras)
+
+    combine_make_flags(make_flags, args, extras)
 
     return args, extras
 
@@ -91,6 +98,10 @@ def prepare_arguments(parser, args):
     parser.add_argument(
         '--start-with',
         help='Start with a particular package',
+    )
+    parser.add_argument(
+        '--make-flags',
+        help='Flags to be passed to make by build types which invoke make'
     )
 
     # Allow all available build_type's to provide additional arguments

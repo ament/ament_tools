@@ -29,7 +29,9 @@ from ament_tools.build_type_discovery import MissingPluginError
 from ament_tools.build_type_discovery import get_class_for_build_type
 
 from ament_tools.context import Context
+from ament_tools.helper import combine_make_flags
 from ament_tools.helper import determine_path_argument
+from ament_tools.helper import extract_argument_group
 
 from osrf_pycommon.cli_utils.verb_pattern import call_prepare_arguments
 
@@ -60,6 +62,9 @@ def argument_preprocessor(args):
     """
     extras = {}
 
+    # Extract make arguments
+    args, make_flags = extract_argument_group(args, '--make-flags')
+
     # Detected build type if possible
     parser = argparse.ArgumentParser()
     add_path_argument(parser)
@@ -72,6 +77,9 @@ def argument_preprocessor(args):
     build_type_impl = get_class_for_build_type(build_type)()
     # Let detected build type plugin do argument preprocessing
     args, extras = build_type_impl.argument_preprocessor(args)
+
+    combine_make_flags(make_flags, args, extras)
+
     return args, extras
 
 
@@ -109,6 +117,10 @@ def prepare_arguments(parser, args):
         action='store_true',
         default=False,
         help='Enable testing of packages',
+    )
+    parser.add_argument(
+        '--make-flags',
+        help='Flags to be passed to make by build types which invoke make'
     )
 
     # Detected build type if possible
@@ -259,7 +271,7 @@ def main(opts):
     context.install = True
     context.isolated_install = False
     context.symbolic_link_install = False
-    context.make_flags = []
+    context.make_flags = opts.make_flags
     context.dry_run = False
     context.testing = opts.test
     print("Build package '{0}' with context:".format(pkg_name))
