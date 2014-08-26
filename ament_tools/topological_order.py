@@ -67,7 +67,9 @@ class _PackageDecorator(object):
         """
         depends_for_topological_order.add(self.package.name)
         package_names = packages.keys()
-        deps = self.package.build_export_depends + self.package.exec_depends
+        deps = (self.package.build_export_depends +
+                self.package.buildtool_export_depends +
+                self.package.exec_depends)
         for name in [d.name
                      for d in deps
                      if (d.name in package_names and
