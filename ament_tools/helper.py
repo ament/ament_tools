@@ -127,14 +127,94 @@ def extract_argument_group(args, delimiting_option):
     .. code-block:: python
 
         >>> extract_argument_group(['foo', '--args', 'bar', '--baz'], '--args')
-        (['--foo'], ['bar', '--baz'])
+        (['foo'], ['bar', '--baz'])
+
+    The group can always be endded using the double hyphen ``--``.
+    In order to pass a double hyphen as arguments, use three hyphens ``---``.
+    Any set of hypens encountered after the delimeter, and up to ``--``, which
+    have three or more hyphens and are isolated, will be captured and reduced
+    by one hyphen.
+
+    For example:
+
+    .. code-block:: python
+
+        >> extract_argument_group(['foo',
+                                   '--args', 'bar', '--baz', '---', '--',
+                                   '--foo-option'], '--args')
+        (['foo', '--foo-option'], ['bar', '--baz', '--'])
+
+    In the result the ``--`` comes from the ``---`` in the input.
+    The ``--args`` and the corresponding ``--`` are removed entirely.
+
+    The delimeter and ``--`` terminator combination can also happen multiple
+    times, in which case the bodies of arguments are combined and returned in
+    the order they appeared.
+
+    For example:
+
+    .. code-block:: python
+
+        >> extract_argument_group(['foo',
+                                   '--args', 'ping', '--',
+                                   'bar',
+                                   '--args', 'pong', '--',
+                                   'baz',
+                                   '--args', '--'], '--args')
+        (['foo', 'bar', 'baz'], ['ping', 'pong'])
+
+    Note: ``--`` cannot be used as the ``delimiting_option``.
 
     :param list args: list of strings which are ordered arguments.
     :param str delimiting_option: option which denotes where to split the args.
     :returns: tuple of arguments before and after the delimeter.
     :rtype: tuple
+    :raises: ValueError if the delimiting_option is ``--``.
     """
+    if delimiting_option == '--':
+        raise ValueError("Cannot use '--' as the delimiter")
     if delimiting_option not in args:
         return args, []
-    index = args.index(delimiting_option)
-    return args[0:index], args[index + 1:]
+    trimmed_args = args
+    extracted_args = []
+    # Loop through all arguments extracting groups of arguments
+    while True:
+        try:
+            next_delimeter = trimmed_args.index(delimiting_option)
+        except ValueError:
+            # No delimeter's left in the arguments, stop looking
+            break
+        # Capture and remove args after the delimeter
+        tail = trimmed_args[next_delimeter + 1:]
+        trimmed_args = trimmed_args[:next_delimeter]
+        # Look for a terminator, '--'
+        next_terminator = None
+        try:
+            next_terminator = tail.index('--')
+        except ValueError:
+            pass
+        if next_terminator is None:
+            # No terminator, put all args in extracted_args and stop looking
+            extracted_args.extend(tail)
+            break
+        else:
+            # Terminator foud, put args up, but not including terminator
+            # in extracted_args
+            extracted_args.extend(tail[:next_terminator])
+            # And put arguments after the terminator back in trimmed_args
+            # then continue looking for additional delimeters
+            trimmed_args.extend(tail[next_terminator + 1:])
+    # Iterate through extracted args and shorted tokens with 3+ -'s only
+    for i, token in enumerate(extracted_args):
+        # '--' should have been removed from extracted_args in the above loop
+        assert token != '--', "this shouldn't happen"
+        # Skip single hyphens
+        if token == '-':
+            continue
+        # Check for non-hyphen characters
+        if [c for c in token if c != '-']:
+            # contains something other than -, continue
+            continue
+        # Must be only hyphens with more than two, Shorted by one -
+        extracted_args[i] = token[1:]
+    return trimmed_args, extracted_args

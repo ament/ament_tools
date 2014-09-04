@@ -26,3 +26,37 @@ def test_extract_jobs_flags():
     for mflag in invalid_mflags:
         match = extract_jobs_flags(mflag)
         assert match is None, "should not match '{0}'".format(mflag)
+
+
+def test_extract_argument_group():
+    extract_argument_group = helper.extract_argument_group
+    # Example 1 from docstring
+    args = ['foo', '--args', 'bar', '--baz']
+    expected = (['foo'], ['bar', '--baz'])
+    results = extract_argument_group(args, '--args')
+    assert expected == results, (args, expected, results)
+    # Example 2 from docstring
+    args = ['foo', '--args', 'bar', '--baz', '---', '--', '--foo-option']
+    expected = (['foo', '--foo-option'], ['bar', '--baz', '--'])
+    results = extract_argument_group(args, '--args')
+    assert expected == results, (args, expected, results)
+    # Example 3 from docstring
+    args = ['foo',
+            '--args', 'ping', '--',
+            'bar',
+            '--args', 'pong', '--',
+            'baz',
+            '--args', '--']
+    expected = (['foo', 'bar', 'baz'], ['ping', 'pong'])
+    results = extract_argument_group(args, '--args')
+    assert expected == results, (args, expected, results)
+    # Example with delimeter but no arguments
+    args = ['foo', '--args']
+    expected = (['foo'], [])
+    results = extract_argument_group(args, '--args')
+    assert expected == results, (args, expected, results)
+    # Example with no delimeter
+    args = ['foo', 'bar']
+    expected = (['foo', 'bar'], [])
+    results = extract_argument_group(args, '--args')
+    assert expected == results, (args, expected, results)
