@@ -78,8 +78,8 @@ def prepare_arguments(parser, args):
         'basepath',
         nargs='?',
         type=argparse_existing_dir,
-        default=os.curdir,
-        help="Base path to the packages (default 'CWD')",
+        default=os.path.join(os.curdir, 'src'),
+        help="Base path to the packages (default 'CWD/src')",
     )
     parser.add_argument(
         '--build-space',
