@@ -6,6 +6,12 @@
 
    development/build_types
 
+.. This is a custom role for allowing inline comments in rst docs
+.. You can use it by doing :cmt:`Your comment here` anywhere.
+
+.. role:: cmt(raw)
+   :format: never-ever
+
 This Python package provides command line tools for working with ament packages and ament workspaces.
 
 The ``ament`` command
