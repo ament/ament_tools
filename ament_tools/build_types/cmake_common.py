@@ -32,6 +32,11 @@ def has_make_target(path, target):
     return target in targets
 
 
+def cmakecache_exists_at(path):
+    cmakecache = os.path.join(path, 'CMakeCache.txt')
+    return os.path.exists(cmakecache)
+
+
 def makefile_exists_at(path):
     makefile = os.path.join(path, 'Makefile')
     return os.path.exists(makefile)
