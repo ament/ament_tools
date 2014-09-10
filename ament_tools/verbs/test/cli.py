@@ -18,6 +18,7 @@ import os
 
 from ament_tools.verbs.test_pkg import main as test_pkg_main
 from ament_tools.topological_order import topological_order
+from ament_tools.verbs.build_pkg import TestError
 
 
 def main(options):
@@ -25,17 +26,39 @@ def main(options):
 
     print('')
     print('# Topological order')
+    start_with_found = not options.start_with
     for (path, package) in packages:
-        print(' - %s' % package.name)
+        if package.name == options.start_with:
+            start_with_found = True
+        if not start_with_found:
+            print(' skip %s' % package.name)
+        else:
+            print(' - %s' % package.name)
     print('')
 
+    any_test_errors = False
+    start_with_found = not options.start_with
     for (path, package) in packages:
+        if package.name == options.start_with:
+            start_with_found = True
+        if not start_with_found:
+            print('# Skipping: %s' % package.name)
+            continue
         pkg_path = os.path.join(options.basepath, path)
 
         print('')
         print('# Testing: %s' % package.name)
         print('')
         options.path = pkg_path
-        rc = test_pkg_main(options)
+        try:
+            rc = test_pkg_main(options)
+        except TestError as e:
+            if options.abort_test_error:
+                return str(e)
+            rc = None
+            any_test_errors = True
         if rc:
             return rc
+
+    if any_test_errors:
+        return 1

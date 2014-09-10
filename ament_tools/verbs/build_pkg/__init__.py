@@ -15,6 +15,7 @@
 from .cli import argument_preprocessor
 from .cli import main
 from .cli import prepare_arguments
+from .cli import TestError
 
 __all__ = ['entry_point_data']
 

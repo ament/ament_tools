@@ -26,6 +26,7 @@ from ament_tools.helper import determine_path_argument
 from ament_tools.helper import extract_argument_group
 from ament_tools.topological_order import topological_order
 from ament_tools.verbs.build_pkg import main as build_pkg_main
+from ament_tools.verbs.build_pkg import TestError
 
 
 def argument_preprocessor(args):
@@ -96,6 +97,12 @@ def prepare_arguments(parser, args):
         help='Enable testing of packages',
     )
     parser.add_argument(
+        '--abort-test-error',
+        action='store_true',
+        default=False,
+        help='Stop after tests with errors or failures',
+    )
+    parser.add_argument(
         '--start-with',
         help='Start with a particular package',
     )
@@ -145,6 +152,7 @@ def main(opts):
             print(' -    %s' % package.name)
     print('')
 
+    any_test_errors = False
     start_with_found = not opts.start_with
     for (path, package) in packages:
         if package.name == opts.start_with:
@@ -158,6 +166,15 @@ def main(opts):
         print('# Building: %s' % package.name)
         print('')
         opts.path = pkg_path
-        rc = build_pkg_main(opts)
+        try:
+            rc = build_pkg_main(opts)
+        except TestError as e:
+            if opts.abort_test_error:
+                return str(e)
+            rc = None
+            any_test_errors = True
         if rc:
             return rc
+
+    if any_test_errors:
+        return 1

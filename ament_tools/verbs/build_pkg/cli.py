@@ -36,6 +36,10 @@ from ament_tools.helper import extract_argument_group
 from osrf_pycommon.cli_utils.verb_pattern import call_prepare_arguments
 
 
+class TestError(Exception):
+    pass
+
+
 def add_path_argument(parser):
     """Add position path argument to parser."""
     parser.add_argument(
@@ -117,6 +121,12 @@ def prepare_arguments(parser, args):
         action='store_true',
         default=False,
         help='Enable testing of packages',
+    )
+    parser.add_argument(
+        '--abort-test-error',
+        action='store_true',
+        default=False,
+        help='Stop after tests with errors or failures',
     )
     parser.add_argument(
         '--make-flags',
@@ -297,12 +307,19 @@ def main(opts):
     print("+++ Building '{0}'".format(pkg_name))
     on_build_ret = build_type_impl.on_build(context)
     handle_build_action(on_build_ret, context)
+    failed_tests = None
     if context.testing:
         # Run the test command
         print("+++ Testing '{0}'".format(pkg_name))
         on_test_ret = build_type_impl.on_test(context)
-        handle_build_action(on_test_ret, context)
+        try:
+            handle_build_action(on_test_ret, context)
+        except SystemExit as e:
+            failed_tests = str(e)
     # Run the install command
     print("+++ Installing '{0}'".format(pkg_name))
     on_install_ret = build_type_impl.on_install(context)
     handle_build_action(on_install_ret, context)
+
+    if failed_tests:
+        raise TestError(failed_tests)
