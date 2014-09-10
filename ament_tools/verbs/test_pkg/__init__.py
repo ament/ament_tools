@@ -21,7 +21,7 @@ from ament_tools.verbs.build_pkg import prepare_arguments
 
 # meta information of the entry point
 entry_point_data = dict(
-    verb='test',
+    verb='test_pkg',
     description='Test a package',
     main=main,
     prepare_arguments=prepare_arguments,
