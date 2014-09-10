@@ -229,7 +229,6 @@ def run_command(build_action, context):
 
 
 def handle_build_action(build_action_ret, context):
-    build_action_ret
     if not inspect.isgenerator(build_action_ret):
         return
     for build_action in build_action_ret:
@@ -299,7 +298,7 @@ def main(opts):
     on_build_ret = build_type_impl.on_build(context)
     handle_build_action(on_build_ret, context)
     if context.testing:
-        # Run the install command
+        # Run the test command
         print("+++ Testing '{0}'".format(pkg_name))
         on_test_ret = build_type_impl.on_test(context)
         handle_build_action(on_test_ret, context)
