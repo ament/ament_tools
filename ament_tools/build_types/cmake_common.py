@@ -27,7 +27,7 @@ __target_re = re.compile(r'^([a-zA-Z0-9][a-zA-Z0-9_\.]*):')
 def has_make_target(path, target):
     global __target_re
     output = subprocess.check_output([MAKE_EXECUTABLE, '-pn'], cwd=path)
-    lines = output.splitlines()
+    lines = output.decode().splitlines()
     targets = [m.group(1) for m in [__target_re.match(l) for l in lines] if m]
     return target in targets
 
