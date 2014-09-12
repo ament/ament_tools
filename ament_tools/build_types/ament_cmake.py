@@ -92,7 +92,7 @@ class AmentCmakeBuildType(BuildType):
                                                       'ament_cmake_args')
         ament_cmake_config = {
             'ament_cmake_args': context.ament_cmake_args,
-            'testing': context.testing,
+            'build_tests': context.build_tests,
         }
         if ament_cmake_config != cached_ament_cmake_config:
             should_run_configure = True
@@ -109,7 +109,7 @@ class AmentCmakeBuildType(BuildType):
             cmake_args = [context.source_space]
             cmake_args += context.ament_cmake_args
             cmake_args += ["-DCMAKE_INSTALL_PREFIX=" + context.install_space]
-            if context.testing:
+            if context.build_tests:
                 cmake_args += ["-DAMENT_ENABLE_TESTING=1"]
             yield BuildAction(prefix + [CMAKE_EXECUTABLE] + cmake_args)
         else:
@@ -119,7 +119,7 @@ class AmentCmakeBuildType(BuildType):
         yield BuildAction(prefix + [MAKE_EXECUTABLE] + context.make_flags)
 
     def on_test(self, context):
-        assert context.testing
+        assert context.build_tests
         # Figure out if there is a setup file to source
         prefix = self.get_command_prefix(context)
         if has_make_target(context.build_space, 'test') or context.dry_run:

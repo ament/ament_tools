@@ -16,49 +16,59 @@ from __future__ import print_function
 
 import os
 
+from ament_tools.verbs.build import prepare_arguments \
+    as build_prepare_arguments
+from ament_tools.verbs.build.cli import iterate_packages
+from ament_tools.verbs.build.cli import print_topological_order
 from ament_tools.verbs.test_pkg import main as test_pkg_main
 from ament_tools.topological_order import topological_order
-from ament_tools.verbs.build_pkg import TestError
 
 
-def main(options):
-    packages = topological_order(options.basepath)
+def prepare_arguments(parser, args):
+    """Add parameters to argparse for the build_pkg verb and its plugins.
 
-    print('')
-    print('# Topological order')
-    start_with_found = not options.start_with
-    for (path, package) in packages:
-        if package.name == options.start_with:
-            start_with_found = True
-        if not start_with_found:
-            print(' skip %s' % package.name)
-        else:
-            print(' - %s' % package.name)
-    print('')
+    After adding the generic verb arguments, this function tries to determine
+    the build type of the target package. This is done by gracefully trying
+    to get the positional ``path`` argument from the arguments, falling back
+    to the default ``os.curdir``. Then it searches for a package manifest in
+    that path. If it finds the package manifest it then determines the build
+    type of the package, e.g. ``ament_cmake``. It then trys to load a build
+    type plugin for that build type. If the loading is successful it will allow
+    the plugin to add additional arguments to the parser in a new
+    :py:class:`argparse.ArgumentGroup` for that build type.
 
-    any_test_errors = False
-    start_with_found = not options.start_with
-    for (path, package) in packages:
-        if package.name == options.start_with:
-            start_with_found = True
-        if not start_with_found:
-            print('# Skipping: %s' % package.name)
-            continue
-        pkg_path = os.path.join(options.basepath, path)
+    :param parser: ArgumentParser object to which arguments are added
+    :type parser: :py:class:`argparse.ArgumentParser`
+    :param list args: list of arguments as str's
+    :returns: modified version of the original parser given
+    :rtype: :py:class:`argparse.ArgumentParser`
+    """
+    parser = build_prepare_arguments(parser, args)
+    parser.add_argument(
+        '--abort-on-test-error',
+        action='store_true',
+        default=False,
+        help='Stop after tests with errors or failures',
+    )
+    return parser
 
-        print('')
-        print('# Testing: %s' % package.name)
-        print('')
-        options.path = pkg_path
-        try:
-            rc = test_pkg_main(options)
-        except TestError as e:
-            if options.abort_test_error:
-                return str(e)
-            rc = None
-            any_test_errors = True
+
+def main(opts):
+    packages = topological_order(opts.basepath)
+
+    print_topological_order(opts, packages)
+
+    rc_storage = {}
+
+    def test_pkg_main_wrapper(opts):
+        rc = test_pkg_main(opts)
         if rc:
-            return rc
+            rc_storage['rc'] = rc
+            if opts.abort_on_test_error:
+                return rc
+        return 0
 
-    if any_test_errors:
-        return 1
+    iterate_packages(opts, packages, test_pkg_main_wrapper)
+
+    if 'rc' in rc_storage:
+        return rc_storage['rc']

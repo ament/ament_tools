@@ -26,7 +26,6 @@ from ament_tools.helper import determine_path_argument
 from ament_tools.helper import extract_argument_group
 from ament_tools.topological_order import topological_order
 from ament_tools.verbs.build_pkg import main as build_pkg_main
-from ament_tools.verbs.build_pkg import TestError
 
 
 def argument_preprocessor(args):
@@ -91,16 +90,10 @@ def prepare_arguments(parser, args):
         help="Path to the install space (default 'CWD/install')",
     )
     parser.add_argument(
-        '--test',
+        '--build-tests',
         action='store_true',
         default=False,
-        help='Enable testing of packages',
-    )
-    parser.add_argument(
-        '--abort-test-error',
-        action='store_true',
-        default=False,
-        help='Stop after tests with errors or failures',
+        help='Enable building tests',
     )
     parser.add_argument(
         '--start-with',
@@ -134,6 +127,13 @@ def main(opts):
                                                  opts.install_space, 'install')
 
     packages = topological_order(opts.basepath)
+
+    print_topological_order(opts, packages)
+
+    iterate_packages(opts, packages, build_pkg_main)
+
+
+def print_topological_order(opts, packages):
     package_names = [p.name for _, p in packages]
 
     if opts.start_with and opts.start_with not in package_names:
@@ -152,7 +152,8 @@ def main(opts):
             print(' -    %s' % package.name)
     print('')
 
-    any_test_errors = False
+
+def iterate_packages(opts, packages, per_package_callback):
     start_with_found = not opts.start_with
     for (path, package) in packages:
         if package.name == opts.start_with:
@@ -161,20 +162,7 @@ def main(opts):
             print('# Skipping: %s' % package.name)
             continue
         pkg_path = os.path.join(opts.basepath, path)
-
-        print('')
-        print('# Building: %s' % package.name)
-        print('')
         opts.path = pkg_path
-        try:
-            rc = build_pkg_main(opts)
-        except TestError as e:
-            if opts.abort_test_error:
-                return str(e)
-            rc = None
-            any_test_errors = True
+        rc = per_package_callback(opts)
         if rc:
             return rc
-
-    if any_test_errors:
-        return 1

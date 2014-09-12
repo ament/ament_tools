@@ -36,10 +36,6 @@ from ament_tools.helper import extract_argument_group
 from osrf_pycommon.cli_utils.verb_pattern import call_prepare_arguments
 
 
-class TestError(Exception):
-    pass
-
-
 def add_path_argument(parser):
     """Add position path argument to parser."""
     parser.add_argument(
@@ -117,16 +113,10 @@ def prepare_arguments(parser, args):
         help="Path to the install space (default 'CWD/build')",
     )
     parser.add_argument(
-        '--test',
+        '--build-tests',
         action='store_true',
         default=False,
-        help='Enable testing of packages',
-    )
-    parser.add_argument(
-        '--abort-test-error',
-        action='store_true',
-        default=False,
-        help='Stop after tests with errors or failures',
+        help='Enable building tests',
     )
     parser.add_argument(
         '--make-flags',
@@ -252,6 +242,26 @@ def handle_build_action(build_action_ret, context):
 
 
 def main(opts):
+    update_options(opts)
+    context = create_context(opts)
+
+    # Load up build type plugin class
+    build_type = get_build_type(opts.path)
+    build_type_impl = get_class_for_build_type(build_type)()
+
+    pkg_name = context.package_manifest.name
+
+    # Run the build command
+    print("+++ Building '{0}'".format(pkg_name))
+    on_build_ret = build_type_impl.on_build(context)
+    handle_build_action(on_build_ret, context)
+    # Run the install command
+    print("+++ Installing '{0}'".format(pkg_name))
+    on_install_ret = build_type_impl.on_install(context)
+    handle_build_action(on_install_ret, context)
+
+
+def update_options(opts):
     # use PWD in order to work when being invoked in a symlinked location
     cwd = os.getenv('PWD', os.curdir)
     # no -C / --directory argument yet
@@ -267,9 +277,9 @@ def main(opts):
         opts.path = validate_package_manifest_path(opts.path)
     except ValueError as exc:
         sys.exit("Error: {0}".format(exc))
-    # Load up build type plugin class
-    build_type = get_build_type(opts.path)
-    build_type_impl = get_class_for_build_type(build_type)()
+
+
+def create_context(opts):
     # Setup build_pkg common context
     context = Context()
     context.source_space = os.path.abspath(os.path.normpath(opts.path))
@@ -282,15 +292,15 @@ def main(opts):
     context.symbolic_link_install = False
     context.make_flags = opts.make_flags
     context.dry_run = False
-    context.testing = opts.test
-    print("Build package '{0}' with context:".format(pkg_name))
+    context.build_tests = opts.build_tests
+    print("Process package '{0}' with context:".format(pkg_name))
     print("-" * 80)
     keys = [
         'source_space',
         'build_space',
         'install_space',
         'make_flags',
-        'testing',
+        'build_tests',
     ]
     max_key_len = str(max([len(k) for k in keys]))
     for key in keys:
@@ -299,27 +309,14 @@ def main(opts):
             value = ", ".join(value) if value else "None"
         print(("{0:>" + max_key_len + "} => {1}").format(key, value))
     print("-" * 80)
+
+    # Load up build type plugin class
+    build_type = get_build_type(opts.path)
+    build_type_impl = get_class_for_build_type(build_type)()
+
     # Allow the build type plugin to process options into a context extender
     ce = build_type_impl.extend_context(opts)
     # Extend the context with the context extender
     ce.apply_to_context(context)
-    # Run the build command
-    print("+++ Building '{0}'".format(pkg_name))
-    on_build_ret = build_type_impl.on_build(context)
-    handle_build_action(on_build_ret, context)
-    failed_tests = None
-    if context.testing:
-        # Run the test command
-        print("+++ Testing '{0}'".format(pkg_name))
-        on_test_ret = build_type_impl.on_test(context)
-        try:
-            handle_build_action(on_test_ret, context)
-        except SystemExit as e:
-            failed_tests = str(e)
-    # Run the install command
-    print("+++ Installing '{0}'".format(pkg_name))
-    on_install_ret = build_type_impl.on_install(context)
-    handle_build_action(on_install_ret, context)
 
-    if failed_tests:
-        raise TestError(failed_tests)
+    return context
