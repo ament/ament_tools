@@ -26,6 +26,8 @@ from ament_tools.helper import determine_path_argument
 from ament_tools.helper import extract_argument_group
 from ament_tools.topological_order import topological_order
 from ament_tools.verbs.build_pkg import main as build_pkg_main
+from ament_tools.verbs.build_pkg.cli import add_arguments \
+    as build_pkg_add_arguments
 
 
 def argument_preprocessor(args):
@@ -81,27 +83,10 @@ def prepare_arguments(parser, args):
         default=os.path.join(os.curdir, 'src'),
         help="Base path to the packages (default 'CWD/src')",
     )
-    parser.add_argument(
-        '--build-space',
-        help="Path to the build space (default 'CWD/build')",
-    )
-    parser.add_argument(
-        '--install-space',
-        help="Path to the install space (default 'CWD/install')",
-    )
-    parser.add_argument(
-        '--build-tests',
-        action='store_true',
-        default=False,
-        help='Enable building tests',
-    )
+    build_pkg_add_arguments(parser)
     parser.add_argument(
         '--start-with',
         help='Start with a particular package',
-    )
-    parser.add_argument(
-        '--make-flags',
-        help='Flags to be passed to make by build types which invoke make'
     )
 
     # Allow all available build_type's to provide additional arguments

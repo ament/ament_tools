@@ -104,24 +104,7 @@ def prepare_arguments(parser, args):
     """
     # Add verb arguments
     add_path_argument(parser)
-    parser.add_argument(
-        '--build-space',
-        help="Path to the build space (default 'CWD/build')",
-    )
-    parser.add_argument(
-        '--install-space',
-        help="Path to the install space (default 'CWD/build')",
-    )
-    parser.add_argument(
-        '--build-tests',
-        action='store_true',
-        default=False,
-        help='Enable building tests',
-    )
-    parser.add_argument(
-        '--make-flags',
-        help='Flags to be passed to make by build types which invoke make'
-    )
+    add_arguments(parser)
 
     # Detected build type if possible
     try:
@@ -155,6 +138,34 @@ def prepare_arguments(parser, args):
         if '-h' in args or '--help' in args:
             print("Error: Could not detect package build type:", exc)
     return parser
+
+
+def add_arguments(parser):
+    parser.add_argument(
+        '--build-space',
+        help="Path to the build space (default 'CWD/build')",
+    )
+    parser.add_argument(
+        '--install-space',
+        help="Path to the install space (default 'CWD/build')",
+    )
+    parser.add_argument(
+        '--build-tests',
+        action='store_true',
+        default=False,
+        help='Enable building tests',
+    )
+    parser.add_argument(
+        '--make-flags',
+        help='Flags to be passed to make by build types which invoke make'
+    )
+    parser.add_argument(
+        '--skip-install',
+        action='store_true',
+        default=False,
+        help='Skip the install step (only makes sense when install has been '
+             'done before using symlinks and no new files have been added)',
+    )
 
 package_manifest_cache_ = {}
 
@@ -255,10 +266,12 @@ def main(opts):
     print("+++ Building '{0}'".format(pkg_name))
     on_build_ret = build_type_impl.on_build(context)
     handle_build_action(on_build_ret, context)
-    # Run the install command
-    print("+++ Installing '{0}'".format(pkg_name))
-    on_install_ret = build_type_impl.on_install(context)
-    handle_build_action(on_install_ret, context)
+
+    if not opts.skip_install:
+        # Run the install command
+        print("+++ Installing '{0}'".format(pkg_name))
+        on_install_ret = build_type_impl.on_install(context)
+        handle_build_action(on_install_ret, context)
 
 
 def update_options(opts):
