@@ -26,6 +26,8 @@ from ament_tools.helper import determine_path_argument
 from ament_tools.helper import extract_argument_group
 from ament_tools.topological_order import topological_order
 from ament_tools.verbs.build_pkg import main as build_pkg_main
+from ament_tools.verbs.build_pkg.cli import add_arguments \
+    as build_pkg_add_arguments
 
 
 def argument_preprocessor(args):
@@ -81,27 +83,10 @@ def prepare_arguments(parser, args):
         default=os.path.join(os.curdir, 'src'),
         help="Base path to the packages (default 'CWD/src')",
     )
-    parser.add_argument(
-        '--build-space',
-        help="Path to the build space (default 'CWD/build')",
-    )
-    parser.add_argument(
-        '--install-space',
-        help="Path to the install space (default 'CWD/install')",
-    )
-    parser.add_argument(
-        '--test',
-        action='store_true',
-        default=False,
-        help='Enable testing of packages',
-    )
+    build_pkg_add_arguments(parser)
     parser.add_argument(
         '--start-with',
         help='Start with a particular package',
-    )
-    parser.add_argument(
-        '--make-flags',
-        help='Flags to be passed to make by build types which invoke make'
     )
 
     # Allow all available build_type's to provide additional arguments
@@ -127,6 +112,13 @@ def main(opts):
                                                  opts.install_space, 'install')
 
     packages = topological_order(opts.basepath)
+
+    print_topological_order(opts, packages)
+
+    iterate_packages(opts, packages, build_pkg_main)
+
+
+def print_topological_order(opts, packages):
     package_names = [p.name for _, p in packages]
 
     if opts.start_with and opts.start_with not in package_names:
@@ -145,6 +137,8 @@ def main(opts):
             print(' -    %s' % package.name)
     print('')
 
+
+def iterate_packages(opts, packages, per_package_callback):
     start_with_found = not opts.start_with
     for (path, package) in packages:
         if package.name == opts.start_with:
@@ -153,11 +147,7 @@ def main(opts):
             print('# Skipping: %s' % package.name)
             continue
         pkg_path = os.path.join(opts.basepath, path)
-
-        print('')
-        print('# Building: %s' % package.name)
-        print('')
         opts.path = pkg_path
-        rc = build_pkg_main(opts)
+        rc = per_package_callback(opts)
         if rc:
             return rc

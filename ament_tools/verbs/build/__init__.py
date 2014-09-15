@@ -21,7 +21,7 @@ __all__ = ['entry_point_data']
 # meta information of the entry point
 entry_point_data = dict(
     verb='build',
-    description='Builds a workspace of packages',
+    description='Build a workspace of packages',
     # Called for execution, given parsed arguments object
     main=main,
     # Called first to setup argparse, given argparse parser

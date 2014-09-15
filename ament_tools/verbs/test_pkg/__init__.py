@@ -12,16 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
-
-from .cli import main
-
 from ament_tools.verbs.build_pkg import argument_preprocessor
 from ament_tools.verbs.build_pkg import prepare_arguments
 
+from .cli import main
+
+__all__ = ['entry_point_data']
+
 # meta information of the entry point
 entry_point_data = dict(
-    verb='test',
+    verb='test_pkg',
     description='Test a package',
     main=main,
     prepare_arguments=prepare_arguments,
