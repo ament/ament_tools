@@ -224,12 +224,15 @@ def validate_package_manifest_path(path):
 
 
 def run_command(build_action, context):
+    cwd = build_action.cwd
+    if cwd is None:
+        cwd = context.build_space
     print("==> '{0}' in '{1}'".format(
-        " ".join(build_action.cmd), context.build_space))
+        " ".join(build_action.cmd), cwd))
     try:
         cmd = build_action.cmd
         cmd = ' '.join([(shlex.quote(c) if c != '&&' else c) for c in cmd])
-        subprocess.check_call(cmd, shell=True, cwd=context.build_space)
+        subprocess.check_call(cmd, shell=True, cwd=cwd)
     except subprocess.CalledProcessError as exc:
         print()
         cmd_msg = exc.cmd
@@ -246,7 +249,7 @@ def handle_build_action(build_action_ret, context):
         if build_action.type == 'command':
             run_command(build_action, context)
         elif build_action.type == 'function':
-            raise NotImplementedError
+            build_action.cmd(context)
         else:
             raise RuntimeError("Unknown BuildAction type '{0}'"
                                .format(build_action.type))

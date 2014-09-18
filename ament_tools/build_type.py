@@ -41,12 +41,17 @@ class BuildAction(object):
     This parameter can be used to provide an alternative cmd for the
     dry run case, e.g. ``['git', 'push']`` might become
     ``['git', 'push', '--dry-run']``.
+
+    The default working directory for commands is the build space which can be
+    overridden with the optional ``cwd`` parameter.
     """
-    def __init__(self, cmd, type='command', title=None, dry_run_cmd=None):
+    def __init__(self, cmd, type='command', title=None, dry_run_cmd=None,
+                 cwd=None):
         self.cmd = cmd
         self.type = self.__validate_type(type, cmd, dry_run_cmd)
         self.title = title
         self.dry_run_cmd = dry_run_cmd
+        self.cwd = cwd
 
     def __validate_type(self, type_str, cmd, dry_run_cmd):
         if type_str not in ['command', 'function']:

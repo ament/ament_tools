@@ -79,7 +79,7 @@ class AmentCmakeBuildType(BuildType):
         return prefix
 
     def on_build(self, context):
-        # Reguardless of dry-run, try to determine if CMake should be invoked
+        # Regardless of dry-run, try to determine if CMake should be invoked
         should_run_configure = False
         if context.force_ament_cmake_configure:
             should_run_configure = True
