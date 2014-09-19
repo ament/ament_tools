@@ -132,8 +132,10 @@ class AmentPythonBuildType(BuildType):
 
     def _install_action(self, context):
         # deploy package manifest
-        self._deploy(context, context.source_space, 'package.xml',
-                     executable=False)
+        self._deploy(
+            context, context.source_space, 'package.xml',
+            dst_subfolder=os.path.join('share', context.package_manifest.name),
+            executable=False)
 
         # create marker file
         marker_file = os.path.join(
@@ -170,9 +172,11 @@ class AmentPythonBuildType(BuildType):
                 self._deploy(context, os.path.dirname(template_path),
                              os.path.basename(template_path))
 
-    def _deploy(self, context, source_base_path, filename, executable=True):
+    def _deploy(self, context, source_base_path, filename, dst_subfolder='',
+                executable=True):
         # create destination folder if necessary
-        destination_path = os.path.join(context.install_space, filename)
+        destination_path = os.path.join(
+            context.install_space, dst_subfolder, filename)
         destination_folder = os.path.dirname(destination_path)
         if not os.path.exists(destination_folder):
             os.makedirs(destination_folder)
