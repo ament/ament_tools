@@ -37,8 +37,6 @@ class AmentCmakeBuildType(BuildType):
     build_type = 'ament_cmake'
     description = "ament package built with cmake"
 
-    supports_symbolic_link_install = False
-
     def prepare_arguments(self, parser):
         parser.add_argument(
             '--force-ament-cmake-configure',
@@ -93,6 +91,7 @@ class AmentCmakeBuildType(BuildType):
         ament_cmake_config = {
             'ament_cmake_args': context.ament_cmake_args,
             'build_tests': context.build_tests,
+            'symlink_install': context.symlink_install,
         }
         if ament_cmake_config != cached_ament_cmake_config:
             should_run_configure = True
@@ -111,6 +110,8 @@ class AmentCmakeBuildType(BuildType):
             cmake_args += ["-DCMAKE_INSTALL_PREFIX=" + context.install_space]
             if context.build_tests:
                 cmake_args += ["-DAMENT_ENABLE_TESTING=1"]
+            if context.symlink_install:
+                cmake_args += ['-DAMENT_CMAKE_SYMLINK_INSTALL=1']
             yield BuildAction(prefix + [CMAKE_EXECUTABLE] + cmake_args)
         else:
             cmd = prefix + [MAKE_EXECUTABLE, 'cmake_check_build_system']
@@ -129,8 +130,6 @@ class AmentCmakeBuildType(BuildType):
                       "has no 'test' target")
 
     def on_install(self, context):
-        # TODO: Check for, and act on, the symbolic install option
-
         # Figure out if there is a setup file to source
         prefix = self.get_command_prefix(context)
 
