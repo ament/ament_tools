@@ -50,20 +50,7 @@ class AmentPythonBuildType(BuildType):
         # expand all templates in build space
         yield BuildAction(self._build_action, type='function')
 
-        # Figure out if there is a setup file to source
-        prefix = self.get_command_prefix(context)
-
-        # Execute the setup.py build step
-        yield BuildAction(prefix + [
-            PYTHON_EXECUTABLE, 'setup.py',
-            'build', '--build-base', context.build_space,
-        ], cwd=context.source_space)
-
     def _build_action(self, context):
-        # setup.py install requires the --build-base to exist
-        if not os.path.exists(context.build_space):
-            os.makedirs(context.build_space)
-
         # expand environment hook for PYTHONPATH
         template_path = get_environment_hook_template_path('pythonpath.sh.in')
         content = configure_file(template_path, {
@@ -117,17 +104,26 @@ class AmentPythonBuildType(BuildType):
     def on_install(self, context):
         yield BuildAction(self._install_action, type='function')
 
+        # setup.py egg_info requires the --egg-base to exist
+        if not os.path.exists(context.build_space):
+            os.makedirs(context.build_space)
+
         # Figure out if there is a setup file to source
         prefix = self.get_command_prefix(context)
 
         # Execute the setup.py install step
+        # with lots of arguments to avoid placing any files in the source space
         cmd = [
             PYTHON_EXECUTABLE, 'setup.py',
-            'build', '--build-base', context.build_space,
             'install', '--prefix', context.install_space,
         ]
         if 'dist-packages' in get_python_lib(prefix=''):
             cmd += ['--install-layout', 'deb']
+        cmd += [
+            'build', '--build-base', context.build_space,
+            'egg_info', '--egg-base', context.build_space,
+            'bdist_egg', '--dist-dir', context.build_space,
+        ]
         yield BuildAction(prefix + cmd, cwd=context.source_space)
 
     def _install_action(self, context):
