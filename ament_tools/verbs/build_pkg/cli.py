@@ -166,6 +166,12 @@ def add_arguments(parser):
         help='Skip the install step (only makes sense when install has been '
              'done before using symlinks and no new files have been added)',
     )
+    parser.add_argument(
+        '--symlink-install',
+        action='store_true',
+        default=False,
+        help='Use symlinks instead of copying files wherever possible',
+    )
 
 package_manifest_cache_ = {}
 
@@ -305,7 +311,7 @@ def create_context(opts):
     context.install_space = opts.install_space
     context.install = True
     context.isolated_install = False
-    context.symbolic_link_install = False
+    context.symlink_install = opts.symlink_install
     context.make_flags = opts.make_flags
     context.dry_run = False
     context.build_tests = opts.build_tests

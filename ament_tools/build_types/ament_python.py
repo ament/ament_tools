@@ -17,6 +17,8 @@
 from distutils.sysconfig import get_python_lib
 import filecmp
 import os
+import re
+import setuptools
 import shutil
 import stat
 import sys
@@ -102,7 +104,7 @@ class AmentPythonBuildType(BuildType):
         raise NotImplementedError()
 
     def on_install(self, context):
-        yield BuildAction(self._install_action, type='function')
+        yield BuildAction(self._install_action_files, type='function')
 
         # setup.py egg_info requires the --egg-base to exist
         if not os.path.exists(context.build_space):
@@ -111,22 +113,50 @@ class AmentPythonBuildType(BuildType):
         # Figure out if there is a setup file to source
         prefix = self.get_command_prefix(context)
 
-        # Execute the setup.py install step
-        # with lots of arguments to avoid placing any files in the source space
-        cmd = [
-            PYTHON_EXECUTABLE, 'setup.py',
-            'install', '--prefix', context.install_space,
-        ]
-        if 'dist-packages' in get_python_lib(prefix=''):
-            cmd += ['--install-layout', 'deb']
-        cmd += [
-            'build', '--build-base', context.build_space,
-            'egg_info', '--egg-base', context.build_space,
-            'bdist_egg', '--dist-dir', context.build_space,
-        ]
-        yield BuildAction(prefix + cmd, cwd=context.source_space)
+        if not context.symlink_install:
+            # Undo previous develop if .egg-info is found
+            if os.path.exists(os.path.join(
+                    context.build_space, '%s.egg-info' %
+                    context.package_manifest.name)):
+                cmd = [
+                    PYTHON_EXECUTABLE, 'setup.py',
+                    'develop', '--prefix', context.install_space,
+                    '--uninstall',
+                ]
+                if 'dist-packages' in get_python_lib(prefix=''):
+                    cmd += ['--install-layout', 'deb']
+                yield BuildAction(prefix + cmd, cwd=context.build_space)
 
-    def _install_action(self, context):
+            # Execute the setup.py install step with lots of arguments
+            # to avoid placing any files in the source space
+            cmd = [
+                PYTHON_EXECUTABLE, 'setup.py',
+                'install', '--prefix', context.install_space,
+                '--record', os.path.join(context.build_space, 'install.log'),
+            ]
+            if 'dist-packages' in get_python_lib(prefix=''):
+                cmd += ['--install-layout', 'deb']
+            cmd += [
+                'build', '--build-base', context.build_space,
+                'egg_info', '--egg-base', context.build_space,
+                'bdist_egg', '--dist-dir', context.build_space,
+            ]
+            yield BuildAction(prefix + cmd, cwd=context.source_space)
+
+        else:
+            yield BuildAction(self._install_action_python, type='function')
+
+            # Execute the setup.py develop step in build space
+            # to avoid placing any files in the source space
+            cmd = [
+                PYTHON_EXECUTABLE, 'setup.py',
+                'develop', '--prefix', context.install_space,
+            ]
+            if 'dist-packages' in get_python_lib(prefix=''):
+                cmd += ['--install-layout', 'deb']
+            yield BuildAction(prefix + cmd, cwd=context.build_space)
+
+    def _install_action_files(self, context):
         # deploy package manifest
         self._deploy(
             context, context.source_space, 'package.xml',
@@ -191,3 +221,46 @@ class AmentPythonBuildType(BuildType):
             new_mode = mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
             if new_mode != mode:
                 os.chmod(destination_path, new_mode)
+
+    def _install_action_python(self, context):
+        # Undo previous install if install.log is found
+        install_log = os.path.join(context.build_space, 'install.log')
+        if os.path.exists(install_log):
+            with open(install_log, 'r') as h:
+                lines = [l.rstrip() for l in h.readlines()]
+            for line in lines:
+                if os.path.exists(line) and \
+                        line.startswith(context.install_space):
+                    os.remove(line)
+            os.remove(install_log)
+
+            # remove entry from easy-install.pth file
+            easy_install = os.path.join(
+                context.install_space, get_python_lib(prefix=''),
+                'easy-install.pth')
+            if os.path.exists(easy_install):
+                with open(easy_install, 'r') as h:
+                    content = h.read()
+                pattern = r'^\./%s-\d.+\.egg\n' % \
+                    re.escape(context.package_manifest.name)
+                matches = re.findall(pattern, content, re.MULTILINE)
+                if len(matches) > 0:
+                    assert len(matches) == 1, \
+                        "Multiple matching entries in '%s'" % easy_install
+                    content = content.replace(matches[0], '')
+                    with open(easy_install, 'w') as h:
+                        h.write(content)
+
+        # Symlink setup.py and all root-packages into build space
+        packages = setuptools.find_packages(
+            context.source_space, exclude=['*.*'])
+        packages.append('setup.py')
+        for package in packages:
+            src = os.path.join(context.source_space, package)
+            dst = os.path.join(context.build_space, package)
+            if os.path.exists(dst):
+                if not os.path.islink(dst) or \
+                        not os.path.samefile(src, dst):
+                    os.remove(dst)
+            if not os.path.exists(dst):
+                os.symlink(src, dst)

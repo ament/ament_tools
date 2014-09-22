@@ -113,9 +113,6 @@ class BuildType(object):
     This should be set by the subclass.
     """
 
-    supports_symbolic_link_install = False
-    """Indicates whether or not symbolic link installation is supported."""
-
     logger = DefaultBuildTypeLogger()
     """Logging singleton, allows executor to hook in a custom logger."""
 
