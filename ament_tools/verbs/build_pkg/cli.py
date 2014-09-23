@@ -315,6 +315,7 @@ def create_context(opts):
     context.make_flags = opts.make_flags
     context.dry_run = False
     context.build_tests = opts.build_tests
+    print('')
     print("Process package '{0}' with context:".format(pkg_name))
     print("-" * 80)
     keys = [

@@ -125,7 +125,6 @@ def print_topological_order(opts, packages):
         sys.exit("Package '{0}' specified with --start-with was not found."
                  .format(opts.start_with))
 
-    print('')
     print('# Topological order')
     start_with_found = not opts.start_with
     for (path, package) in packages:
@@ -135,7 +134,6 @@ def print_topological_order(opts, packages):
             print(' skip %s' % package.name)
         else:
             print(' -    %s' % package.name)
-    print('')
 
 
 def iterate_packages(opts, packages, per_package_callback):
