@@ -73,9 +73,13 @@ class AmentCmakeBuildType(BuildType):
 
     def get_command_prefix(self, context):
         prefix = []
-        local_setup = os.path.join(context.install_space, 'local_setup.sh')
-        if os.path.isfile(local_setup):
-            prefix = ['.', local_setup, '&&']
+        for path in context.build_dependencies:
+            local_setup = os.path.join(path, 'local_setup.sh')
+            if os.path.isfile(local_setup):
+                prefix += ['.', local_setup, '&&']
+        prefix += [
+            'export',
+            'CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH:$AMENT_PREFIX_PATH', '&&']
         return prefix
 
     def on_build(self, context):

@@ -25,6 +25,7 @@ from ament_tools.helper import combine_make_flags
 from ament_tools.helper import determine_path_argument
 from ament_tools.helper import extract_argument_group
 from ament_tools.topological_order import topological_order
+from ament_tools.topological_order import topological_order_packages
 from ament_tools.verbs import VerbExecutionError
 from ament_tools.verbs.build_pkg import main as build_pkg_main
 from ament_tools.verbs.build_pkg.cli import add_arguments \
@@ -86,6 +87,12 @@ def prepare_arguments(parser, args):
     )
     build_pkg_add_arguments(parser)
     parser.add_argument(
+        '--isolated',
+        action='store_true',
+        default=False,
+        help='Use separate subfolders in the install space for each package',
+    )
+    parser.add_argument(
         '--start-with',
         help='Start with a particular package',
     )
@@ -114,8 +121,8 @@ def main(opts):
 
     packages = topological_order(opts.basepath)
 
-    circular_dependencies = [package_names for path, package_names in packages
-                             if path is None]
+    circular_dependencies = [
+        package_names for path, package_names, _ in packages if path is None]
     if circular_dependencies:
         raise VerbExecutionError('Circular dependency within the following '
                                  'packages: %s' % circular_dependencies[0])
@@ -126,7 +133,7 @@ def main(opts):
 
 
 def print_topological_order(opts, packages):
-    package_names = [p.name for _, p in packages]
+    package_names = [p.name for _, p, _ in packages]
 
     if opts.start_with and opts.start_with not in package_names:
         sys.exit("Package '{0}' specified with --start-with was not found."
@@ -134,7 +141,7 @@ def print_topological_order(opts, packages):
 
     print('# Topological order')
     start_with_found = not opts.start_with
-    for (path, package) in packages:
+    for (path, package, _) in packages:
         if package.name == opts.start_with:
             start_with_found = True
         if not start_with_found:
@@ -145,7 +152,9 @@ def print_topological_order(opts, packages):
 
 def iterate_packages(opts, packages, per_package_callback):
     start_with_found = not opts.start_with
-    for (path, package) in packages:
+    install_space_base = opts.install_space
+    package_dict = dict([(path, package) for path, package, _ in packages])
+    for (path, package, depends) in packages:
         if package.name == opts.start_with:
             start_with_found = True
         if not start_with_found:
@@ -153,6 +162,25 @@ def iterate_packages(opts, packages, per_package_callback):
             continue
         pkg_path = os.path.join(opts.basepath, path)
         opts.path = pkg_path
+        if opts.isolated:
+            opts.install_space = os.path.join(install_space_base, package.name)
+
+        # get recursive package dependencies in topological order
+        ordered_depends = topological_order_packages(
+            package_dict, whitelisted=depends)
+        ordered_depends = [
+            pkg.name
+            for _, pkg, _ in ordered_depends
+            if pkg.name != package.name]
+        # get package share folder for each package
+        opts.build_dependencies = []
+        for depend in ordered_depends:
+            install_space = install_space_base
+            if opts.isolated:
+                install_space = os.path.join(install_space, depend)
+            package_share = os.path.join(install_space, 'share', depend)
+            opts.build_dependencies.append(package_share)
+
         rc = per_package_callback(opts)
         if rc:
             return rc

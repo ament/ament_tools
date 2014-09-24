@@ -131,8 +131,8 @@ def topological_order_packages(
     :param list blacklisted: A list of blacklisted package names
     :param dict underlay_packages: A dict mapping relative paths to
         ``Package`` objects
-    :returns: A list of tuples containing the relative path and a
-        ``Package`` object
+    :returns: A List of tuples containing the relative path, a ``Package``
+        object and a list of recursive dependencies
     :rtype: list
     """
     decorators_by_name = {}
@@ -171,8 +171,8 @@ def topological_order_packages(
 
     tuples = _sort_decorated_packages(decorators_by_name)
     # remove underlay packages from result
-    return [(path, package)
-            for path, package in tuples
+    return [(path, package, depends)
+            for path, package, depends in tuples
             if path is None or package.name not in underlay_decorators_by_name]
 
 
@@ -217,8 +217,8 @@ def _sort_decorated_packages(packages_orig):
 
     :param dict packages: A dict mapping package name to
         ``_PackageDecorator`` objects
-    :returns: A List of tuples containing the relative path and a
-        ``Package`` object
+    :returns: A List of tuples containing the relative path, a ``Package``
+        object and a list of recursive dependencies
     :rtype: list
     """
     packages = copy.deepcopy(packages_orig)
@@ -235,7 +235,7 @@ def _sort_decorated_packages(packages_orig):
             # the names list of remaining package names, with path
             # None to indicate cycle
             ordered_packages.append(
-                [None, ', '.join(sorted(_reduce_cycle_set(packages)))])
+                [None, ', '.join(sorted(_reduce_cycle_set(packages))), None])
             break
 
         # alphabetic order only for convenience
@@ -245,7 +245,10 @@ def _sort_decorated_packages(packages_orig):
         # do not add all candidates since removing the depends from
         # the first might affect the next candidates
         name = names[0]
-        ordered_packages.append([packages[name].path, packages[name].package])
+        ordered_packages.append([
+            packages[name].path,
+            packages[name].package,
+            packages_orig[name].depends_for_topological_order])
         # remove package from further processing
         del packages[name]
         for package in packages.values():

@@ -310,7 +310,8 @@ def create_context(opts):
     context.build_space = os.path.join(opts.build_space, pkg_name)
     context.install_space = opts.install_space
     context.install = True
-    context.isolated_install = False
+    context.build_dependencies = opts.build_dependencies \
+        if 'build_dependencies' in opts else []
     context.symlink_install = opts.symlink_install
     context.make_flags = opts.make_flags
     context.dry_run = False
