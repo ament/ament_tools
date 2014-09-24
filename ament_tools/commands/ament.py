@@ -21,6 +21,8 @@ from osrf_pycommon.cli_utils.verb_pattern import create_subparsers
 from osrf_pycommon.cli_utils.verb_pattern import list_verbs
 from osrf_pycommon.cli_utils.verb_pattern import split_arguments_by_verb
 
+from ament_tools.verbs import VerbExecutionError
+
 COMMAND_NAME = 'ament'
 
 VERBS_ENTRY_POINT = '{0}.verbs'.format(COMMAND_NAME)
@@ -82,4 +84,9 @@ def main(sysargs=None):
 
     # Finally call the subparser's main function with the processed args
     # and the extras which the preprocessor may have returned
-    sys.exit(args.main(args) or 0)
+    try:
+        rc = args.main(args)
+    except VerbExecutionError as e:
+        print('%s %s: %s' % (COMMAND_NAME, verb, e), file=sys.stderr)
+        rc = 1
+    sys.exit(rc or 0)
