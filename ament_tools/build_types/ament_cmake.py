@@ -32,6 +32,8 @@ from ament_tools.build_types.cmake_common import MAKE_EXECUTABLE
 from ament_tools.build_types.common import get_cached_config
 from ament_tools.build_types.common import set_cached_config
 
+from ament_tools.verbs import VerbExecutionError
+
 
 class AmentCmakeBuildType(BuildType):
     build_type = 'ament_cmake'
@@ -112,6 +114,8 @@ class AmentCmakeBuildType(BuildType):
                 cmake_args += ["-DAMENT_ENABLE_TESTING=1"]
             if context.symlink_install:
                 cmake_args += ['-DAMENT_CMAKE_SYMLINK_INSTALL=1']
+            if CMAKE_EXECUTABLE is None:
+                raise VerbExecutionError("Could not find 'cmake' executable")
             yield BuildAction(prefix + [CMAKE_EXECUTABLE] + cmake_args)
         else:
             cmd = prefix + [MAKE_EXECUTABLE, 'cmake_check_build_system']
