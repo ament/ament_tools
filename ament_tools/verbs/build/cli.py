@@ -25,6 +25,7 @@ from ament_tools.helper import combine_make_flags
 from ament_tools.helper import determine_path_argument
 from ament_tools.helper import extract_argument_group
 from ament_tools.topological_order import topological_order
+from ament_tools.verbs import VerbExecutionError
 from ament_tools.verbs.build_pkg import main as build_pkg_main
 from ament_tools.verbs.build_pkg.cli import add_arguments \
     as build_pkg_add_arguments
@@ -112,6 +113,12 @@ def main(opts):
                                                  opts.install_space, 'install')
 
     packages = topological_order(opts.basepath)
+
+    circular_dependencies = [package_names for path, package_names in packages
+                             if path is None]
+    if circular_dependencies:
+        raise VerbExecutionError('Circular dependency within the following '
+                                 'packages: %s' % circular_dependencies[0])
 
     print_topological_order(opts, packages)
 

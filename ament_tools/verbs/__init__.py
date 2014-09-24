@@ -1,0 +1,2 @@
+class VerbExecutionError(Exception):
+    pass
