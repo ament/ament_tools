@@ -43,9 +43,12 @@ class AmentPythonBuildType(BuildType):
 
     def get_command_prefix(self, context):
         prefix = []
-        local_setup = os.path.join(context.install_space, 'local_setup.sh')
-        if os.path.isfile(local_setup):
-            prefix = ['.', local_setup, '&&']
+        for path in context.build_dependencies:
+            local_setup = os.path.join(path, 'local_setup.sh')
+            if os.path.isfile(local_setup):
+                prefix += ['.', local_setup, '&&']
+        prefix += ['export', 'PYTHONPATH=%s:$PYTHONPATH' % os.path.join(
+            context.install_space, get_python_lib(prefix='')), '&&']
         return prefix
 
     def on_build(self, context):
@@ -109,15 +112,24 @@ class AmentPythonBuildType(BuildType):
         # setup.py egg_info requires the --egg-base to exist
         if not os.path.exists(context.build_space):
             os.makedirs(context.build_space)
+        # setup.py install/develop requires the PYTHONPATH to exist
+        python_path = os.path.join(
+            context.install_space, get_python_lib(prefix=''))
+        if not os.path.exists(python_path):
+            os.makedirs(python_path)
 
         # Figure out if there is a setup file to source
         prefix = self.get_command_prefix(context)
 
         if not context.symlink_install:
-            # Undo previous develop if .egg-info is found
-            if os.path.exists(os.path.join(
-                    context.build_space, '%s.egg-info' %
-                    context.package_manifest.name)):
+            # Undo previous develop if .egg-info is found and develop symlinks
+            egg_info = os.path.join(context.build_space, '%s.egg-info' %
+                                    context.package_manifest.name)
+            setup_py_build_space = os.path.join(
+                context.build_space, 'setup.py')
+            if os.path.exists(egg_info) and \
+                    os.path.exists(setup_py_build_space) and \
+                    os.path.islink(setup_py_build_space):
                 cmd = [
                     PYTHON_EXECUTABLE, 'setup.py',
                     'develop', '--prefix', context.install_space,
