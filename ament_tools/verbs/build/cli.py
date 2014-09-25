@@ -114,10 +114,12 @@ def main(opts):
     if not os.path.exists(opts.basepath):
         raise RuntimeError("The specified base path '%s' does not exist" %
                            opts.basepath)
-    opts.build_space = determine_path_argument(cwd, opts.directory,
-                                               opts.build_space, 'build')
-    opts.install_space = determine_path_argument(cwd, opts.directory,
-                                                 opts.install_space, 'install')
+    opts.build_space = determine_path_argument(
+        cwd, opts.directory, opts.build_space,
+        'build' if not opts.isolated else 'build_isolated')
+    opts.install_space = determine_path_argument(
+        cwd, opts.directory, opts.install_space,
+        'install' if not opts.isolated else 'install_isolated')
 
     packages = topological_order(opts.basepath)
 

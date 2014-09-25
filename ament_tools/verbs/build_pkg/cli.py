@@ -143,11 +143,11 @@ def prepare_arguments(parser, args):
 def add_arguments(parser):
     parser.add_argument(
         '--build-space',
-        help="Path to the build space (default 'CWD/build')",
+        help="Path to the build space (default 'CWD/build(_isolated)')",
     )
     parser.add_argument(
         '--install-space',
-        help="Path to the install space (default 'CWD/build')",
+        help="Path to the install space (default 'CWD/install(_isolated)')",
     )
     parser.add_argument(
         '--build-tests',
