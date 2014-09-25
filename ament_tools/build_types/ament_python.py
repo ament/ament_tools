@@ -78,11 +78,12 @@ class AmentPythonBuildType(BuildType):
             template_path = get_package_level_template_path(name)
             variables = {
                 'CMAKE_INSTALL_PREFIX': context.install_space,
-                'SOURCE_HOOKS': ''}
+                'ENVIRONMENT_HOOKS': ''}
             if name[:-3].endswith('.sh'):
-                variables['SOURCE_HOOKS'] = '. %s' % (
+                variables['ENVIRONMENT_HOOKS'] = \
+                    'ament_append_value AMENT_ENVIRONMENT_HOOKS "%s"\n' % \
                     os.path.join(
-                        '$AMENT_CURRENT_PREFIX', pythonpath_environment_hook))
+                        '$AMENT_CURRENT_PREFIX', pythonpath_environment_hook)
             content = configure_file(template_path, variables)
             destination_path = os.path.join(
                 context.build_space,
