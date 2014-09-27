@@ -93,7 +93,14 @@ class AmentPythonBuildType(BuildType):
                     h.write(content)
 
     def on_test(self, context):
-        raise NotImplementedError()
+        # Execute the setup.py test step
+        # and avoid placing any files in the source space
+        prefix = self._get_command_prefix('test', context)
+        cmd = [
+            PYTHON_EXECUTABLE, 'setup.py', 'test',
+            'egg_info', '--egg-base', context.build_space,
+        ]
+        yield BuildAction(prefix + cmd, cwd=context.source_space)
 
     def on_install(self, context):
         yield BuildAction(self._install_action_files, type='function')
