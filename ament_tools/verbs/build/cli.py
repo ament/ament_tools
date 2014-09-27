@@ -15,10 +15,14 @@
 from __future__ import print_function
 
 import os
+import shutil
 import sys
 
 from osrf_pycommon.cli_utils.verb_pattern import call_prepare_arguments
 
+from ament_package.templates import configure_file
+from ament_package.templates import get_isolated_prefix_level_template_names
+from ament_package.templates import get_isolated_prefix_level_template_path
 from ament_tools.build_type_discovery import yield_supported_build_types
 from ament_tools.helper import argparse_existing_dir
 from ament_tools.helper import combine_make_flags
@@ -186,3 +190,29 @@ def iterate_packages(opts, packages, per_package_callback):
         rc = per_package_callback(opts)
         if rc:
             return rc
+
+    # expand prefix-level setup files for the root of the install-space
+    if opts.isolated:
+        for name in get_isolated_prefix_level_template_names():
+            template_path = get_isolated_prefix_level_template_path(name)
+            if name.endswith('.in'):
+                content = configure_file(template_path, {
+                    'CMAKE_INSTALL_PREFIX': install_space_base,
+                    'PYTHON_EXECUTABLE': sys.executable,
+                })
+                destination_path = os.path.join(
+                    install_space_base, name[:-3])
+                with open(destination_path, 'w') as h:
+                    h.write(content)
+            else:
+                dst = os.path.join(install_space_base, name)
+                if os.path.exists(dst):
+                    if not opts.symlink_install or \
+                            not os.path.islink(dst) or \
+                            not os.path.samefile(template_path, dst):
+                        os.remove(dst)
+                if not os.path.exists(dst):
+                    if not opts.symlink_install:
+                        shutil.copy(template_path, dst)
+                    else:
+                        os.symlink(template_path, dst)

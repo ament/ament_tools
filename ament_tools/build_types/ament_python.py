@@ -76,9 +76,7 @@ class AmentPythonBuildType(BuildType):
         for name in get_package_level_template_names():
             assert name.endswith('.in')
             template_path = get_package_level_template_path(name)
-            variables = {
-                'CMAKE_INSTALL_PREFIX': context.install_space,
-                'ENVIRONMENT_HOOKS': ''}
+            variables = {'CMAKE_INSTALL_PREFIX': context.install_space}
             if name[:-3].endswith('.sh'):
                 variables['ENVIRONMENT_HOOKS'] = \
                     'ament_append_value AMENT_ENVIRONMENT_HOOKS "%s"\n' % \
