@@ -71,17 +71,6 @@ class AmentCmakeBuildType(BuildType):
         ce.add('ament_cmake_args', options.ament_cmake_args)
         return ce
 
-    def get_command_prefix(self, context):
-        prefix = []
-        for path in context.build_dependencies:
-            local_setup = os.path.join(path, 'local_setup.sh')
-            if os.path.isfile(local_setup):
-                prefix += ['.', local_setup, '&&']
-        prefix += [
-            'export',
-            'CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH:$AMENT_PREFIX_PATH', '&&']
-        return prefix
-
     def on_build(self, context):
         # Regardless of dry-run, try to determine if CMake should be invoked
         should_run_configure = False
@@ -107,7 +96,7 @@ class AmentCmakeBuildType(BuildType):
         set_cached_config(context.build_space, 'ament_cmake_args',
                           ament_cmake_config)
         # Figure out if there is a setup file to source
-        prefix = self.get_command_prefix(context)
+        prefix = self._get_command_prefix('build', context)
         # Execute the configure step
         # (either cmake or the cmake_check_build_system make target)
         if should_run_configure:
@@ -130,7 +119,7 @@ class AmentCmakeBuildType(BuildType):
     def on_test(self, context):
         assert context.build_tests
         # Figure out if there is a setup file to source
-        prefix = self.get_command_prefix(context)
+        prefix = self._get_command_prefix('test', context)
         if has_make_target(context.build_space, 'test') or context.dry_run:
             yield BuildAction(prefix + [MAKE_EXECUTABLE, 'test'])
         else:
@@ -139,7 +128,27 @@ class AmentCmakeBuildType(BuildType):
 
     def on_install(self, context):
         # Figure out if there is a setup file to source
-        prefix = self.get_command_prefix(context)
+        prefix = self._get_command_prefix('install', context)
 
         # Assumption: install target exists
         yield BuildAction(prefix + [MAKE_EXECUTABLE, 'install'])
+
+    def _get_command_prefix(self, name, context):
+        lines = []
+        lines.append('#!/usr/bin/env sh\n')
+        for path in context.build_dependencies:
+            local_setup = os.path.join(path, 'local_setup.sh')
+            lines.append('if [ -f "%s" ]; then' % local_setup)
+            lines.append('  . "%s"' % local_setup)
+            lines.append('fi')
+        lines.append(
+            'export CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH:$AMENT_PREFIX_PATH')
+
+        generated_file = os.path.join(
+            context.build_space, '%s__%s.sh' %
+            (AmentCmakeBuildType.build_type, name))
+        with open(generated_file, 'w') as h:
+            for line in lines:
+                h.write('%s\n' % line)
+
+        return ['.', generated_file, '&&']

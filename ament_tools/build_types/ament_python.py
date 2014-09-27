@@ -41,16 +41,6 @@ class AmentPythonBuildType(BuildType):
     build_type = 'ament_python'
     description = "ament package built with Python"
 
-    def get_command_prefix(self, context):
-        prefix = []
-        for path in context.build_dependencies:
-            local_setup = os.path.join(path, 'local_setup.sh')
-            if os.path.isfile(local_setup):
-                prefix += ['.', local_setup, '&&']
-        prefix += ['export', 'PYTHONPATH=%s:$PYTHONPATH' % os.path.join(
-            context.install_space, get_python_lib(prefix='')), '&&']
-        return prefix
-
     def on_build(self, context):
         # expand all templates in build space
         yield BuildAction(self._build_action, type='function')
@@ -118,7 +108,7 @@ class AmentPythonBuildType(BuildType):
             os.makedirs(python_path)
 
         # Figure out if there is a setup file to source
-        prefix = self.get_command_prefix(context)
+        prefix = self._get_command_prefix('install', context)
 
         if not context.symlink_install:
             # Undo previous develop if .egg-info is found and develop symlinks
@@ -232,6 +222,27 @@ class AmentPythonBuildType(BuildType):
             new_mode = mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
             if new_mode != mode:
                 os.chmod(destination_path, new_mode)
+
+    def _get_command_prefix(self, name, context):
+        lines = []
+        lines.append('#!/usr/bin/env sh\n')
+        for path in context.build_dependencies:
+            local_setup = os.path.join(path, 'local_setup.sh')
+            lines.append('if [ -f "%s" ]; then' % local_setup)
+            lines.append('  . "%s"' % local_setup)
+            lines.append('fi')
+        lines.append(
+            'export PYTHONPATH=%s:$PYTHONPATH' % os.path.join(
+            context.install_space, get_python_lib(prefix='')))
+
+        generated_file = os.path.join(
+            context.build_space, '%s__%s.sh' %
+            (AmentPythonBuildType.build_type, name))
+        with open(generated_file, 'w') as h:
+            for line in lines:
+                h.write('%s\n' % line)
+
+        return ['.', generated_file, '&&']
 
     def _install_action_python(self, context):
         # Undo previous install if install.log is found
