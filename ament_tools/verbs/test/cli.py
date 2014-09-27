@@ -18,10 +18,8 @@ import os
 
 from ament_tools.verbs.build import prepare_arguments \
     as build_prepare_arguments
-from ament_tools.verbs.build.cli import iterate_packages
-from ament_tools.verbs.build.cli import print_topological_order
+from ament_tools.verbs.build.cli import main as build_main
 from ament_tools.verbs.test_pkg import main as test_pkg_main
-from ament_tools.topological_order import topological_order
 
 
 def prepare_arguments(parser, args):
@@ -54,10 +52,6 @@ def prepare_arguments(parser, args):
 
 
 def main(opts):
-    packages = topological_order(opts.basepath)
-
-    print_topological_order(opts, packages)
-
     rc_storage = {}
 
     def test_pkg_main_wrapper(opts):
@@ -68,7 +62,7 @@ def main(opts):
                 return rc
         return 0
 
-    iterate_packages(opts, packages, test_pkg_main_wrapper)
+    build_main(opts, test_pkg_main_wrapper)
 
     if 'rc' in rc_storage:
         return rc_storage['rc']

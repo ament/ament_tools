@@ -111,7 +111,7 @@ def prepare_arguments(parser, args):
     return parser
 
 
-def main(opts):
+def main(opts, per_package_main=build_pkg_main):
     # use PWD in order to work when being invoked in a symlinked location
     cwd = os.getenv('PWD', os.curdir)
     opts.directory = os.path.abspath(os.path.join(cwd, opts.directory))
@@ -135,7 +135,7 @@ def main(opts):
 
     print_topological_order(opts, packages)
 
-    iterate_packages(opts, packages, build_pkg_main)
+    iterate_packages(opts, packages, per_package_main)
 
 
 def print_topological_order(opts, packages):

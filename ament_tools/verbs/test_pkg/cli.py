@@ -14,10 +14,10 @@
 
 from __future__ import print_function
 
+import sys
+
 from ament_tools.build_type_discovery import get_class_for_build_type
 
-from ament_tools.verbs.build_pkg import prepare_arguments \
-    as build_pkg_prepare_arguments
 from ament_tools.verbs.build_pkg.cli import create_context
 from ament_tools.verbs.build_pkg.cli import get_build_type
 from ament_tools.verbs.build_pkg.cli import handle_build_action
@@ -39,7 +39,12 @@ def main(opts):
     # Run the test command
     pkg_name = context.package_manifest.name
     print("+++ Testing '{0}'".format(pkg_name))
-    on_test_ret = build_type_impl.on_test(context)
+    try:
+        on_test_ret = build_type_impl.on_test(context)
+    except (AttributeError, NotImplementedError):
+        print("on_test() is not implemented for build type '%s'" % build_type,
+              file=sys.stderr)
+        return
     try:
         handle_build_action(on_test_ret, context)
     except SystemExit as e:
