@@ -14,9 +14,10 @@
 
 import os
 
-from ament_tools.packages import find_package_paths
-
 from ament_tools.helper import argparse_existing_dir
+from ament_tools.packages import find_package_paths
+from ament_tools.topological_order import find_unique_packages
+from ament_tools.topological_order import topological_order_packages
 
 
 def prepare_arguments(parser):
@@ -27,14 +28,25 @@ def prepare_arguments(parser):
         default=os.curdir,
         help='Base paths to recursively crawl for packages',
     )
+    parser.add_argument(
+        '--topological-order',
+        action='store_true',
+        default=False,
+        help='Order Enable building tests',
+    )
     return parser
 
 
 def main(options):
-    package_paths = sorted(find_package_paths(options.basepath))
-    for package_path in package_paths:
-        print(package_path)
-
+    if not options.topological_order:
+        package_paths = find_package_paths(options.basepath)
+        for package_path in sorted(package_paths):
+            print(package_path)
+    else:
+        packages = find_unique_packages(options.basepath)
+        packages = topological_order_packages(packages)
+        for package_path, _, _ in packages:
+            print(package_path)
 
 # meta information of the entry point
 entry_point_data = dict(
