@@ -23,6 +23,8 @@ import shutil
 import stat
 import sys
 
+from osrf_pycommon.process_utils import which
+
 from ament_package.templates import configure_file
 from ament_package.templates import get_environment_hook_template_path
 from ament_package.templates import get_package_level_template_names
@@ -34,6 +36,8 @@ from ament_tools.build_type import BuildType
 
 from ament_tools.context import ContextExtender
 
+NOSETESTS_EXECUTABLE = which(
+    'nosetests3' if sys.version_info.major == 3 else 'nosetests')
 PYTHON_EXECUTABLE = sys.executable
 
 
@@ -93,13 +97,27 @@ class AmentPythonBuildType(BuildType):
                     h.write(content)
 
     def on_test(self, context):
-        # Execute the setup.py test step
+        # Execute nosetests
         # and avoid placing any files in the source space
-        prefix = self._get_command_prefix('test', context)
+        coverage_file = os.path.join(context.build_space, '.coverage')
+        additional_lines = ['export COVERAGE_FILE=%s' % coverage_file]
+        prefix = self._get_command_prefix(
+            'test', context, additional_lines=additional_lines)
+        xunit_file = os.path.join(context.build_space, 'nosetests.xml')
         cmd = [
-            PYTHON_EXECUTABLE, 'setup.py', 'test',
-            'egg_info', '--egg-base', context.build_space,
+            NOSETESTS_EXECUTABLE,
+            '--nocapture',
+            '--with-xunit', '--xunit-file=%s' % xunit_file,
+            '--with-coverage', '--cover-erase',
+            '--cover-tests', '--cover-branches',
         ]
+        # coverage for all root-packages
+        packages = setuptools.find_packages(
+            context.source_space, exclude=['*.*'])
+        for package in packages:
+            if package in ['test', 'tests']:
+                continue
+            cmd += ['--cover-package=%s' % package]
         yield BuildAction(prefix + cmd, cwd=context.source_space)
 
     def on_install(self, context):
@@ -230,7 +248,7 @@ class AmentPythonBuildType(BuildType):
             if new_mode != mode:
                 os.chmod(destination_path, new_mode)
 
-    def _get_command_prefix(self, name, context):
+    def _get_command_prefix(self, name, context, additional_lines=None):
         lines = []
         lines.append('#!/usr/bin/env sh\n')
         for path in context.build_dependencies:
@@ -241,6 +259,8 @@ class AmentPythonBuildType(BuildType):
         lines.append(
             'export PYTHONPATH=%s:$PYTHONPATH' % os.path.join(
             context.install_space, get_python_lib(prefix='')))
+        if additional_lines:
+            lines += additional_lines
 
         generated_file = os.path.join(
             context.build_space, '%s__%s.sh' %
