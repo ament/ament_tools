@@ -53,7 +53,7 @@ class AmentPythonBuildType(BuildType):
         # expand environment hook for PYTHONPATH
         template_path = get_environment_hook_template_path('pythonpath.sh.in')
         content = configure_file(template_path, {
-            'PYTHON_INSTALL_DIR': get_python_lib(prefix=''),
+            'PYTHON_INSTALL_DIR': self._get_python_lib(context),
         })
         pythonpath_environment_hook = os.path.join(
             'share', context.package_manifest.name, 'environment',
@@ -128,7 +128,7 @@ class AmentPythonBuildType(BuildType):
             os.makedirs(context.build_space)
         # setup.py install/develop requires the PYTHONPATH to exist
         python_path = os.path.join(
-            context.install_space, get_python_lib(prefix=''))
+            context.install_space, self._get_python_lib(context))
         if not os.path.exists(python_path):
             os.makedirs(python_path)
 
@@ -149,8 +149,7 @@ class AmentPythonBuildType(BuildType):
                     'develop', '--prefix', context.install_space,
                     '--uninstall',
                 ]
-                if 'dist-packages' in get_python_lib(prefix=''):
-                    cmd += ['--install-layout', 'deb']
+                self._add_install_layout(context, cmd)
                 yield BuildAction(prefix + cmd, cwd=context.build_space)
 
             # Execute the setup.py install step with lots of arguments
@@ -160,8 +159,7 @@ class AmentPythonBuildType(BuildType):
                 'install', '--prefix', context.install_space,
                 '--record', os.path.join(context.build_space, 'install.log'),
             ]
-            if 'dist-packages' in get_python_lib(prefix=''):
-                cmd += ['--install-layout', 'deb']
+            self._add_install_layout(context, cmd)
             cmd += [
                 'build', '--build-base', context.build_space,
                 'egg_info', '--egg-base', context.build_space,
@@ -178,8 +176,7 @@ class AmentPythonBuildType(BuildType):
                 PYTHON_EXECUTABLE, 'setup.py',
                 'develop', '--prefix', context.install_space,
             ]
-            if 'dist-packages' in get_python_lib(prefix=''):
-                cmd += ['--install-layout', 'deb']
+            self._add_install_layout(context, cmd)
             yield BuildAction(prefix + cmd, cwd=context.build_space)
 
     def _install_action_files(self, context):
@@ -248,6 +245,14 @@ class AmentPythonBuildType(BuildType):
             if new_mode != mode:
                 os.chmod(destination_path, new_mode)
 
+    def _add_install_layout(self, context, cmd):
+        if 'dist-packages' in self._get_python_lib(context):
+            cmd += ['--install-layout', 'deb']
+
+    def _get_python_lib(self, context):
+        path = get_python_lib(prefix=context.install_space)
+        return os.path.relpath(path, start=context.install_space)
+
     def _get_command_prefix(self, name, context, additional_lines=None):
         lines = []
         lines.append('#!/usr/bin/env sh\n')
@@ -258,7 +263,7 @@ class AmentPythonBuildType(BuildType):
             lines.append('fi')
         lines.append(
             'export PYTHONPATH=%s:$PYTHONPATH' % os.path.join(
-            context.install_space, get_python_lib(prefix='')))
+            context.install_space, self._get_python_lib(context)))
         if additional_lines:
             lines += additional_lines
 
@@ -285,7 +290,7 @@ class AmentPythonBuildType(BuildType):
 
             # remove entry from easy-install.pth file
             easy_install = os.path.join(
-                context.install_space, get_python_lib(prefix=''),
+                context.install_space, self._get_python_lib(context),
                 'easy-install.pth')
             if os.path.exists(easy_install):
                 with open(easy_install, 'r') as h:
