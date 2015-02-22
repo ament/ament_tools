@@ -16,7 +16,7 @@ from __future__ import print_function
 
 import copy
 
-from .packages import find_unique_packages
+from .packages import find_unique_packages as _find_unique_packages
 
 
 class _PackageDecorator(object):
@@ -97,13 +97,13 @@ def topological_order(
     :returns: A list of tuples containing the relative path and a
         ``Package`` object, ``list``
     """
-    packages = find_unique_packages(root_dir)
+    packages = _find_unique_packages(root_dir)
 
     # find packages in underlayed workspaces
     underlay_packages = {}
     if underlay_workspaces:
         for workspace in reversed(underlay_workspaces):
-            for path, package in find_unique_packages(workspace).items():
+            for path, package in _find_unique_packages(workspace).items():
                 underlay_packages[package.name] = (path, package)
 
     return topological_order_packages(

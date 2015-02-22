@@ -14,9 +14,11 @@
 
 import os
 
+from ament_package import parse_package
+
 from ament_tools.helper import argparse_existing_dir
 from ament_tools.packages import find_package_paths
-from ament_tools.topological_order import find_unique_packages
+from ament_tools.packages import find_unique_packages
 from ament_tools.topological_order import topological_order_packages
 
 
@@ -29,24 +31,63 @@ def prepare_arguments(parser):
         help='Base paths to recursively crawl for packages',
     )
     parser.add_argument(
-        '--topological-order',
+        '--topological-order', '-t',
         action='store_true',
         default=False,
-        help='Order Enable building tests',
+        help='Order output based on topological order',
+    )
+    parser.add_argument(
+        '--names-only',
+        action='store_true',
+        default=False,
+        help='Print the name of the packages not the path',
+    )
+    parser.add_argument(
+        '--depends-on',
+        help='Only show packages which depend on the given package'
     )
     return parser
+
+
+def get_unique_depend_names(package):
+    return list(set(
+        [d.name for d in
+         package.build_depends +
+         package.buildtool_depends +
+         package.build_export_depends +
+         package.buildtool_export_depends +
+         package.exec_depends +
+         package.test_depends +
+         package.doc_depends]
+    ))
 
 
 def main(options):
     if not options.topological_order:
         package_paths = find_package_paths(options.basepath)
         for package_path in sorted(package_paths):
-            print(package_path)
+            package = None
+            package_abs_path = os.path.join(options.basepath, package_path)
+            if options.depends_on is not None:
+                package = parse_package(package_abs_path)
+                if options.depends_on not in get_unique_depend_names(package):
+                    continue
+            if options.names_only:
+                package = package or parse_package(package_abs_path)
+                print(package.name)
+            else:
+                print(package_path)
     else:
         packages = find_unique_packages(options.basepath)
         packages = topological_order_packages(packages)
-        for package_path, _, _ in packages:
-            print(package_path)
+        for package_path, package, _ in packages:
+            if options.depends_on is not None:
+                if options.depends_on not in get_unique_depend_names(package):
+                    continue
+            if options.names_only:
+                print(package.name)
+            else:
+                print(package_path)
 
 # meta information of the entry point
 entry_point_data = dict(
