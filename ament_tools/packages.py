@@ -18,7 +18,8 @@ Library to find packages in the filesystem.
 
 import os
 
-from ament_package import parse_package, PACKAGE_MANIFEST_FILENAME
+from ament_package import PACKAGE_MANIFEST_FILENAME
+from ament_package import parse_package
 
 
 def find_package_paths(basepath, exclude_paths=None):
