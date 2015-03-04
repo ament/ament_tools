@@ -84,6 +84,7 @@ def combine_make_flags(make_flags, args, extras):
 
     # Ensure make args will have job flags and then store make_flags in extras
     extras['make_flags'] = ensure_make_job_flags(make_flags)
+    return args
 
 
 def ensure_make_job_flags(input_make_args):

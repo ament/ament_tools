@@ -78,7 +78,7 @@ def argument_preprocessor(args):
     # Let detected build type plugin do argument preprocessing
     args, extras = build_type_impl.argument_preprocessor(args)
 
-    combine_make_flags(make_flags, args, extras)
+    args = combine_make_flags(make_flags, args, extras)
 
     return args, extras
 

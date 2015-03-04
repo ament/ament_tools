@@ -57,7 +57,7 @@ def argument_preprocessor(args):
         args, tmp_extras = build_type_impl.argument_preprocessor(args)
         extras.update(tmp_extras)
 
-    combine_make_flags(make_flags, args, extras)
+    args = combine_make_flags(make_flags, args, extras)
 
     return args, extras
 
