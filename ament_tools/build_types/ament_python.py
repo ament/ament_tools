@@ -262,8 +262,8 @@ class AmentPythonBuildType(BuildType):
             lines.append('  . "%s"' % local_setup)
             lines.append('fi')
         lines.append(
-            'export PYTHONPATH=%s:$PYTHONPATH' % os.path.join(
-            context.install_space, self._get_python_lib(context)))
+            'export PYTHONPATH=%s:$PYTHONPATH' %
+            os.path.join(context.install_space, self._get_python_lib(context)))
         if additional_lines:
             lines += additional_lines
 
