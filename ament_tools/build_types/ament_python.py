@@ -104,6 +104,7 @@ class AmentPythonBuildType(BuildType):
         prefix = self._get_command_prefix(
             'test', context, additional_lines=additional_lines)
         xunit_file = os.path.join(context.build_space, 'nosetests.xml')
+        assert NOSETESTS_EXECUTABLE, 'Could not find nosetests'
         cmd = [
             NOSETESTS_EXECUTABLE,
             '--nocapture',
