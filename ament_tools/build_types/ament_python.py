@@ -157,14 +157,16 @@ class AmentPythonBuildType(BuildType):
             # to avoid placing any files in the source space
             cmd = [
                 PYTHON_EXECUTABLE, 'setup.py',
+                'egg_info', '--egg-base', context.build_space,
+                'build', '--build-base', os.path.join(
+                    context.build_space, 'build'),
                 'install', '--prefix', context.install_space,
                 '--record', os.path.join(context.build_space, 'install.log'),
             ]
             self._add_install_layout(context, cmd)
             cmd += [
-                'build', '--build-base', context.build_space,
-                'egg_info', '--egg-base', context.build_space,
-                'bdist_egg', '--dist-dir', context.build_space,
+                'bdist_egg', '--dist-dir', os.path.join(
+                    context.build_space, 'dist'),
             ]
             yield BuildAction(prefix + cmd, cwd=context.source_space)
 
