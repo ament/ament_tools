@@ -174,7 +174,6 @@ class AmentCmakeBuildType(BuildType):
             lines.append('if exist "{0}" call "{0}"\n'.format(local_setup))
         lines.append(
             'set "CMAKE_PREFIX_PATH=%CMAKE_PREFIX_PATH%;%AMENT_PREFIX_PATH%"')
-        lines += ['set PYTHONPATH']
         lines += ['%*']
         lines += ['if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%']
         lines += ['if defined AMENT_TRACE_SETUP_FILES echo Leaving %~0']
