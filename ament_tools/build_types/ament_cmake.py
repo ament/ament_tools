@@ -113,7 +113,7 @@ class AmentCmakeBuildType(BuildType):
             if context.symlink_install:
                 cmake_args += ['-DAMENT_CMAKE_SYMLINK_INSTALL=1']
             if IS_WINDOWS:
-                cmake_args += ['-G', 'Visual Studio 12 2013 Win64']
+                cmake_args += ['-G', 'Visual Studio 14 2015 Win64']
             if CMAKE_EXECUTABLE is None:
                 raise VerbExecutionError("Could not find 'cmake' executable")
             yield BuildAction(prefix + [CMAKE_EXECUTABLE] + cmake_args)
