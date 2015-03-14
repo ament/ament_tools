@@ -25,6 +25,7 @@ from ament_tools.helper import extract_argument_group
 
 from ament_tools.build_types.cmake_common import CMAKE_EXECUTABLE
 from ament_tools.build_types.cmake_common import cmakecache_exists_at
+from ament_tools.build_types.cmake_common import get_visual_studio_version
 from ament_tools.build_types.cmake_common import has_make_target
 from ament_tools.build_types.cmake_common import MAKE_EXECUTABLE
 from ament_tools.build_types.cmake_common import makefile_exists_at
@@ -113,7 +114,20 @@ class AmentCmakeBuildType(BuildType):
             if context.symlink_install:
                 cmake_args += ['-DAMENT_CMAKE_SYMLINK_INSTALL=1']
             if IS_WINDOWS:
-                cmake_args += ['-G', 'Visual Studio 14 2015 Win64']
+                vsv = get_visual_studio_version()
+                if vsv is None:
+                    print("VisualStudioVersion is not set, please run within "
+                          "a VS2013 or VS2015 Command Prompt.")
+                    raise VerbExecutionError(
+                        "Could not determine Visual Studio Version.")
+                generator = None
+                if vsv == '12.0':
+                    generator = 'Visual Studio 12 2013 Win64'
+                elif vsv == '14.0':
+                    generator = 'Visual Studio 14 2015 Win64'
+                else:
+                    raise VerbExecutionError("Unknown VS version: " + vsv)
+                cmake_args += ['-G', generator]
             if CMAKE_EXECUTABLE is None:
                 raise VerbExecutionError("Could not find 'cmake' executable")
             yield BuildAction(prefix + [CMAKE_EXECUTABLE] + cmake_args)

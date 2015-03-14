@@ -55,3 +55,8 @@ def project_file_exists_at(path, target):
     if not os.path.isfile(project_file):
         return None
     return project_file
+
+
+def get_visual_studio_version():
+    vsv = os.environ.get('VisualStudioVersion', None)
+    return vsv
