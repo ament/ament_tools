@@ -52,9 +52,10 @@ def is_appropriate_setup_extension(setup_file):
     if not IS_WINDOWS and stripped_filename.endswith('.bat'):
         # On non-Windows system, ignore .bat
         return False
-    if IS_WINDOWS and stripped_filename.endswith('.bat'):
+    if IS_WINDOWS and not stripped_filename.endswith('.bat'):
         # On Windows, ignore anything other than .bat
         return False
+    return True
 
 
 class AmentPythonBuildType(BuildType):
