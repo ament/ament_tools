@@ -135,16 +135,16 @@ class AmentCmakeBuildType(BuildType):
             cmd = prefix + [MAKE_EXECUTABLE, 'cmake_check_build_system']
             yield BuildAction(cmd)
         # Now execute the build step
-        if IS_WINDOWS:
+        if not IS_WINDOWS:
+            if MAKE_EXECUTABLE is None:
+                raise VerbExecutionError("Could not find 'make' executable")
+            yield BuildAction(prefix + [MAKE_EXECUTABLE] + context.make_flags)
+        else:
             if MSBUILD_EXECUTABLE is None:
                 raise VerbExecutionError("Could not find 'msbuild' executable")
             solution_file = solution_file_exists_at(
                 context.build_space, context.package_manifest.name)
             yield BuildAction(prefix + [MSBUILD_EXECUTABLE, solution_file])
-        else:
-            if MAKE_EXECUTABLE is None:
-                raise VerbExecutionError("Could not find 'make' executable")
-            yield BuildAction(prefix + [MAKE_EXECUTABLE] + context.make_flags)
 
     def on_test(self, context):
         assert context.build_tests
@@ -160,24 +160,24 @@ class AmentCmakeBuildType(BuildType):
         # Figure out if there is a setup file to source
         prefix = self._get_command_prefix('install', context)
 
-        if IS_WINDOWS:
+        if not IS_WINDOWS:
+            # Assumption: install target exists
+            if MAKE_EXECUTABLE is None:
+                raise VerbExecutionError("Could not find 'make' executable")
+            yield BuildAction(prefix + [MAKE_EXECUTABLE, 'install'])
+        else:
             if MSBUILD_EXECUTABLE is None:
                 raise VerbExecutionError("Could not find 'msbuild' executable")
             install_project_file = project_file_exists_at(
                 context.build_space, 'INSTALL')
             yield BuildAction(prefix +
                               [MSBUILD_EXECUTABLE, install_project_file])
-        else:
-            # Assumption: install target exists
-            if MAKE_EXECUTABLE is None:
-                raise VerbExecutionError("Could not find 'make' executable")
-            yield BuildAction(prefix + [MAKE_EXECUTABLE, 'install'])
 
     def _get_command_prefix(self, name, context):
-        if IS_WINDOWS:
-            return self._get_command_prefix_windows(name, context)
-        else:
+        if not IS_WINDOWS:
             return self._get_command_prefix_unix(name, context)
+        else:
+            return self._get_command_prefix_windows(name, context)
 
     def _get_command_prefix_windows(self, name, context):
         lines = []

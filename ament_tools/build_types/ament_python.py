@@ -45,6 +45,18 @@ except ImportError:
 IS_WINDOWS = os.name == 'nt'
 
 
+def is_appropriate_setup_extension(setup_file):
+    stripped_filename = setup_file
+    if stripped_filename.endswith('.in'):
+        stripped_filename = stripped_filename[:-3]
+    if not IS_WINDOWS and stripped_filename.endswith('.bat'):
+        # On non-Windows system, ignore .bat
+        return False
+    if IS_WINDOWS and stripped_filename.endswith('.bat'):
+        # On Windows, ignore anything other than .bat
+        return False
+
+
 class AmentPythonBuildType(BuildType):
     build_type = 'ament_python'
     description = "ament package built with Python"
@@ -55,7 +67,7 @@ class AmentPythonBuildType(BuildType):
 
     def _build_action(self, context):
         # expand environment hook for PYTHONPATH
-        ext = '.bat.in' if IS_WINDOWS else '.sh.in'
+        ext = '.sh.in' if not IS_WINDOWS else '.bat.in'
         template_path = get_environment_hook_template_path('pythonpath' + ext)
         content = configure_file(template_path, {
             'PYTHON_INSTALL_DIR': self._get_python_lib(context),
@@ -73,9 +85,7 @@ class AmentPythonBuildType(BuildType):
 
         # expand package-level setup files
         for name in get_package_level_template_names():
-            if IS_WINDOWS and not name.endswith('.bat.in'):
-                continue
-            if not IS_WINDOWS and name.endswith('.bat.in'):
+            if not is_appropriate_setup_extension(name):
                 continue
             assert name.endswith('.in')
             template_path = get_package_level_template_path(name)
@@ -103,9 +113,7 @@ class AmentPythonBuildType(BuildType):
 
         # expand prefix-level setup files
         for name in get_prefix_level_template_names():
-            if IS_WINDOWS and not name.endswith('.bat.in'):
-                continue
-            if not IS_WINDOWS and name.endswith('.bat.in'):
+            if not is_appropriate_setup_extension(name):
                 continue
             if name.endswith('.in'):
                 template_path = get_prefix_level_template_path(name)
@@ -122,10 +130,10 @@ class AmentPythonBuildType(BuildType):
         # and avoid placing any files in the source space
         coverage_file = os.path.join(context.build_space, '.coverage')
         additional_lines = []
-        if IS_WINDOWS:
-            additional_lines.append('set "COVERAGE_FILE=%s"' % coverage_file)
-        else:
+        if not IS_WINDOWS:
             additional_lines.append('export COVERAGE_FILE=%s' % coverage_file)
+        else:
+            additional_lines.append('set "COVERAGE_FILE=%s"' % coverage_file)
         prefix = self._get_command_prefix(
             'test', context, additional_lines=additional_lines)
         xunit_file = os.path.join(context.build_space, 'nosetests.xml')
@@ -230,7 +238,7 @@ class AmentPythonBuildType(BuildType):
                 pass
 
         # deploy environment hook for PYTHONPATH
-        deploy_file = 'pythonpath' + ('.bat' if IS_WINDOWS else '.sh')
+        deploy_file = 'pythonpath' + ('.sh' if not IS_WINDOWS else '.bat')
         self._deploy(
             context, context.build_space,
             os.path.join(
@@ -239,9 +247,7 @@ class AmentPythonBuildType(BuildType):
         # deploy package-level setup files
         for name in get_package_level_template_names():
             assert name.endswith('.in')
-            if IS_WINDOWS and not name.endswith('.bat.in'):
-                continue
-            if not IS_WINDOWS and name.endswith('.bat.in'):
+            if not is_appropriate_setup_extension(name):
                 continue
             self._deploy(
                 context, context.build_space,
@@ -250,9 +256,7 @@ class AmentPythonBuildType(BuildType):
 
         # deploy prefix-level setup files
         for name in get_prefix_level_template_names():
-            if IS_WINDOWS and not name[:-3].endswith('.bat'):
-                continue
-            if not IS_WINDOWS and name[:-3].endswith('.bat'):
+            if not is_appropriate_setup_extension(name):
                 continue
             if name.endswith('.in'):
                 self._deploy(context, context.build_space, name[:-3])
@@ -294,12 +298,12 @@ class AmentPythonBuildType(BuildType):
         return os.path.relpath(path, start=context.install_space)
 
     def _get_command_prefix(self, name, context, additional_lines=None):
-        if IS_WINDOWS:
-            return self._get_command_prefix_windows(name, context,
-                                                    additional_lines)
-        else:
+        if not IS_WINDOWS:
             return self._get_command_prefix_unix(name, context,
                                                  additional_lines)
+        else:
+            return self._get_command_prefix_windows(name, context,
+                                                    additional_lines)
 
     def _get_command_prefix_windows(self, name, context, additional_lines):
         lines = []
