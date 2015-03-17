@@ -131,7 +131,7 @@ class AmentCmakeBuildType(BuildType):
             if CMAKE_EXECUTABLE is None:
                 raise VerbExecutionError("Could not find 'cmake' executable")
             yield BuildAction(prefix + [CMAKE_EXECUTABLE] + cmake_args)
-        elif not IS_WINDOWS:  # Nothing to do if False on Windows
+        elif not IS_WINDOWS:  # Check for reconfigure if available.
             cmd = prefix + [MAKE_EXECUTABLE, 'cmake_check_build_system']
             yield BuildAction(cmd)
         # Now execute the build step
@@ -188,9 +188,9 @@ class AmentCmakeBuildType(BuildType):
             lines.append('if exist "{0}" call "{0}"\n'.format(local_setup))
         lines.append(
             'set "CMAKE_PREFIX_PATH=%CMAKE_PREFIX_PATH%;%AMENT_PREFIX_PATH%"')
-        lines += ['%*']
-        lines += ['if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%']
-        lines += ['if defined AMENT_TRACE_SETUP_FILES echo Leaving %~0']
+        lines.append('%*')
+        lines.append('if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%')
+        lines.append('if defined AMENT_TRACE_SETUP_FILES echo Leaving %~0')
 
         generated_file = os.path.join(
             context.build_space, '%s__%s.bat' %
