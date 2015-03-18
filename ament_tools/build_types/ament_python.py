@@ -34,8 +34,6 @@ from ament_package.templates import get_prefix_level_template_path
 from ament_tools.build_type import BuildAction
 from ament_tools.build_type import BuildType
 
-from ament_tools.context import ContextExtender
-
 NOSETESTS_EXECUTABLE = which(
     'nosetests3' if sys.version_info.major == 3 else 'nosetests')
 PYTHON_EXECUTABLE = sys.executable
@@ -198,7 +196,7 @@ class AmentPythonBuildType(BuildType):
             marker_dir = os.path.dirname(marker_file)
             if not os.path.exists(marker_dir):
                 os.makedirs(marker_dir)
-            with open(marker_file, 'w') as f:
+            with open(marker_file, 'w'):
                 pass
 
         # deploy environment hook for PYTHONPATH
