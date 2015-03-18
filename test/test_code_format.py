@@ -4,7 +4,7 @@ import os
 
 def test_flake8():
     """Test source code for pyFlakes and PEP8 conformance"""
-    flake8style = flake8.engine.StyleGuide()
+    flake8style = flake8.engine.StyleGuide(max_line_length=100)
     report = flake8style.options.report
     report.start()
     this_dir = os.path.dirname(os.path.abspath(__file__))

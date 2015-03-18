@@ -23,8 +23,6 @@ import shutil
 import stat
 import sys
 
-from osrf_pycommon.process_utils import which
-
 from ament_package.templates import configure_file
 from ament_package.templates import get_environment_hook_template_path
 from ament_package.templates import get_package_level_template_names
@@ -34,11 +32,15 @@ from ament_package.templates import get_prefix_level_template_path
 from ament_tools.build_type import BuildAction
 from ament_tools.build_type import BuildType
 
-from ament_tools.context import ContextExtender
-
-NOSETESTS_EXECUTABLE = which(
-    'nosetests3' if sys.version_info.major == 3 else 'nosetests')
 PYTHON_EXECUTABLE = sys.executable
+NOSETESTS_EXECUTABLE = None
+try:
+    import nose
+    # Use the -m module option for executing nose, to ensure we get the desired version.
+    # Looking for just nosetest or nosetest3 on the PATH was not reliable in virtualenvs.
+    NOSETESTS_EXECUTABLE = [PYTHON_EXECUTABLE, '-m', nose.__name__]
+except ImportError:
+    pass
 
 
 class AmentPythonBuildType(BuildType):
@@ -105,8 +107,7 @@ class AmentPythonBuildType(BuildType):
             'test', context, additional_lines=additional_lines)
         xunit_file = os.path.join(context.build_space, 'nosetests.xml')
         assert NOSETESTS_EXECUTABLE, 'Could not find nosetests'
-        cmd = [
-            NOSETESTS_EXECUTABLE,
+        cmd = NOSETESTS_EXECUTABLE + [
             '--nocapture',
             '--with-xunit', '--xunit-file=%s' % xunit_file,
             '--with-coverage', '--cover-erase',
@@ -198,7 +199,7 @@ class AmentPythonBuildType(BuildType):
             marker_dir = os.path.dirname(marker_file)
             if not os.path.exists(marker_dir):
                 os.makedirs(marker_dir)
-            with open(marker_file, 'w') as f:
+            with open(marker_file, 'w'):
                 pass
 
         # deploy environment hook for PYTHONPATH
