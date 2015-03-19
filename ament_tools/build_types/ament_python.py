@@ -231,11 +231,7 @@ class AmentPythonBuildType(BuildType):
             marker_dir = os.path.dirname(marker_file)
             if not os.path.exists(marker_dir):
                 os.makedirs(marker_dir)
-<<<<<<< HEAD
-            with open(marker_file, 'w'):
-=======
             with open(marker_file, 'w'):  # "touching" the file
->>>>>>> [windows] support ament cmake and python
                 pass
 
         # deploy environment hook for PYTHONPATH
