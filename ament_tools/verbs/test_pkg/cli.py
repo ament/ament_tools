@@ -47,5 +47,5 @@ def main(opts):
         return
     try:
         handle_build_action(on_test_ret, context)
-    except SystemExit as e:
+    except SystemExit:
         return 1

@@ -14,8 +14,6 @@
 
 from __future__ import print_function
 
-import os
-
 from ament_tools.verbs.build import prepare_arguments \
     as build_prepare_arguments
 from ament_tools.verbs.build.cli import main as build_main
