@@ -20,6 +20,7 @@ from osrf_pycommon.process_utils import which
 
 CMAKE_EXECUTABLE = which('cmake')
 MAKE_EXECUTABLE = which('make')
+MSBUILD_EXECUTABLE = which('msbuild')
 
 __target_re = re.compile(r'^([a-zA-Z0-9][a-zA-Z0-9_\.]*):')
 
@@ -34,9 +35,28 @@ def has_make_target(path, target):
 
 def cmakecache_exists_at(path):
     cmakecache = os.path.join(path, 'CMakeCache.txt')
-    return os.path.exists(cmakecache)
+    return os.path.isfile(cmakecache)
 
 
 def makefile_exists_at(path):
     makefile = os.path.join(path, 'Makefile')
-    return os.path.exists(makefile)
+    return os.path.isfile(makefile)
+
+
+def solution_file_exists_at(path, package_name):
+    solution_file = os.path.join(path, package_name + '.sln')
+    if not os.path.isfile(solution_file):
+        return None
+    return solution_file
+
+
+def project_file_exists_at(path, target):
+    project_file = os.path.join(path, target + '.vcxproj')
+    if not os.path.isfile(project_file):
+        return None
+    return project_file
+
+
+def get_visual_studio_version():
+    vsv = os.environ.get('VisualStudioVersion', None)
+    return vsv

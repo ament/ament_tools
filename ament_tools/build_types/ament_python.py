@@ -42,6 +42,21 @@ try:
 except ImportError:
     pass
 
+IS_WINDOWS = os.name == 'nt'
+
+
+def is_appropriate_setup_extension(setup_file):
+    stripped_filename = setup_file
+    if stripped_filename.endswith('.in'):
+        stripped_filename = stripped_filename[:-3]
+    if not IS_WINDOWS and stripped_filename.endswith('.bat'):
+        # On non-Windows system, ignore .bat
+        return False
+    if IS_WINDOWS and not stripped_filename.endswith('.bat'):
+        # On Windows, ignore anything other than .bat
+        return False
+    return True
+
 
 class AmentPythonBuildType(BuildType):
     build_type = 'ament_python'
@@ -53,7 +68,8 @@ class AmentPythonBuildType(BuildType):
 
     def _build_action(self, context):
         # expand environment hook for PYTHONPATH
-        template_path = get_environment_hook_template_path('pythonpath.sh.in')
+        ext = '.sh.in' if not IS_WINDOWS else '.bat.in'
+        template_path = get_environment_hook_template_path('pythonpath' + ext)
         content = configure_file(template_path, {
             'PYTHON_INSTALL_DIR': self._get_python_lib(context),
         })
@@ -70,6 +86,8 @@ class AmentPythonBuildType(BuildType):
 
         # expand package-level setup files
         for name in get_package_level_template_names():
+            if not is_appropriate_setup_extension(name):
+                continue
             assert name.endswith('.in')
             template_path = get_package_level_template_path(name)
             variables = {'CMAKE_INSTALL_PREFIX': context.install_space}
@@ -78,6 +96,14 @@ class AmentPythonBuildType(BuildType):
                     'ament_append_value AMENT_ENVIRONMENT_HOOKS "%s"\n' % \
                     os.path.join(
                         '$AMENT_CURRENT_PREFIX', pythonpath_environment_hook)
+            elif name[:-3].endswith('.bat'):
+                t = 'call:ament_append_value AMENT_ENVIRONMENT_HOOKS[%s] %s\n'
+                variables['ENVIRONMENT_HOOKS'] = t % (
+                    context.package_manifest.name,
+                    os.path.join('%AMENT_CURRENT_PREFIX%',
+                                 pythonpath_environment_hook)
+                )
+                variables['PROJECT_NAME'] = context.package_manifest.name
             content = configure_file(template_path, variables)
             destination_path = os.path.join(
                 context.build_space,
@@ -88,6 +114,8 @@ class AmentPythonBuildType(BuildType):
 
         # expand prefix-level setup files
         for name in get_prefix_level_template_names():
+            if not is_appropriate_setup_extension(name):
+                continue
             if name.endswith('.in'):
                 template_path = get_prefix_level_template_path(name)
                 content = configure_file(template_path, {
@@ -102,7 +130,11 @@ class AmentPythonBuildType(BuildType):
         # Execute nosetests
         # and avoid placing any files in the source space
         coverage_file = os.path.join(context.build_space, '.coverage')
-        additional_lines = ['export COVERAGE_FILE=%s' % coverage_file]
+        additional_lines = []
+        if not IS_WINDOWS:
+            additional_lines.append('export COVERAGE_FILE=%s' % coverage_file)
+        else:
+            additional_lines.append('set "COVERAGE_FILE=%s"' % coverage_file)
         prefix = self._get_command_prefix(
             'test', context, additional_lines=additional_lines)
         xunit_file = os.path.join(context.build_space, 'nosetests.xml')
@@ -199,18 +231,21 @@ class AmentPythonBuildType(BuildType):
             marker_dir = os.path.dirname(marker_file)
             if not os.path.exists(marker_dir):
                 os.makedirs(marker_dir)
-            with open(marker_file, 'w'):
+            with open(marker_file, 'w'):  # "touching" the file
                 pass
 
         # deploy environment hook for PYTHONPATH
+        deploy_file = 'pythonpath' + ('.sh' if not IS_WINDOWS else '.bat')
         self._deploy(
             context, context.build_space,
             os.path.join(
                 'share', context.package_manifest.name, 'environment',
-                'pythonpath.sh'))
+                deploy_file))
         # deploy package-level setup files
         for name in get_package_level_template_names():
             assert name.endswith('.in')
+            if not is_appropriate_setup_extension(name):
+                continue
             self._deploy(
                 context, context.build_space,
                 os.path.join(
@@ -218,6 +253,8 @@ class AmentPythonBuildType(BuildType):
 
         # deploy prefix-level setup files
         for name in get_prefix_level_template_names():
+            if not is_appropriate_setup_extension(name):
+                continue
             if name.endswith('.in'):
                 self._deploy(context, context.build_space, name[:-3])
             else:
@@ -258,6 +295,38 @@ class AmentPythonBuildType(BuildType):
         return os.path.relpath(path, start=context.install_space)
 
     def _get_command_prefix(self, name, context, additional_lines=None):
+        if not IS_WINDOWS:
+            return self._get_command_prefix_unix(name, context,
+                                                 additional_lines)
+        else:
+            return self._get_command_prefix_windows(name, context,
+                                                    additional_lines)
+
+    def _get_command_prefix_windows(self, name, context, additional_lines):
+        lines = []
+        lines.append('@echo off')
+        for path in context.build_dependencies:
+            local_setup = os.path.join(path, 'local_setup.bat')
+            lines.append('if exist "{0}" call "{0}"'.format(local_setup))
+        lines.append(
+            'set "PYTHONPATH={0};%PYTHONPATH%"'
+            .format(os.path.join(context.install_space,
+                                 self._get_python_lib(context))))
+        if additional_lines:
+            lines += additional_lines
+        lines += ['%*']
+        lines += ['if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%']
+
+        generated_file = os.path.join(
+            context.build_space, '%s__%s.bat' %
+            (AmentPythonBuildType.build_type, name))
+        with open(generated_file, 'w') as h:
+            for line in lines:
+                h.write('%s\n' % line)
+
+        return [generated_file]
+
+    def _get_command_prefix_unix(self, name, context, additional_lines):
         lines = []
         lines.append('#!/usr/bin/env sh\n')
         for path in context.build_dependencies:

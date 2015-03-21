@@ -23,16 +23,22 @@ from ament_tools.context import ContextExtender
 
 from ament_tools.helper import extract_argument_group
 
-from ament_tools.build_types.cmake_common import cmakecache_exists_at
-from ament_tools.build_types.cmake_common import has_make_target
-from ament_tools.build_types.cmake_common import makefile_exists_at
 from ament_tools.build_types.cmake_common import CMAKE_EXECUTABLE
+from ament_tools.build_types.cmake_common import cmakecache_exists_at
+from ament_tools.build_types.cmake_common import get_visual_studio_version
+from ament_tools.build_types.cmake_common import has_make_target
 from ament_tools.build_types.cmake_common import MAKE_EXECUTABLE
+from ament_tools.build_types.cmake_common import makefile_exists_at
+from ament_tools.build_types.cmake_common import MSBUILD_EXECUTABLE
+from ament_tools.build_types.cmake_common import project_file_exists_at
+from ament_tools.build_types.cmake_common import solution_file_exists_at
 
 from ament_tools.build_types.common import get_cached_config
 from ament_tools.build_types.common import set_cached_config
 
 from ament_tools.verbs import VerbExecutionError
+
+IS_WINDOWS = os.name == 'nt'
 
 
 class AmentCmakeBuildType(BuildType):
@@ -107,14 +113,38 @@ class AmentCmakeBuildType(BuildType):
                 cmake_args += ["-DAMENT_ENABLE_TESTING=1"]
             if context.symlink_install:
                 cmake_args += ['-DAMENT_CMAKE_SYMLINK_INSTALL=1']
+            if IS_WINDOWS:
+                vsv = get_visual_studio_version()
+                if vsv is None:
+                    print("VisualStudioVersion is not set, please run within "
+                          "a VS2013 or VS2015 Command Prompt.")
+                    raise VerbExecutionError(
+                        "Could not determine Visual Studio Version.")
+                generator = None
+                if vsv == '12.0':
+                    generator = 'Visual Studio 12 2013 Win64'
+                elif vsv == '14.0':
+                    generator = 'Visual Studio 14 2015 Win64'
+                else:
+                    raise VerbExecutionError("Unknown VS version: " + vsv)
+                cmake_args += ['-G', generator]
             if CMAKE_EXECUTABLE is None:
                 raise VerbExecutionError("Could not find 'cmake' executable")
             yield BuildAction(prefix + [CMAKE_EXECUTABLE] + cmake_args)
-        else:
+        elif not IS_WINDOWS:  # Check for reconfigure if available.
             cmd = prefix + [MAKE_EXECUTABLE, 'cmake_check_build_system']
             yield BuildAction(cmd)
         # Now execute the build step
-        yield BuildAction(prefix + [MAKE_EXECUTABLE] + context.make_flags)
+        if not IS_WINDOWS:
+            if MAKE_EXECUTABLE is None:
+                raise VerbExecutionError("Could not find 'make' executable")
+            yield BuildAction(prefix + [MAKE_EXECUTABLE] + context.make_flags)
+        else:
+            if MSBUILD_EXECUTABLE is None:
+                raise VerbExecutionError("Could not find 'msbuild' executable")
+            solution_file = solution_file_exists_at(
+                context.build_space, context.package_manifest.name)
+            yield BuildAction(prefix + [MSBUILD_EXECUTABLE, solution_file])
 
     def on_test(self, context):
         assert context.build_tests
@@ -130,10 +160,48 @@ class AmentCmakeBuildType(BuildType):
         # Figure out if there is a setup file to source
         prefix = self._get_command_prefix('install', context)
 
-        # Assumption: install target exists
-        yield BuildAction(prefix + [MAKE_EXECUTABLE, 'install'])
+        if not IS_WINDOWS:
+            # Assumption: install target exists
+            if MAKE_EXECUTABLE is None:
+                raise VerbExecutionError("Could not find 'make' executable")
+            yield BuildAction(prefix + [MAKE_EXECUTABLE, 'install'])
+        else:
+            if MSBUILD_EXECUTABLE is None:
+                raise VerbExecutionError("Could not find 'msbuild' executable")
+            install_project_file = project_file_exists_at(
+                context.build_space, 'INSTALL')
+            yield BuildAction(prefix +
+                              [MSBUILD_EXECUTABLE, install_project_file])
 
     def _get_command_prefix(self, name, context):
+        if not IS_WINDOWS:
+            return self._get_command_prefix_unix(name, context)
+        else:
+            return self._get_command_prefix_windows(name, context)
+
+    def _get_command_prefix_windows(self, name, context):
+        lines = []
+        lines.append('@echo off\n')
+        lines.append('if defined AMENT_TRACE_SETUP_FILES echo Inside %~0')
+        for path in context.build_dependencies:
+            local_setup = os.path.join(path, 'local_setup.bat')
+            lines.append('if exist "{0}" call "{0}"\n'.format(local_setup))
+        lines.append(
+            'set "CMAKE_PREFIX_PATH=%CMAKE_PREFIX_PATH%;%AMENT_PREFIX_PATH%"')
+        lines.append('%*')
+        lines.append('if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%')
+        lines.append('if defined AMENT_TRACE_SETUP_FILES echo Leaving %~0')
+
+        generated_file = os.path.join(
+            context.build_space, '%s__%s.bat' %
+            (AmentCmakeBuildType.build_type, name))
+        with open(generated_file, 'w') as h:
+            for line in lines:
+                h.write('%s\n' % line)
+
+        return [generated_file]
+
+    def _get_command_prefix_unix(self, name, context):
         lines = []
         lines.append('#!/usr/bin/env sh\n')
         for path in context.build_dependencies:
