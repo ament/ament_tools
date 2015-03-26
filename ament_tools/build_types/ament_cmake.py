@@ -144,7 +144,10 @@ class AmentCmakeBuildType(BuildType):
                 raise VerbExecutionError("Could not find 'msbuild' executable")
             solution_file = solution_file_exists_at(
                 context.build_space, context.package_manifest.name)
-            yield BuildAction(prefix + [MSBUILD_EXECUTABLE, solution_file])
+            if '-j1' in context.make_flags:
+                yield BuildAction(prefix + [MSBUILD_EXECUTABLE, solution_file])
+            else:
+                yield BuildAction(prefix + [MSBUILD_EXECUTABLE, '/m', solution_file])
 
     def on_test(self, context):
         assert context.build_tests
