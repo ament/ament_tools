@@ -194,6 +194,7 @@ class AmentPythonBuildType(BuildType):
                 'build', '--build-base', os.path.join(
                     context.build_space, 'build'),
                 'install', '--prefix', context.install_space,
+                '--install-scripts', os.path.join(context.install_space, 'bin'),
                 '--record', os.path.join(context.build_space, 'install.log'),
             ]
             self._add_install_layout(context, cmd)
@@ -211,6 +212,7 @@ class AmentPythonBuildType(BuildType):
             cmd = [
                 PYTHON_EXECUTABLE, 'setup.py',
                 'develop', '--prefix', context.install_space,
+                '--script-dir', os.path.join(context.install_space, 'bin'),
             ]
             self._add_install_layout(context, cmd)
             yield BuildAction(prefix + cmd, cwd=context.build_space)
