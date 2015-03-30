@@ -45,19 +45,6 @@ except ImportError:
 IS_WINDOWS = os.name == 'nt'
 
 
-def is_appropriate_setup_extension(setup_file):
-    stripped_filename = setup_file
-    if stripped_filename.endswith('.in'):
-        stripped_filename = stripped_filename[:-3]
-    if not IS_WINDOWS and stripped_filename.endswith('.bat'):
-        # On non-Windows system, ignore .bat
-        return False
-    if IS_WINDOWS and not stripped_filename.endswith('.bat'):
-        # On Windows, ignore anything other than .bat
-        return False
-    return True
-
-
 class AmentPythonBuildType(BuildType):
     build_type = 'ament_python'
     description = "ament package built with Python"
@@ -86,8 +73,6 @@ class AmentPythonBuildType(BuildType):
 
         # expand package-level setup files
         for name in get_package_level_template_names():
-            if not is_appropriate_setup_extension(name):
-                continue
             assert name.endswith('.in')
             template_path = get_package_level_template_path(name)
             variables = {'CMAKE_INSTALL_PREFIX': context.install_space}
@@ -114,8 +99,6 @@ class AmentPythonBuildType(BuildType):
 
         # expand prefix-level setup files
         for name in get_prefix_level_template_names():
-            if not is_appropriate_setup_extension(name):
-                continue
             if name.endswith('.in'):
                 template_path = get_prefix_level_template_path(name)
                 content = configure_file(template_path, {
@@ -246,8 +229,6 @@ class AmentPythonBuildType(BuildType):
         # deploy package-level setup files
         for name in get_package_level_template_names():
             assert name.endswith('.in')
-            if not is_appropriate_setup_extension(name):
-                continue
             self._deploy(
                 context, context.build_space,
                 os.path.join(
@@ -255,8 +236,6 @@ class AmentPythonBuildType(BuildType):
 
         # deploy prefix-level setup files
         for name in get_prefix_level_template_names():
-            if not is_appropriate_setup_extension(name):
-                continue
             if name.endswith('.in'):
                 self._deploy(context, context.build_space, name[:-3])
             else:
