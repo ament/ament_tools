@@ -157,8 +157,8 @@ class AmentCmakeBuildType(BuildType):
             if has_make_target(context.build_space, 'test') or context.dry_run:
                 yield BuildAction(prefix + [MAKE_EXECUTABLE, 'test'])
             else:
-                self.warn("Could not run test for ament_cmake package because it "
-                          "has no 'test' target")
+                self.warn("Could not run tests for 'ament_cmake' package because it has no "
+                          "'test' target")
         else:
             if MSBUILD_EXECUTABLE is None:
                 raise VerbExecutionError("Could not find 'msbuild' executable")
@@ -166,8 +166,7 @@ class AmentCmakeBuildType(BuildType):
             if run_tests_project_file is not None or context.dry_run:
                 yield BuildAction(prefix + [MSBUILD_EXECUTABLE, run_tests_project_file])
             else:
-                self.warn("Could not locate RUN_TESTS VS project file, "
-                          "did you build with the --build-tests option?")
+                self.warn("Could not find Visual Studio project file 'RUN_TESTS.vcxproj'")
 
     def on_install(self, context):
         # Figure out if there is a setup file to source
@@ -184,7 +183,8 @@ class AmentCmakeBuildType(BuildType):
             install_project_file = project_file_exists_at(
                 context.build_space, 'INSTALL')
             if install_project_file is None:
-                raise VerbExecutionError("Could not find INSTALL VS project file.")
+                raise VerbExecutionError(
+                    "Could not find Visual Studio project file 'INSTALL.vcxproj'")
             yield BuildAction(prefix + [MSBUILD_EXECUTABLE, install_project_file])
 
     def _get_command_prefix(self, name, context):
