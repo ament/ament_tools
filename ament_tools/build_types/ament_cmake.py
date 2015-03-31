@@ -153,11 +153,21 @@ class AmentCmakeBuildType(BuildType):
         assert context.build_tests
         # Figure out if there is a setup file to source
         prefix = self._get_command_prefix('test', context)
-        if has_make_target(context.build_space, 'test') or context.dry_run:
-            yield BuildAction(prefix + [MAKE_EXECUTABLE, 'test'])
+        if not IS_WINDOWS:
+            if has_make_target(context.build_space, 'test') or context.dry_run:
+                yield BuildAction(prefix + [MAKE_EXECUTABLE, 'test'])
+            else:
+                self.warn("Could not run test for ament_cmake package because it "
+                          "has no 'test' target")
         else:
-            self.warn("Could not run test for ament_cmake package because it "
-                      "has no 'test' target")
+            if MSBUILD_EXECUTABLE is None:
+                raise VerbExecutionError("Could not find 'msbuild' executable")
+            run_tests_project_file = project_file_exists_at(context.build_space, 'RUN_TESTS')
+            if run_tests_project_file is not None or context.dry_run:
+                yield BuildAction(prefix + [MSBUILD_EXECUTABLE, run_tests_project_file])
+            else:
+                self.warn("Could not locate RUN_TESTS VS project file, "
+                          "did you build with the --build-tests option?")
 
     def on_install(self, context):
         # Figure out if there is a setup file to source
@@ -173,8 +183,9 @@ class AmentCmakeBuildType(BuildType):
                 raise VerbExecutionError("Could not find 'msbuild' executable")
             install_project_file = project_file_exists_at(
                 context.build_space, 'INSTALL')
-            yield BuildAction(prefix +
-                              [MSBUILD_EXECUTABLE, install_project_file])
+            if install_project_file is None:
+                raise VerbExecutionError("Could not find INSTALL VS project file.")
+            yield BuildAction(prefix + [MSBUILD_EXECUTABLE, install_project_file])
 
     def _get_command_prefix(self, name, context):
         if not IS_WINDOWS:
