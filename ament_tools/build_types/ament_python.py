@@ -15,6 +15,7 @@
 """Implements the BuildType support for cmake based ament packages."""
 
 from distutils.sysconfig import get_python_lib
+from distutils.version import LooseVersion
 import filecmp
 import os
 import re
@@ -120,7 +121,11 @@ class AmentPythonBuildType(BuildType):
             additional_lines.append('set "COVERAGE_FILE=%s"' % coverage_file)
         prefix = self._get_command_prefix(
             'test', context, additional_lines=additional_lines)
-        xunit_file = os.path.join(context.build_space, 'nosetests.xml')
+        xunit_file = os.path.join(
+            context.build_space, 'test_results',
+            context.package_manifest.name, 'nosetests.xml')
+        if not os.path.exists(os.path.dirname(xunit_file)):
+            os.makedirs(os.path.dirname(xunit_file))
         assert NOSETESTS_EXECUTABLE, 'Could not find nosetests'
         cmd = NOSETESTS_EXECUTABLE + [
             '--nocapture',
@@ -128,6 +133,10 @@ class AmentPythonBuildType(BuildType):
             '--with-coverage', '--cover-erase',
             '--cover-tests', '--cover-branches',
         ]
+        if LooseVersion(nose.__version__) >= LooseVersion('1.3.5'):
+            cmd += [
+                '--xunit-testsuite-name=%s.nosetests' %
+                context.package_manifest.name]
         # coverage for all root-packages
         packages = setuptools.find_packages(
             context.source_space, exclude=['*.*'])
