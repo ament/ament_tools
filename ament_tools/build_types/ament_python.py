@@ -116,7 +116,7 @@ class AmentPythonBuildType(BuildType):
         coverage_file = os.path.join(context.build_space, '.coverage')
         additional_lines = []
         if not IS_WINDOWS:
-            additional_lines.append('export COVERAGE_FILE=%s' % coverage_file)
+            additional_lines.append('export COVERAGE_FILE="%s"' % coverage_file)
         else:
             additional_lines.append('set "COVERAGE_FILE=%s"' % coverage_file)
         prefix = self._get_command_prefix(
@@ -325,7 +325,7 @@ class AmentPythonBuildType(BuildType):
             lines.append('  . "%s"' % local_setup)
             lines.append('fi')
         lines.append(
-            'export PYTHONPATH=%s:$PYTHONPATH' %
+            'export PYTHONPATH="%s:$PYTHONPATH"' %
             os.path.join(context.install_space, self._get_python_lib(context)))
         if additional_lines:
             lines += additional_lines
