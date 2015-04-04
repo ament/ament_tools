@@ -224,7 +224,7 @@ class AmentCmakeBuildType(BuildType):
             lines.append('  . "%s"' % local_setup)
             lines.append('fi')
         lines.append(
-            'export CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH:$AMENT_PREFIX_PATH')
+            'export CMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH:$AMENT_PREFIX_PATH"')
 
         generated_file = os.path.join(
             context.build_space, '%s__%s.sh' %
