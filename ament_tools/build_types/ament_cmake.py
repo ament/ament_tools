@@ -155,7 +155,10 @@ class AmentCmakeBuildType(BuildType):
         prefix = self._get_command_prefix('test', context)
         if not IS_WINDOWS:
             if has_make_target(context.build_space, 'test') or context.dry_run:
-                yield BuildAction(prefix + [MAKE_EXECUTABLE, 'test'])
+                cmd = prefix + [MAKE_EXECUTABLE, 'test']
+                if 'ARGS' not in os.environ:
+                    cmd.append('ARGS="-V"')
+                yield BuildAction(cmd)
             else:
                 self.warn("Could not run tests for 'ament_cmake' package because it has no "
                           "'test' target")
