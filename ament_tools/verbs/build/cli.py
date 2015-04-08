@@ -100,6 +100,15 @@ def prepare_arguments(parser, args):
         '--start-with',
         help='Start with a particular package',
     )
+    parser.add_argument(
+        '--end-with',
+        help='End with a particular package',
+    )
+    parser.add_argument(
+        '--only-package',
+        '--only',
+        help='Only process a particular package, implies --start-with <pkg> and --end-with <pkg>'
+    )
 
     # Allow all available build_type's to provide additional arguments
     for build_type in yield_supported_build_types():
@@ -145,15 +154,48 @@ def print_topological_order(opts, packages):
         sys.exit("Package '{0}' specified with --start-with was not found."
                  .format(opts.start_with))
 
+    if opts.end_with and opts.end_with not in package_names:
+        sys.exit("Package '{0}' specified with --end-with was not found."
+                 .format(opts.end_with))
+
+    if opts.only_package:
+        if opts.start_with or opts.end_with:
+            # The argprase mutually exclusive mechanism is broken for subparsers
+            # See: http://bugs.python.org/issue10680
+            # So we'll check it manually here
+            sys.exit("The --start-with and --end-with options cannot be used with "
+                     "the --only-package option.")
+        if opts.only_package not in package_names:
+            sys.exit("Package '{0}' specified with --only-package was not found."
+                     .format(opts.only_package))
+        opts.start_with = opts.only_package
+        opts.end_with = opts.only_package
+
+    if opts.start_with and opts.end_with and not opts.only_package:
+        # Make sure that the --end-with doesn't come before the --start-with package.
+        test_start_with_found = False
+        for (path, package, _) in packages:
+            if package.name == opts.start_with:
+                test_start_with_found = True
+            if package.name == opts.end_with:
+                if not test_start_with_found:
+                    sys.exit("The --end-with package '{0}' occurs topologically "
+                             "before the --start-with package '{1}'"
+                             .format(opts.start_with, opts.end_with))
+                break
+
     print('# Topological order')
     start_with_found = not opts.start_with
+    end_with_found = not opts.end_with
     for (path, package, _) in packages:
         if package.name == opts.start_with:
             start_with_found = True
-        if not start_with_found:
+        if not start_with_found or end_with_found:
             print(' - (%s)' % package.name)
         else:
             print(' - %s' % package.name)
+        if package.name == opts.end_with:
+            end_with_found = True
 
 
 def iterate_packages(opts, packages, per_package_callback):
@@ -190,6 +232,9 @@ def iterate_packages(opts, packages, per_package_callback):
         rc = per_package_callback(opts)
         if rc:
             return rc
+        if package.name == opts.end_with:
+            print("Stopped after package '{0}'".format(package.name))
+            break
 
     # expand prefix-level setup files for the root of the install-space
     if opts.isolated:
