@@ -263,9 +263,16 @@ def handle_build_action(build_action_ret, context):
 
 
 def main(opts):
-    update_options(opts)
-    context = create_context(opts)
+    context = get_context(opts)
+    return run(opts, context)
 
+
+def get_context(opts):
+    update_options(opts)
+    return create_context(opts)
+
+
+def run(opts, context):
     # Load up build type plugin class
     build_type = get_build_type(opts.path)
     build_type_impl = get_class_for_build_type(build_type)()

@@ -151,9 +151,9 @@ def print_topological_order(opts, packages):
         if package.name == opts.start_with:
             start_with_found = True
         if not start_with_found:
-            print(' skip %s' % package.name)
+            print(' - (%s)' % package.name)
         else:
-            print(' -    %s' % package.name)
+            print(' - %s' % package.name)
 
 
 def iterate_packages(opts, packages, per_package_callback):

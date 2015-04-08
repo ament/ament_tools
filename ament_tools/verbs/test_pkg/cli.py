@@ -18,19 +18,18 @@ import sys
 
 from ament_tools.build_type_discovery import get_class_for_build_type
 
-from ament_tools.verbs.build_pkg.cli import create_context
 from ament_tools.verbs.build_pkg.cli import get_build_type
 from ament_tools.verbs.build_pkg.cli import handle_build_action
-from ament_tools.verbs.build_pkg.cli import main as build_pkg_main
+from ament_tools.verbs.build_pkg.cli import get_context as build_pkg_get_context
+from ament_tools.verbs.build_pkg.cli import run as build_pkg_run
 
 
 def main(opts):
     opts.build_tests = True
-    rc = build_pkg_main(opts)
+    context = build_pkg_get_context(opts)
+    rc = build_pkg_run(opts, context)
     if rc:
         return rc
-
-    context = create_context(opts)
 
     # Load up build type plugin class
     build_type = get_build_type(opts.path)
