@@ -190,7 +190,7 @@ def print_topological_order(opts, packages):
     for (path, package, _) in packages:
         if package.name == opts.start_with:
             start_with_found = True
-        if not start_with_found or end_with_found:
+        if not start_with_found or (opts.end_with and end_with_found):
             print(' - (%s)' % package.name)
         else:
             print(' - %s' % package.name)
