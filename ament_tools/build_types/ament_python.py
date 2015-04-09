@@ -378,6 +378,9 @@ class AmentPythonBuildType(BuildType):
             if os.path.exists(dst):
                 if not os.path.islink(dst) or \
                         not os.path.samefile(src, dst):
-                    os.remove(dst)
+                    if os.path.isfile(dst):
+                        os.remove(dst)
+                    elif os.path.isdir(dst):
+                        shutil.rmtree(dst)
             if not os.path.exists(dst):
                 os.symlink(src, dst)
