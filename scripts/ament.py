@@ -35,6 +35,7 @@ if os.path.exists(ament_package_root):
     sys.path.insert(1, os.path.abspath(ament_package_root))
 try:
     import ament_package
+    ament_package  # silence pyflakes
 except ImportError as e:
     raise ImportError(("%s\nTry cloning 'ament_package' into a sibling " +
                        "folder of 'ament_tools'") % e)
@@ -46,12 +47,13 @@ if os.path.exists(osrf_pycommon_root):
     sys.path.insert(1, os.path.abspath(osrf_pycommon_root))
 try:
     import osrf_pycommon
+    osrf_pycommon  # silence pyflakes
 except ImportError as e:
     raise ImportError(("%s\nTry cloning 'osrf_pycommon' into a sibling " +
                        "folder of 'ament_tools'") % e)
 
 # override verb discovery relying on pkg_resources entry points
-from osrf_pycommon.cli_utils import verb_pattern
+from osrf_pycommon.cli_utils import verb_pattern  # noqa
 
 
 def list_verbs(group):
@@ -113,13 +115,13 @@ def get_class_for_build_type(build_type):
     return loader.load()
 
 
-from ament_tools import build_type_discovery
+from ament_tools import build_type_discovery  # noqa
 
 build_type_discovery.yield_supported_build_types = yield_supported_build_types
 build_type_discovery.get_class_for_build_type = get_class_for_build_type
 
 
-from ament_tools.commands.ament import main
+from ament_tools.commands.ament import main  # noqa
 
 if __name__ == '__main__':
     sys.exit(main() or 0)
