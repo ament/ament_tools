@@ -160,11 +160,19 @@ def add_arguments(parser):
         help='Flags to be passed to make by build types which invoke make'
     )
     parser.add_argument(
+        '--skip-build',
+        action='store_true',
+        default=False,
+        help='Skip the build step (this can be used when installing or '
+             'testing and you know that the build has successfully run)',
+    )
+    parser.add_argument(
         '--skip-install',
         action='store_true',
         default=False,
         help='Skip the install step (only makes sense when install has been '
-             'done before using symlinks and no new files have been added)',
+             'done before using symlinks and no new files have been added or '
+             'when testing after a successful install)',
     )
     parser.add_argument(
         '--symlink-install',
@@ -279,10 +287,11 @@ def run(opts, context):
 
     pkg_name = context.package_manifest.name
 
-    # Run the build command
-    print("+++ Building '{0}'".format(pkg_name))
-    on_build_ret = build_type_impl.on_build(context)
-    handle_build_action(on_build_ret, context)
+    if not opts.skip_build:
+        # Run the build command
+        print("+++ Building '{0}'".format(pkg_name))
+        on_build_ret = build_type_impl.on_build(context)
+        handle_build_action(on_build_ret, context)
 
     if not opts.skip_install:
         # Run the install command
