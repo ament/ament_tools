@@ -42,6 +42,7 @@ and provides tooling to build these federated packages together.""",
         'ament.build_types': [
             'ament_cmake = ament_tools.build_types.ament_cmake:AmentCmakeBuildType',
             'ament_python = ament_tools.build_types.ament_python:AmentPythonBuildType',
+            'cmake = ament_tools.build_types.cmake:CmakeBuildType',
         ],
     }
 )

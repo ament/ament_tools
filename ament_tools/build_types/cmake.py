@@ -41,78 +41,83 @@ from ament_tools.verbs import VerbExecutionError
 IS_WINDOWS = os.name == 'nt'
 
 
-class AmentCmakeBuildType(BuildType):
-    build_type = 'ament_cmake'
-    description = "ament package built with cmake"
+class CmakeBuildType(BuildType):
+    build_type = 'cmake'
+    description = "plain cmake project"
 
     def prepare_arguments(self, parser):
         parser.add_argument(
-            '--force-ament-cmake-configure',
+            '--force-cmake-configure',
             action='store_true',
             help="Invoke 'cmake' even if it has been executed before.")
         parser.add_argument(
-            '--ament-cmake-args',
+            '--cmake-args',
             nargs='*',
             default=[],
-            help='Arbitrary arguments which are passed to CMake. '
-                 'It must be passed after other arguments since it collects '
-                 'all following options.')
+            help="Arbitrary arguments which are passed to all CMake projects. "
+                 "Argument collection can be terminated with '--'.")
 
     def argument_preprocessor(self, args):
-        # The ament CMake pass-through flag collects dashed options.
+        # The CMake pass-through flag collects dashed options.
         # This requires special handling or argparse will complain about
         # unrecognized options.
-        args, cmake_args = extract_argument_group(args, '--ament-cmake-args')
+        args, cmake_args = extract_argument_group(args, '--cmake-args')
         extras = {
-            'ament_cmake_args': cmake_args,
+            'cmake_args': cmake_args,
         }
         return args, extras
 
     def extend_context(self, options):
         ce = ContextExtender()
-        force_ament_cmake_configure = options.force_ament_cmake_configure
-        if hasattr(options, 'force_configure') and options.force_configure:
-            force_ament_cmake_configure = True
-        ce.add('force_ament_cmake_configure', force_ament_cmake_configure)
-        ce.add('ament_cmake_args', options.ament_cmake_args)
+        force_cmake_configure = options.force_cmake_configure
+        if getattr(options, 'force_configure', False):
+            force_cmake_configure = True
+        ce.add('force_cmake_configure', force_cmake_configure)
+        ce.add('cmake_args', options.cmake_args)
         return ce
 
     def on_build(self, context):
         # Regardless of dry-run, try to determine if CMake should be invoked
         should_run_configure = False
-        if context.force_ament_cmake_configure:
+        if context.force_cmake_configure:
             should_run_configure = True
         elif not makefile_exists_at(context.build_space) or \
                 not cmakecache_exists_at(context.build_space):
             # If either the Makefile or the CMake cache does not exist
             # we must configure
             should_run_configure = True
-        cached_ament_cmake_config = get_cached_config(context.build_space,
-                                                      'ament_cmake_args')
-        ament_cmake_config = {
-            'ament_cmake_args': context.ament_cmake_args,
+        cached_cmake_config = get_cached_config(
+            context.build_space, 'cmake_args')
+        cmake_config = {
+            'cmake_args': context.cmake_args,
             'build_tests': context.build_tests,
             'symlink_install': context.symlink_install,
         }
-        if ament_cmake_config != cached_ament_cmake_config:
+        if cmake_config != cached_cmake_config:
             should_run_configure = True
-            self.warn(
-                "Running cmake because arguments have changed.")
-        # Store the ament_cmake_args for next invocation
-        set_cached_config(context.build_space, 'ament_cmake_args',
-                          ament_cmake_config)
+            self.warn("Running cmake because arguments have changed.")
+        # Store the cmake_args for next invocation
+        set_cached_config(context.build_space, 'cmake_args',
+                          cmake_config)
         # Figure out if there is a setup file to source
         prefix = self._get_command_prefix('build', context)
+        # Calculate any extra cmake args which are not common between cmake build types
+        extra_cmake_args = []
+        if should_run_configure:
+            extra_cmake_args += context.cmake_args
+        # Yield the cmake common on_build
+        for step in self._common_cmake_on_build(
+            should_run_configure, context, prefix, extra_cmake_args
+        ):
+            yield step
+
+    def _common_cmake_on_build(self, should_run_configure, context, prefix, extra_cmake_args):
         # Execute the configure step
         # (either cmake or the cmake_check_build_system make target)
         if should_run_configure:
             cmake_args = [context.source_space]
-            cmake_args += context.ament_cmake_args
+            cmake_args.extend(extra_cmake_args)
             cmake_args += ["-DCMAKE_INSTALL_PREFIX=" + context.install_space]
-            if context.build_tests:
-                cmake_args += ["-DAMENT_ENABLE_TESTING=1"]
-            if context.symlink_install:
-                cmake_args += ['-DAMENT_CMAKE_SYMLINK_INSTALL=1']
             if IS_WINDOWS:
                 vsv = get_visual_studio_version()
                 if vsv is None:
@@ -150,6 +155,10 @@ class AmentCmakeBuildType(BuildType):
                 yield BuildAction(prefix + [MSBUILD_EXECUTABLE, '/m', solution_file])
 
     def on_test(self, context):
+        for step in self._common_cmake_on_test(context, 'cmake'):
+            yield step
+
+    def _common_cmake_on_test(self, context, build_type):
         assert context.build_tests
         # Figure out if there is a setup file to source
         prefix = self._get_command_prefix('test', context)
@@ -160,8 +169,8 @@ class AmentCmakeBuildType(BuildType):
                     cmd.append('ARGS="-V"')
                 yield BuildAction(cmd)
             else:
-                self.warn("Could not run tests for 'ament_cmake' package because it has no "
-                          "'test' target")
+                self.warn("Could not run tests for '{0}' package because it has no "
+                          "'test' target".format(build_type))
         else:
             if MSBUILD_EXECUTABLE is None:
                 raise VerbExecutionError("Could not find 'msbuild' executable")
@@ -172,6 +181,11 @@ class AmentCmakeBuildType(BuildType):
                 self.warn("Could not find Visual Studio project file 'RUN_TESTS.vcxproj'")
 
     def on_install(self, context):
+        # Call cmake common on_install (defined in CmakeBuildType)
+        for step in self._common_cmake_on_install(context):
+            yield step
+
+    def _common_cmake_on_install(self, context):
         # Figure out if there is a setup file to source
         prefix = self._get_command_prefix('install', context)
 
@@ -211,7 +225,7 @@ class AmentCmakeBuildType(BuildType):
 
         generated_file = os.path.join(
             context.build_space, '%s__%s.bat' %
-            (AmentCmakeBuildType.build_type, name))
+            (CmakeBuildType.build_type, name))
         with open(generated_file, 'w') as h:
             for line in lines:
                 h.write('%s\n' % line)
@@ -231,7 +245,7 @@ class AmentCmakeBuildType(BuildType):
 
         generated_file = os.path.join(
             context.build_space, '%s__%s.sh' %
-            (AmentCmakeBuildType.build_type, name))
+            (CmakeBuildType.build_type, name))
         with open(generated_file, 'w') as h:
             for line in lines:
                 h.write('%s\n' % line)
