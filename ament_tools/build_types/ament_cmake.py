@@ -16,8 +16,6 @@
 
 import os
 
-from ament_tools.context import ContextExtender
-
 from ament_tools.helper import extract_argument_group
 
 from ament_tools.build_types.cmake_common import cmakecache_exists_at
@@ -58,7 +56,7 @@ class AmentCmakeBuildType(CmakeBuildType):
         return args, extras
 
     def extend_context(self, options):
-        ce = ContextExtender()
+        ce = super(AmentCmakeBuildType, self).extend_context(options)
         force_ament_cmake_configure = options.force_ament_cmake_configure
         if getattr(options, 'force_configure', False):
             force_ament_cmake_configure = True
