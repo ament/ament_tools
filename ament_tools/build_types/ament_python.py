@@ -107,7 +107,7 @@ class AmentPythonBuildType(BuildType):
                         os.path.join('$AMENT_CURRENT_PREFIX', pythonpath_environment_hook),
                     ])
             elif name[:-3].endswith('.bat'):
-                t = 'call:ament_append_value AMENT_ENVIRONMENT_HOOKS[%s] %s\n'
+                t = 'call:ament_append_value AMENT_ENVIRONMENT_HOOKS[%s] "%s"\n'
                 variables['ENVIRONMENT_HOOKS'] = t % (
                     context.package_manifest.name,
                     ';'.join([
