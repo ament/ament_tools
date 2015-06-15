@@ -55,6 +55,28 @@ class AmentPythonBuildType(BuildType):
         yield BuildAction(self._build_action, type='function')
 
     def _build_action(self, context):
+        # copy/symlink environment hook for PATH
+        ext = '.sh' if not IS_WINDOWS else '.bat'
+        template_path = get_environment_hook_template_path('path' + ext)
+        path_environment_hook = os.path.join(
+            'share', context.package_manifest.name, 'environment',
+            os.path.basename(template_path))
+        destination_path = os.path.join(
+            context.build_space, path_environment_hook)
+        destination_dir = os.path.dirname(destination_path)
+        if not os.path.exists(destination_dir):
+            os.makedirs(destination_dir)
+        if os.path.exists(destination_path):
+            if not context.symlink_install or \
+                    not os.path.islink(destination_path) or \
+                    not os.path.samefile(template_path, destination_path):
+                os.remove(destination_path)
+        if not os.path.exists(destination_path):
+            if not context.symlink_install:
+                shutil.copy(template_path, destination_path)
+            else:
+                os.symlink(template_path, destination_path)
+
         # expand environment hook for PYTHONPATH
         ext = '.sh.in' if not IS_WINDOWS else '.bat.in'
         template_path = get_environment_hook_template_path('pythonpath' + ext)
@@ -80,14 +102,18 @@ class AmentPythonBuildType(BuildType):
             if name[:-3].endswith('.sh'):
                 variables['ENVIRONMENT_HOOKS'] = \
                     'ament_append_value AMENT_ENVIRONMENT_HOOKS "%s"\n' % \
-                    os.path.join(
-                        '$AMENT_CURRENT_PREFIX', pythonpath_environment_hook)
+                    ':'.join([
+                        os.path.join('$AMENT_CURRENT_PREFIX', path_environment_hook),
+                        os.path.join('$AMENT_CURRENT_PREFIX', pythonpath_environment_hook),
+                    ])
             elif name[:-3].endswith('.bat'):
                 t = 'call:ament_append_value AMENT_ENVIRONMENT_HOOKS[%s] %s\n'
                 variables['ENVIRONMENT_HOOKS'] = t % (
                     context.package_manifest.name,
-                    os.path.join('%AMENT_CURRENT_PREFIX%',
-                                 pythonpath_environment_hook)
+                    ';'.join([
+                        os.path.join('%AMENT_CURRENT_PREFIX%', path_environment_hook),
+                        os.path.join('%AMENT_CURRENT_PREFIX%', pythonpath_environment_hook),
+                    ])
                 )
                 variables['PROJECT_NAME'] = context.package_manifest.name
             content = configure_file(template_path, variables)
@@ -228,13 +254,14 @@ class AmentPythonBuildType(BuildType):
             with open(marker_file, 'w'):  # "touching" the file
                 pass
 
-        # deploy environment hook for PYTHONPATH
-        deploy_file = 'pythonpath' + ('.sh' if not IS_WINDOWS else '.bat')
-        self._deploy(
-            context, context.build_space,
-            os.path.join(
-                'share', context.package_manifest.name, 'environment',
-                deploy_file))
+        # deploy environment hooks
+        for env_hook_name in ['path', 'pythonpath']:
+            deploy_file = env_hook_name + ('.sh' if not IS_WINDOWS else '.bat')
+            self._deploy(
+                context, context.build_space,
+                os.path.join(
+                    'share', context.package_manifest.name, 'environment',
+                    deploy_file))
         # deploy package-level setup files
         for name in get_package_level_template_names():
             assert name.endswith('.in')
