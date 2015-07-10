@@ -190,7 +190,7 @@ def _reduce_cycle_set(packages_orig):
         be detected as not being part of a cycle.
     :rtype: list
     """
-    assert(packages_orig)
+    assert packages_orig, 'The packages must be a non-empty dict'
     packages = copy.copy(packages_orig)
     last_depended = None
     while len(packages) > 0:
