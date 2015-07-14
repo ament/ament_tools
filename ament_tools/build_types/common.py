@@ -32,4 +32,4 @@ def set_cached_config(build_space, name, value):
         os.makedirs(build_space)
     path = os.path.join(build_space, '{name}.cache'.format(name=name))
     with open(path, 'w') as f:
-        f.write(json.dumps(value))
+        f.write(json.dumps(value, sort_keys=True))
