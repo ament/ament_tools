@@ -204,6 +204,31 @@ class CmakeBuildType(BuildType):
                     "Could not find Visual Studio project file 'INSTALL.vcxproj'")
             yield BuildAction(prefix + [MSBUILD_EXECUTABLE, install_project_file])
 
+    def on_uninstall(self, context):
+        # Call cmake common on_uninstall (defined in CmakeBuildType)
+        for step in self._common_cmake_on_uninstall(context, 'cmake'):
+            yield step
+
+    def _common_cmake_on_uninstall(self, context, build_type):
+        # Figure out if there is a setup file to source
+        prefix = self._get_command_prefix('uninstall', context)
+
+        if not IS_WINDOWS:
+            if has_make_target(context.build_space, 'uninstall'):
+                cmd = prefix + [MAKE_EXECUTABLE, 'uninstall']
+                yield BuildAction(cmd)
+            else:
+                self.warn("Could not run uninstall for '{0}' package because it has no "
+                          "'uninstall' target".format(build_type))
+        else:
+            if MSBUILD_EXECUTABLE is None:
+                raise VerbExecutionError("Could not find 'msbuild' executable")
+            uninstall_project_file = project_file_exists_at(context.build_space, 'UNINSTALL')
+            if uninstall_project_file is not None:
+                yield BuildAction(prefix + [MSBUILD_EXECUTABLE, uninstall_project_file])
+            else:
+                self.warn("Could not find Visual Studio project file 'UNINSTALL.vcxproj'")
+
     def _get_command_prefix(self, name, context):
         if not IS_WINDOWS:
             return self._get_command_prefix_unix(name, context)

@@ -114,3 +114,8 @@ class AmentCmakeBuildType(CmakeBuildType):
         # Call cmake common on_install (defined in CmakeBuildType)
         for step in self._common_cmake_on_install(context):
             yield step
+
+    def on_uninstall(self, context):
+        # Call cmake common on_uninstall (defined in CmakeBuildType)
+        for step in self._common_cmake_on_uninstall(context, 'ament_cmake'):
+            yield step

@@ -20,8 +20,8 @@ from .context import ContextExtender
 class BuildAction(object):
     """Represents an action to do at build time, either a command or a functor.
 
-    These objects are yielded from the ``on_build`` and ``on_install`` methods
-    in the BuildType class for a particular ``build_type``.
+    These objects are yielded from the ``on_*`` methodsin the BuildType class
+    for a particular ``build_type``.
 
     The constructor for this class takes a cmd, a type, optionally a title,
     and optionally a dry run cmd.
@@ -95,8 +95,8 @@ class BuildType(object):
     ``build_type``'s, but it cannot be used as is and requires subclassing.
 
     When subclassing this class, the only functions which raise a
-    :py:exc:`NotImplementedError` by default are :py:meth:`on_build` and
-    :py:func:`on_install`.
+    :py:exc:`NotImplementedError` by default are :py:meth:`on_build`,
+    :py:func:`on_test`, :py:func:`on_install` and :py:func:`on_uninstall`.
     Therefore those functions need to be overridden.
     """
 
@@ -158,8 +158,8 @@ class BuildType(object):
 
         Override this function to be able to convert resulting options from
         argparse into a ContextExtender object which will be used to extend
-        the build Context object given to the ``on_build`` and ``on_install``
-        methods.
+        the build Context object given to the ``on_build``, ``on_test`` and
+        ``on_install`` methods.
 
         :param opts: options from argparse, already extended with extra options
             from the ``argument_preprocessor``.
@@ -172,7 +172,13 @@ class BuildType(object):
     def on_build(self, context):
         raise NotImplementedError
 
+    def on_test(self, context):
+        raise NotImplementedError
+
     def on_install(self, context):
+        raise NotImplementedError
+
+    def on_uninstall(self, context):
         raise NotImplementedError
 
     def info(self, *args):

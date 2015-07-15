@@ -188,21 +188,8 @@ class AmentPythonBuildType(BuildType):
         prefix = self._get_command_prefix('install', context)
 
         if not context.symlink_install:
-            # Undo previous develop if .egg-info is found and develop symlinks
-            egg_info = os.path.join(context.build_space, '%s.egg-info' %
-                                    context.package_manifest.name)
-            setup_py_build_space = os.path.join(
-                context.build_space, 'setup.py')
-            if os.path.exists(egg_info) and \
-                    os.path.exists(setup_py_build_space) and \
-                    os.path.islink(setup_py_build_space):
-                cmd = [
-                    PYTHON_EXECUTABLE, 'setup.py',
-                    'develop', '--prefix', context.install_space,
-                    '--uninstall',
-                ]
-                self._add_install_layout(context, cmd)
-                yield BuildAction(prefix + cmd, cwd=context.build_space)
+            for action in self._undo_develop(context, prefix) or []:
+                yield action
 
             # Execute the setup.py install step with lots of arguments
             # to avoid placing any files in the source space
@@ -231,6 +218,23 @@ class AmentPythonBuildType(BuildType):
                 PYTHON_EXECUTABLE, 'setup.py',
                 'develop', '--prefix', context.install_space,
                 '--script-dir', os.path.join(context.install_space, 'bin'),
+            ]
+            self._add_install_layout(context, cmd)
+            yield BuildAction(prefix + cmd, cwd=context.build_space)
+
+    def _undo_develop(self, context, prefix):
+        # Undo previous develop if .egg-info is found and develop symlinks
+        egg_info = os.path.join(context.build_space, '%s.egg-info' %
+                                context.package_manifest.name)
+        setup_py_build_space = os.path.join(
+            context.build_space, 'setup.py')
+        if os.path.exists(egg_info) and \
+                os.path.exists(setup_py_build_space) and \
+                os.path.islink(setup_py_build_space):
+            cmd = [
+                PYTHON_EXECUTABLE, 'setup.py',
+                'develop', '--prefix', context.install_space,
+                '--uninstall',
             ]
             self._add_install_layout(context, cmd)
             yield BuildAction(prefix + cmd, cwd=context.build_space)
@@ -367,6 +371,26 @@ class AmentPythonBuildType(BuildType):
         return ['.', generated_file, '&&']
 
     def _install_action_python(self, context):
+        self._undo_install(context)
+
+        # Symlink setup.py and all root-packages into build space
+        packages = setuptools.find_packages(
+            context.source_space, exclude=['*.*'])
+        packages.append('setup.py')
+        for package in packages:
+            src = os.path.join(context.source_space, package)
+            dst = os.path.join(context.build_space, package)
+            if os.path.exists(dst):
+                if not os.path.islink(dst) or \
+                        not os.path.samefile(src, dst):
+                    if os.path.isfile(dst):
+                        os.remove(dst)
+                    elif os.path.isdir(dst):
+                        shutil.rmtree(dst)
+            if not os.path.exists(dst):
+                os.symlink(src, dst)
+
+    def _undo_install(self, context):
         # Undo previous install if install.log is found
         install_log = os.path.join(context.build_space, 'install.log')
         if os.path.exists(install_log):
@@ -395,19 +419,57 @@ class AmentPythonBuildType(BuildType):
                     with open(easy_install, 'w') as h:
                         h.write(content)
 
-        # Symlink setup.py and all root-packages into build space
-        packages = setuptools.find_packages(
-            context.source_space, exclude=['*.*'])
-        packages.append('setup.py')
-        for package in packages:
-            src = os.path.join(context.source_space, package)
-            dst = os.path.join(context.build_space, package)
-            if os.path.exists(dst):
-                if not os.path.islink(dst) or \
-                        not os.path.samefile(src, dst):
-                    if os.path.isfile(dst):
-                        os.remove(dst)
-                    elif os.path.isdir(dst):
-                        shutil.rmtree(dst)
-            if not os.path.exists(dst):
-                os.symlink(src, dst)
+    def on_uninstall(self, context):
+        yield BuildAction(self._uninstall_action_files, type='function')
+
+        # Figure out if there is a setup file to source
+        prefix = self._get_command_prefix('uninstall', context)
+
+        for action in self._undo_develop(context, prefix) or []:
+            yield action
+        self._undo_install(context)
+
+    def _uninstall_action_files(self, context):
+        files = [
+            # package manifest
+            os.path.join('share', context.package_manifest.name, 'package.xml'),
+            # marker file
+            os.path.join(
+                'share', 'ament_index', 'resource_index', 'packages',
+                context.package_manifest.name),
+        ]
+        # environment hooks
+        for env_hook_name in ['path', 'pythonpath']:
+            deploy_file = env_hook_name + ('.sh' if not IS_WINDOWS else '.bat')
+            files.append(
+                os.path.join('share', context.package_manifest.name, 'environment', deploy_file))
+        # package-level setup files
+        for name in get_package_level_template_names():
+            assert name.endswith('.in')
+            files.append(os.path.join('share', context.package_manifest.name, name[:-3]))
+        # prefix-level setup files
+        for name in get_prefix_level_template_names():
+            if name.endswith('.in'):
+                files.append(name[:-3])
+            else:
+                template_path = get_prefix_level_template_path(name)
+                files.append(os.path.basename(template_path))
+
+        # remove all files
+        for rel_path in files:
+            abs_path = os.path.join(context.install_space, rel_path)
+            if os.path.exists(abs_path):
+                os.remove(abs_path)
+                self._remove_empty_directories(context, os.path.dirname(abs_path))
+
+    def _remove_empty_directories(self, context, path):
+        assert path.startswith(context.install_space), \
+            "The path '%s' must be within the install space '%s'" % (path, context.install_space)
+        if path == context.install_space:
+            return
+        try:
+            os.rmdir(path)
+            self._remove_empty_directories(context, os.path.dirname(path))
+        except OSError:
+            # directory is likely not empty
+            pass
