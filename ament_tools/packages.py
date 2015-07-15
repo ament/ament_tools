@@ -90,10 +90,10 @@ def find_unique_packages(basepath, exclude_paths=None):
                        for name, paths in package_paths_by_name.items()
                        if len(paths) > 1])
     if duplicates:
-        line_template = 'Multiple packages found with the same name "%s":%s'
+        line_template = 'Multiple packages found with the same name "%s":\n%s'
 
         def paths_to_str(name):
-            return ['\n- %s' % p for p in sorted(duplicates[name])]
+            return '\n'.join(['- %s' % p for p in sorted(duplicates[name])])
         lines = [line_template % (name, paths_to_str(name))
                  for name in sorted(duplicates.keys())]
         raise RuntimeError('\n'.join(lines))
