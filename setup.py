@@ -38,6 +38,8 @@ and provides tooling to build these federated packages together.""",
             'test = ament_tools.verbs.test:entry_point_data',
             'test_pkg = ament_tools.verbs.test_pkg:entry_point_data',
             'test_results = ament_tools.verbs.test_results:entry_point_data',
+            'uninstall = ament_tools.verbs.uninstall:entry_point_data',
+            'uninstall_pkg = ament_tools.verbs.uninstall_pkg:entry_point_data',
         ],
         'ament.build_types': [
             'ament_cmake = ament_tools.build_types.ament_cmake:AmentCmakeBuildType',

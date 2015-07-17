@@ -66,7 +66,9 @@ def list_verbs(group):
         'package_version',
         'test',
         'test_pkg',
-        'test_results'
+        'test_results',
+        'uninstall',
+        'uninstall_pkg',
     ]
     return verbs
 
