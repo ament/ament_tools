@@ -16,22 +16,19 @@
 
 from distutils.sysconfig import get_python_lib
 from distutils.version import LooseVersion
-import filecmp
 import os
 import re
 import setuptools
 import shutil
-import stat
 import sys
 
 from ament_package.templates import configure_file
 from ament_package.templates import get_environment_hook_template_path
 from ament_package.templates import get_package_level_template_names
 from ament_package.templates import get_package_level_template_path
-from ament_package.templates import get_prefix_level_template_names
-from ament_package.templates import get_prefix_level_template_path
 from ament_tools.build_type import BuildAction
 from ament_tools.build_type import BuildType
+from ament_tools.helper import deploy_file
 
 PYTHON_EXECUTABLE = sys.executable
 NOSETESTS_EXECUTABLE = None
@@ -123,18 +120,6 @@ class AmentPythonBuildType(BuildType):
                 name[:-3])
             with open(destination_path, 'w') as h:
                 h.write(content)
-
-        # expand prefix-level setup files
-        for name in get_prefix_level_template_names():
-            if name.endswith('.in'):
-                template_path = get_prefix_level_template_path(name)
-                content = configure_file(template_path, {
-                    'CMAKE_INSTALL_PREFIX': context.install_space,
-                })
-                destination_path = os.path.join(
-                    context.build_space, name[:-3])
-                with open(destination_path, 'w') as h:
-                    h.write(content)
 
     def on_test(self, context):
         # Execute nosetests
@@ -241,10 +226,9 @@ class AmentPythonBuildType(BuildType):
 
     def _install_action_files(self, context):
         # deploy package manifest
-        self._deploy(
+        deploy_file(
             context, context.source_space, 'package.xml',
-            dst_subfolder=os.path.join('share', context.package_manifest.name),
-            executable=False)
+            dst_subfolder=os.path.join('share', context.package_manifest.name))
 
         # create marker file
         marker_file = os.path.join(
@@ -260,52 +244,21 @@ class AmentPythonBuildType(BuildType):
 
         # deploy environment hooks
         for env_hook_name in ['path', 'pythonpath']:
-            deploy_file = env_hook_name + ('.sh' if not IS_WINDOWS else '.bat')
-            self._deploy(
+            destination_file = env_hook_name + ('.sh' if not IS_WINDOWS else '.bat')
+            deploy_file(
                 context, context.build_space,
                 os.path.join(
                     'share', context.package_manifest.name, 'environment',
-                    deploy_file))
+                    destination_file),
+                executable=True)
         # deploy package-level setup files
         for name in get_package_level_template_names():
             assert name.endswith('.in')
-            self._deploy(
+            deploy_file(
                 context, context.build_space,
                 os.path.join(
-                    'share', context.package_manifest.name, name[:-3]))
-
-        # deploy prefix-level setup files
-        for name in get_prefix_level_template_names():
-            if name.endswith('.in'):
-                self._deploy(context, context.build_space, name[:-3])
-            else:
-                template_path = get_prefix_level_template_path(name)
-                self._deploy(context, os.path.dirname(template_path),
-                             os.path.basename(template_path))
-
-    def _deploy(self, context, source_base_path, filename, dst_subfolder='',
-                executable=True):
-        # create destination folder if necessary
-        destination_path = os.path.join(
-            context.install_space, dst_subfolder, filename)
-        destination_folder = os.path.dirname(destination_path)
-        if not os.path.exists(destination_folder):
-            os.makedirs(destination_folder)
-
-        # copy the file if not already there and identical
-        source_path = os.path.join(source_base_path, filename)
-        if os.path.exists(destination_path) and \
-                not filecmp.cmp(source_path, destination_path):
-            os.remove(destination_path)
-        if not os.path.exists(destination_path):
-            shutil.copyfile(source_path, destination_path)
-
-        # set executable bit if necessary
-        if executable:
-            mode = os.stat(destination_path).st_mode
-            new_mode = mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
-            if new_mode != mode:
-                os.chmod(destination_path, new_mode)
+                    'share', context.package_manifest.name, name[:-3]),
+                executable=True)
 
     def _add_install_layout(self, context, cmd):
         if 'dist-packages' in self._get_python_lib(context):
@@ -447,13 +400,6 @@ class AmentPythonBuildType(BuildType):
         for name in get_package_level_template_names():
             assert name.endswith('.in')
             files.append(os.path.join('share', context.package_manifest.name, name[:-3]))
-        # prefix-level setup files
-        for name in get_prefix_level_template_names():
-            if name.endswith('.in'):
-                files.append(name[:-3])
-            else:
-                template_path = get_prefix_level_template_path(name)
-                files.append(os.path.basename(template_path))
 
         # remove all files
         for rel_path in files:

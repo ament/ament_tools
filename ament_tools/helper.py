@@ -13,8 +13,11 @@
 # limitations under the License.
 
 import argparse
+import filecmp
 import os
 import re
+import shutil
+import stat
 
 from multiprocessing import cpu_count
 
@@ -219,3 +222,26 @@ def extract_argument_group(args, delimiting_option):
         # Must be only hyphens with more than two, Shorted by one -
         extracted_args[i] = token[1:]
     return trimmed_args, extracted_args
+
+
+def deploy_file(context, source_base_path, filename, dst_subfolder='', executable=False):
+    # create destination folder if necessary
+    destination_path = os.path.join(
+        context.install_space, dst_subfolder, filename)
+    destination_folder = os.path.dirname(destination_path)
+    if not os.path.exists(destination_folder):
+        os.makedirs(destination_folder)
+
+    # copy the file if not already there and identical
+    source_path = os.path.join(source_base_path, filename)
+    if os.path.exists(destination_path) and not filecmp.cmp(source_path, destination_path):
+        os.remove(destination_path)
+    if not os.path.exists(destination_path):
+        shutil.copyfile(source_path, destination_path)
+
+    # set executable bit if necessary
+    if executable:
+        mode = os.stat(destination_path).st_mode
+        new_mode = mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
+        if new_mode != mode:
+            os.chmod(destination_path, new_mode)
