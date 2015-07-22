@@ -24,12 +24,16 @@ import sys
 from ament_package import package_exists_at
 from ament_package import PACKAGE_MANIFEST_FILENAME
 from ament_package import parse_package
+from ament_package.templates import configure_file
+from ament_package.templates import get_prefix_level_template_names
+from ament_package.templates import get_prefix_level_template_path
 
 from ament_tools.build_type_discovery import MissingPluginError
 from ament_tools.build_type_discovery import get_class_for_build_type
 
 from ament_tools.context import Context
 from ament_tools.helper import combine_make_flags
+from ament_tools.helper import deploy_file
 from ament_tools.helper import determine_path_argument
 from ament_tools.helper import extract_argument_group
 
@@ -280,6 +284,32 @@ def get_context(opts):
     return create_context(opts)
 
 
+def expand_prefix_level_setup_files(context):
+    # expand prefix-level setup files
+    for name in get_prefix_level_template_names():
+        if name.endswith('.in'):
+            template_path = get_prefix_level_template_path(name)
+            content = configure_file(template_path, {
+                'CMAKE_INSTALL_PREFIX': context.install_space,
+            })
+            destination_path = os.path.join(
+                context.build_space, name[:-3])
+            with open(destination_path, 'w') as h:
+                h.write(content)
+
+
+def deploy_prefix_level_setup_files(context):
+    # deploy prefix-level setup files
+    for name in get_prefix_level_template_names():
+        if name.endswith('.in'):
+            deploy_file(context, context.build_space, name[:-3], executable=True)
+        else:
+            template_path = get_prefix_level_template_path(name)
+            deploy_file(
+                context, os.path.dirname(template_path), os.path.basename(template_path),
+                executable=True)
+
+
 def run(opts, context):
     # Load up build type plugin class
     build_type = get_build_type(opts.path)
@@ -292,12 +322,14 @@ def run(opts, context):
         print("+++ Building '{0}'".format(pkg_name))
         on_build_ret = build_type_impl.on_build(context)
         handle_build_action(on_build_ret, context)
+        expand_prefix_level_setup_files(context)
 
     if not opts.skip_install:
         # Run the install command
         print("+++ Installing '{0}'".format(pkg_name))
         on_install_ret = build_type_impl.on_install(context)
         handle_build_action(on_install_ret, context)
+        deploy_prefix_level_setup_files(context)
 
 
 def update_options(opts):
