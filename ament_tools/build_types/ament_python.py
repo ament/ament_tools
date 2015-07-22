@@ -52,28 +52,9 @@ class AmentPythonBuildType(BuildType):
         yield BuildAction(self._build_action, type='function')
 
     def _build_action(self, context):
-        # copy/symlink environment hook for PATH
         ext = '.sh' if not IS_WINDOWS else '.bat'
-        template_path = get_environment_hook_template_path('path' + ext)
         path_environment_hook = os.path.join(
-            'share', context.package_manifest.name, 'environment',
-            os.path.basename(template_path))
-        destination_path = os.path.join(
-            context.build_space, path_environment_hook)
-        destination_dir = os.path.dirname(destination_path)
-        if not os.path.exists(destination_dir):
-            os.makedirs(destination_dir)
-        if os.path.exists(destination_path):
-            if not context.symlink_install or \
-                    not os.path.islink(destination_path) or \
-                    not os.path.samefile(template_path, destination_path):
-                os.remove(destination_path)
-        if not os.path.exists(destination_path):
-            if not context.symlink_install:
-                shutil.copy(template_path, destination_path)
-            else:
-                os.symlink(template_path, destination_path)
-
+            'share', context.package_manifest.name, 'environment', 'path' + ext)
         # expand environment hook for PYTHONPATH
         ext = '.sh.in' if not IS_WINDOWS else '.bat.in'
         template_path = get_environment_hook_template_path('pythonpath' + ext)
@@ -242,15 +223,23 @@ class AmentPythonBuildType(BuildType):
             with open(marker_file, 'w'):  # "touching" the file
                 pass
 
-        # deploy environment hooks
-        for env_hook_name in ['path', 'pythonpath']:
-            destination_file = env_hook_name + ('.sh' if not IS_WINDOWS else '.bat')
-            deploy_file(
-                context, context.build_space,
-                os.path.join(
-                    'share', context.package_manifest.name, 'environment',
-                    destination_file),
-                executable=True)
+        # deploy PATH environment hook
+        ext = '.sh' if not IS_WINDOWS else '.bat'
+        template_path = get_environment_hook_template_path('path' + ext)
+        deploy_file(
+            context, os.path.dirname(template_path), os.path.basename(template_path),
+            dst_subfolder=os.path.join('share', context.package_manifest.name, 'environment'),
+            executable=True)
+
+        # deploy PYTHONPATH environment hook
+        destination_file = 'pythonpath' + ('.sh' if not IS_WINDOWS else '.bat')
+        deploy_file(
+            context, context.build_space,
+            os.path.join(
+                'share', context.package_manifest.name, 'environment',
+                destination_file),
+            executable=True)
+
         # deploy package-level setup files
         for name in get_package_level_template_names():
             assert name.endswith('.in')
