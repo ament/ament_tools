@@ -198,9 +198,6 @@ def __get_cached_package_manifest(path):
 def get_build_type(path):
     """Extract the build_type from the package manifest at the given path.
 
-    If the package manifest does not have an explict build_type the default
-    'ament_cmake' is used.
-
     :param str path: path to a package manifest file
     :returns: build_type as a string
     """
@@ -212,7 +209,7 @@ def get_build_type(path):
         print("The '%s' file in '%s' exports multiple build types" %
               (PACKAGE_MANIFEST_FILENAME, path), file=sys.stderr)
 
-    default_build_type = 'ament_cmake'
+    default_build_type = '<not-specified>'
     if not build_type_exports:
         return default_build_type
 
