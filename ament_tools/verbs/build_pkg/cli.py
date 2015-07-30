@@ -161,6 +161,8 @@ def add_arguments(parser):
     )
     parser.add_argument(
         '--make-flags',
+        nargs='*',
+        default=[],
         help='Flags to be passed to make by build types which invoke make'
     )
     parser.add_argument(
