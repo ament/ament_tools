@@ -124,7 +124,7 @@ def ensure_make_job_flags(input_make_args):
 
 
 def extract_argument_group(args, delimiting_option):
-    """Extract a group of arguments from a list of arguments using a delimeter.
+    """Extract a group of arguments from a list of arguments using a delimiter.
 
     Here is an example:
 
@@ -133,9 +133,9 @@ def extract_argument_group(args, delimiting_option):
         >>> extract_argument_group(['foo', '--args', 'bar', '--baz'], '--args')
         (['foo'], ['bar', '--baz'])
 
-    The group can always be endded using the double hyphen ``--``.
+    The group can always be ended using the double hyphen ``--``.
     In order to pass a double hyphen as arguments, use three hyphens ``---``.
-    Any set of hypens encountered after the delimeter, and up to ``--``, which
+    Any set of hyphens encountered after the delimiter, and up to ``--``, which
     have three or more hyphens and are isolated, will be captured and reduced
     by one hyphen.
 
@@ -151,7 +151,7 @@ def extract_argument_group(args, delimiting_option):
     In the result the ``--`` comes from the ``---`` in the input.
     The ``--args`` and the corresponding ``--`` are removed entirely.
 
-    The delimeter and ``--`` terminator combination can also happen multiple
+    The delimiter and ``--`` terminator combination can also happen multiple
     times, in which case the bodies of arguments are combined and returned in
     the order they appeared.
 
@@ -171,7 +171,7 @@ def extract_argument_group(args, delimiting_option):
 
     :param list args: list of strings which are ordered arguments.
     :param str delimiting_option: option which denotes where to split the args.
-    :returns: tuple of arguments before and after the delimeter.
+    :returns: tuple of arguments before and after the delimiter.
     :rtype: tuple
     :raises: ValueError if the delimiting_option is ``--``.
     """
@@ -184,13 +184,13 @@ def extract_argument_group(args, delimiting_option):
     # Loop through all arguments extracting groups of arguments
     while True:
         try:
-            next_delimeter = trimmed_args.index(delimiting_option)
+            next_delimiter = trimmed_args.index(delimiting_option)
         except ValueError:
-            # No delimeter's left in the arguments, stop looking
+            # No delimiter's left in the arguments, stop looking
             break
-        # Capture and remove args after the delimeter
-        tail = trimmed_args[next_delimeter + 1:]
-        trimmed_args = trimmed_args[:next_delimeter]
+        # Capture and remove args after the delimiter
+        tail = trimmed_args[next_delimiter + 1:]
+        trimmed_args = trimmed_args[:next_delimiter]
         # Look for a terminator, '--'
         next_terminator = None
         try:
@@ -202,11 +202,11 @@ def extract_argument_group(args, delimiting_option):
             extracted_args.extend(tail)
             break
         else:
-            # Terminator foud, put args up, but not including terminator
+            # Terminator found, put args up, but not including terminator
             # in extracted_args
             extracted_args.extend(tail[:next_terminator])
             # And put arguments after the terminator back in trimmed_args
-            # then continue looking for additional delimeters
+            # then continue looking for additional delimiters
             trimmed_args.extend(tail[next_terminator + 1:])
     # Iterate through extracted args and shorted tokens with 3+ -'s only
     for i, token in enumerate(extracted_args):
