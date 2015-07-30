@@ -65,7 +65,7 @@ def main(opts):
                            opts.basepath)
 
     try:
-        results = collect_test_results(opts.basepath)
+        results = collect_test_results(opts.basepath, verbose=opts.verbose)
         _, sum_errors, sum_failures = aggregate_results(results)
         print_summary(results, show_stable=opts.verbose)
         if sum_errors or sum_failures:
@@ -77,7 +77,7 @@ def main(opts):
         return 2
 
 
-def collect_test_results(test_results_dir):
+def collect_test_results(test_results_dir, verbose=False):
     """
     Collect test results by parsing all xml files in a given path,
     attempting to interpret them as JUnit results.
@@ -94,10 +94,12 @@ def collect_test_results(test_results_dir):
             name = filename_abs[len(test_results_dir) + 1:]
             try:
                 num_tests, num_errors, num_failures = read_junit(filename_abs)
-            except TypeError:
+            except TypeError as e:
+                if verbose:
+                    print("Skipping '%s': %s" % (name, str(e)), file=sys.stderr)
                 continue
             except Exception as e:
-                print('Skipping "%s": %s' %
+                print("Skipping '%s': %s" %
                       (name, ', '.join([line.strip() for line
                        in traceback.format_exception_only(type(e), e)])),
                       file=sys.stderr)
@@ -120,8 +122,10 @@ def read_junit(filename):
     """
     tree = ElementTree()
     root = tree.parse(filename)
-    if root.tag != 'testsuite':
-        raise TypeError("file '%s' is not a JUnit result file" % filename)
+    if root.tag not in ['testsuite', 'testsuites']:
+        raise TypeError(
+            'seem not to be a JUnit result file '
+            "(does not have a 'testsuite' or 'testsuites' root tag)")
     num_tests = int(root.attrib['tests'])
     num_errors = int(root.attrib.get('errors', 0))
     num_failures = int(root.attrib['failures'])
