@@ -167,6 +167,8 @@ class AmentPythonBuildType(BuildType):
                 'install', '--prefix', context.install_space,
                 '--install-scripts', os.path.join(context.install_space, 'bin'),
                 '--record', os.path.join(context.build_space, 'install.log'),
+                # prevent installation of dependencies specified in the setup.py file
+                '--single-version-externally-managed',
             ]
             self._add_install_layout(context, cmd)
             cmd += [
@@ -184,6 +186,7 @@ class AmentPythonBuildType(BuildType):
                 PYTHON_EXECUTABLE, 'setup.py',
                 'develop', '--prefix', context.install_space,
                 '--script-dir', os.path.join(context.install_space, 'bin'),
+                '--no-deps',
             ]
             self._add_install_layout(context, cmd)
             yield BuildAction(prefix + cmd, cwd=context.build_space)
