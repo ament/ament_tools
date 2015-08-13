@@ -243,7 +243,7 @@ class CmakeBuildType(BuildType):
             local_setup = os.path.join(path, 'local_setup.bat')
             lines.append('if exist "{0}" call "{0}"\n'.format(local_setup))
         lines.append(
-            'set "CMAKE_PREFIX_PATH=%CMAKE_PREFIX_PATH%;%AMENT_PREFIX_PATH%"')
+            'set "CMAKE_PREFIX_PATH=%AMENT_PREFIX_PATH%;%CMAKE_PREFIX_PATH%"')
         lines.append('%*')
         lines.append('if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%')
         lines.append('if defined AMENT_TRACE_SETUP_FILES echo Leaving %~0')
@@ -266,7 +266,7 @@ class CmakeBuildType(BuildType):
             lines.append('  . "%s"' % local_setup)
             lines.append('fi')
         lines.append(
-            'export CMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH:$AMENT_PREFIX_PATH"')
+            'export CMAKE_PREFIX_PATH="$AMENT_PREFIX_PATH:$CMAKE_PREFIX_PATH"')
 
         generated_file = os.path.join(
             context.build_space, '%s__%s.sh' %
