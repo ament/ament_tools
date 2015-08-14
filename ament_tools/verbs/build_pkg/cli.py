@@ -181,6 +181,7 @@ def add_arguments(parser):
              'when testing after a successful install)',
     )
     parser.add_argument(
+        '-s',
         '--symlink-install',
         action='store_true',
         default=False,
