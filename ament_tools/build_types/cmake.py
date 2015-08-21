@@ -24,6 +24,7 @@ from ament_tools.context import ContextExtender
 from ament_tools.helper import extract_argument_group
 
 from ament_tools.build_types.cmake_common import CMAKE_EXECUTABLE
+from ament_tools.build_types.cmake_common import CTEST_EXECUTABLE
 from ament_tools.build_types.cmake_common import cmakecache_exists_at
 from ament_tools.build_types.cmake_common import get_visual_studio_version
 from ament_tools.build_types.cmake_common import has_make_target
@@ -172,13 +173,12 @@ class CmakeBuildType(BuildType):
                 self.warn("Could not run tests for '{0}' package because it has no "
                           "'test' target".format(build_type))
         else:
-            if MSBUILD_EXECUTABLE is None:
-                raise VerbExecutionError("Could not find 'msbuild' executable")
-            run_tests_project_file = project_file_exists_at(context.build_space, 'RUN_TESTS')
-            if run_tests_project_file is not None or context.dry_run:
-                yield BuildAction(prefix + [MSBUILD_EXECUTABLE, run_tests_project_file])
-            else:
-                self.warn("Could not find Visual Studio project file 'RUN_TESTS.vcxproj'")
+            if CTEST_EXECUTABLE is None:
+                raise VerbExecutionError("Could not find 'ctest' executable")
+            # invoke CTest directly in order to pass arguments
+            # it needs a specific configuration and currently there are no conf. specific tests
+            yield BuildAction(prefix + [
+                CTEST_EXECUTABLE, '--force-new-ctest-process', '-C', 'Debug', '-V'])
 
     def on_install(self, context):
         # Call cmake common on_install (defined in CmakeBuildType)

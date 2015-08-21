@@ -19,6 +19,7 @@ import subprocess
 from osrf_pycommon.process_utils import which
 
 CMAKE_EXECUTABLE = which('cmake')
+CTEST_EXECUTABLE = which('ctest')
 MAKE_EXECUTABLE = which('make')
 MSBUILD_EXECUTABLE = which('msbuild')
 
