@@ -137,6 +137,8 @@ class CmakeBuildType(BuildType):
                 raise VerbExecutionError("Could not find 'cmake' executable")
             yield BuildAction(prefix + [CMAKE_EXECUTABLE] + cmake_args)
         elif not IS_WINDOWS:  # Check for reconfigure if available.
+            if MAKE_EXECUTABLE is None:
+                raise VerbExecutionError("Could not find 'make' executable")
             cmd = prefix + [MAKE_EXECUTABLE, 'cmake_check_build_system']
             yield BuildAction(cmd)
         # Now execute the build step
@@ -164,6 +166,8 @@ class CmakeBuildType(BuildType):
         prefix = self._get_command_prefix('test', context)
         if not IS_WINDOWS:
             if has_make_target(context.build_space, 'test') or context.dry_run:
+                if MAKE_EXECUTABLE is None:
+                    raise VerbExecutionError("Could not find 'make' executable")
                 cmd = prefix + [MAKE_EXECUTABLE, 'test']
                 if 'ARGS' not in os.environ:
                     cmd.append('ARGS="-V"')
@@ -190,19 +194,22 @@ class CmakeBuildType(BuildType):
         prefix = self._get_command_prefix('install', context)
 
         if not IS_WINDOWS:
-            # Assumption: install target exists
-            if MAKE_EXECUTABLE is None:
-                raise VerbExecutionError("Could not find 'make' executable")
-            yield BuildAction(prefix + [MAKE_EXECUTABLE, 'install'])
+            if has_make_target(context.build_space, 'install') or context.dry_run:
+                if MAKE_EXECUTABLE is None:
+                    raise VerbExecutionError("Could not find 'make' executable")
+                yield BuildAction(prefix + [MAKE_EXECUTABLE, 'install'])
+            else:
+                self.warn('Could not run installation for package because it has no '
+                          "'install' target")
         else:
-            if MSBUILD_EXECUTABLE is None:
-                raise VerbExecutionError("Could not find 'msbuild' executable")
             install_project_file = project_file_exists_at(
                 context.build_space, 'INSTALL')
-            if install_project_file is None:
-                raise VerbExecutionError(
-                    "Could not find Visual Studio project file 'INSTALL.vcxproj'")
-            yield BuildAction(prefix + [MSBUILD_EXECUTABLE, install_project_file])
+            if install_project_file is not None:
+                if MSBUILD_EXECUTABLE is None:
+                    raise VerbExecutionError("Could not find 'msbuild' executable")
+                yield BuildAction(prefix + [MSBUILD_EXECUTABLE, install_project_file])
+            else:
+                self.warn("Could not find Visual Studio project file 'INSTALL.vcxproj'")
 
     def on_uninstall(self, context):
         # Call cmake common on_uninstall (defined in CmakeBuildType)
@@ -215,6 +222,8 @@ class CmakeBuildType(BuildType):
 
         if not IS_WINDOWS:
             if has_make_target(context.build_space, 'uninstall'):
+                if MAKE_EXECUTABLE is None:
+                    raise VerbExecutionError("Could not find 'make' executable")
                 cmd = prefix + [MAKE_EXECUTABLE, 'uninstall']
                 yield BuildAction(cmd)
             else:
