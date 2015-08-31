@@ -249,6 +249,9 @@ def deploy_file(context, source_base_path, filename, dst_subfolder='', executabl
         if not context.symlink_install:
             shutil.copyfile(source_path, destination_path)
         else:
+            # while the destination might not exist it can still be a symlink
+            if os.path.islink(destination_path):
+                os.remove(destination_path)
             os.symlink(source_path, destination_path)
 
     # set executable bit if necessary
