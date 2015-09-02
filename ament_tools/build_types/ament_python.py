@@ -115,7 +115,7 @@ class AmentPythonBuildType(BuildType):
             'test', context, additional_lines=additional_lines)
         xunit_file = os.path.join(
             context.build_space, 'test_results',
-            context.package_manifest.name, 'nosetests.xml')
+            context.package_manifest.name, 'nosetests.xunit.xml')
         if not os.path.exists(os.path.dirname(xunit_file)):
             os.makedirs(os.path.dirname(xunit_file))
         assert NOSETESTS_EXECUTABLE, 'Could not find nosetests'
