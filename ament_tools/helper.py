@@ -21,8 +21,7 @@ import stat
 
 from multiprocessing import cpu_count
 
-from ament_package import package_exists_at
-from ament_package import PACKAGE_MANIFEST_FILENAME
+from ament_tools.package_types import package_exists_at
 
 
 def argparse_existing_dir(path):
@@ -37,8 +36,7 @@ def argparse_existing_package(path):
     path = argparse_existing_dir(path)
     if not package_exists_at(path):
         raise argparse.ArgumentTypeError(
-            "Path '%s' does not contain a '%s' file" %
-            (path, PACKAGE_MANIFEST_FILENAME))
+            "Path '%s' does not contain a package" % path)
     return path
 
 

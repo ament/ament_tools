@@ -14,9 +14,8 @@
 
 import os
 
-from ament_package import parse_package
-
 from ament_tools.helper import argparse_existing_dir
+from ament_tools.package_types import parse_package
 from ament_tools.packages import find_package_paths
 from ament_tools.packages import find_unique_packages
 from ament_tools.topological_order import topological_order_packages

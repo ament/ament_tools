@@ -124,6 +124,25 @@ build_type_discovery.yield_supported_build_types = yield_supported_build_types
 build_type_discovery.get_class_for_build_type = get_class_for_build_type
 
 
+# override package type discovery relying on pkg_resources entry points
+from ament_tools.package_types.ament import entry_point_data as ament_entry_point_data  # noqa
+from ament_tools.package_types.cmake import entry_point_data as cmake_entry_point_data  # noqa
+from ament_tools.package_types.python import entry_point_data as python_entry_point_data  # noqa
+
+known_package_types = [
+    ament_entry_point_data,
+    cmake_entry_point_data,
+    python_entry_point_data,
+]
+
+
+def get_package_types():
+    return known_package_types
+
+from ament_tools import package_types  # noqa
+package_types.get_package_types = get_package_types
+
+
 from ament_tools.commands.ament import main  # noqa
 
 if __name__ == '__main__':
