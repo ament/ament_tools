@@ -182,7 +182,14 @@ class CmakeBuildType(BuildType):
             # invoke CTest directly in order to pass arguments
             # it needs a specific configuration and currently there are no conf. specific tests
             yield BuildAction(prefix + [
-                CTEST_EXECUTABLE, '--force-new-ctest-process', '-C', 'Debug', '-V'])
+                CTEST_EXECUTABLE,
+                # choose configuration on e.g. Windows
+                '-C', 'Debug',
+                # generate xml of test summary
+                '-D', 'ExperimentalTest', '--no-compress-output',
+                # show all test output
+                '-V',
+                '--force-new-ctest-process'])
 
     def on_install(self, context):
         # Call cmake common on_install (defined in CmakeBuildType)
