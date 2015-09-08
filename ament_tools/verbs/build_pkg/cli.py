@@ -21,9 +21,6 @@ import shlex
 import subprocess
 import sys
 
-from ament_package import package_exists_at
-from ament_package import PACKAGE_MANIFEST_FILENAME
-from ament_package import parse_package
 from ament_package.templates import configure_file
 from ament_package.templates import get_prefix_level_template_names
 from ament_package.templates import get_prefix_level_template_path
@@ -36,6 +33,8 @@ from ament_tools.helper import combine_make_flags
 from ament_tools.helper import deploy_file
 from ament_tools.helper import determine_path_argument
 from ament_tools.helper import extract_argument_group
+from ament_tools.package_types import package_exists_at
+from ament_tools.package_types import parse_package
 
 from osrf_pycommon.cli_utils.verb_pattern import call_prepare_arguments
 
@@ -74,10 +73,10 @@ def argument_preprocessor(args):
     add_path_argument(parser)
     opts, _ = parser.parse_known_args(args)
     try:
-        path = validate_package_manifest_path(opts.path)
+        validate_package_path(opts.path)
     except (MissingPluginError, ValueError) as exc:
         sys.exit("{0}".format(exc))
-    build_type = get_build_type(path)
+    build_type = get_build_type(opts.path)
     build_type_impl = get_class_for_build_type(build_type)()
     # Let detected build type plugin do argument preprocessing
     args, extras = build_type_impl.argument_preprocessor(args)
@@ -122,9 +121,9 @@ def prepare_arguments(parser, args):
         # Parse the arguments to find the user's provided path (or the default)
         opts, _ = parser.parse_known_args(filt_args)
         # Check to ensure the path has a package
-        path = validate_package_manifest_path(opts.path)
+        validate_package_path(opts.path)
         # Get the build_type from the package manifest
-        build_type = get_build_type(path)
+        build_type = get_build_type(opts.path)
         # Find an entry point which supports this build type
         build_type_impl = get_class_for_build_type(build_type)()
         # Let the detected build type plugin add arguments
@@ -209,8 +208,8 @@ def get_build_type(path):
     build_type_exports = [e for e in package.exports
                           if e.tagname == 'build_type']
     if len(build_type_exports) > 1:
-        print("The '%s' file in '%s' exports multiple build types" %
-              (PACKAGE_MANIFEST_FILENAME, path), file=sys.stderr)
+        print("The package in '%s' exports multiple build types" % path,
+              file=sys.stderr)
 
     default_build_type = '<not-specified>'
     if not build_type_exports:
@@ -219,26 +218,17 @@ def get_build_type(path):
     return build_type_exports[0].content
 
 
-def validate_package_manifest_path(path):
-    """Assert the given path is a directory with a manifest or the manifest.
+def validate_package_path(path):
+    """Assert the given path is a directory with a package.
 
-    :param str path: directory containing a package manifest file or the file
-    :returns: path to the manifest file, not just the directory
-    :rtype: str
-    :raises: ValueError if path is not valid or does not contain manifest
+    :param str path: directory containing a package
+    :raises: ValueError if path is not valid or does not contain a package
     """
-    p = path
-    if not os.path.isdir(p):
-        p = p.rstrip('/')
-        if p.endswith(PACKAGE_MANIFEST_FILENAME):
-            p = p[:-len(PACKAGE_MANIFEST_FILENAME)]
-    if not os.path.isdir(p):
+    if not os.path.isdir(path):
         raise ValueError("Path '{0}' is not a directory or does not exist"
-                         .format(p))
-    if not package_exists_at(p):
-        raise ValueError("Path '{0}' does not contain a '{1}' manifest file"
-                         .format(p, PACKAGE_MANIFEST_FILENAME))
-    return p
+                         .format(path))
+    if not package_exists_at(path):
+        raise ValueError("Path '{0}' does not contain a package".format(path))
 
 
 def run_command(build_action, context):
@@ -345,7 +335,7 @@ def update_options(opts):
                                                  opts.install_space, 'install')
 
     try:
-        opts.path = validate_package_manifest_path(opts.path)
+        validate_package_path(opts.path)
     except ValueError as exc:
         sys.exit("Error: {0}".format(exc))
 

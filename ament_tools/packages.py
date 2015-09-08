@@ -18,8 +18,8 @@ Library to find packages in the filesystem.
 
 import os
 
-from ament_package import PACKAGE_MANIFEST_FILENAME
-from ament_package import parse_package
+from ament_tools.package_types import package_exists_at
+from ament_tools.package_types import parse_package
 
 
 def find_package_paths(basepath, exclude_paths=None):
@@ -42,7 +42,7 @@ def find_package_paths(basepath, exclude_paths=None):
         if 'AMENT_IGNORE' in filenames or real_dirpath in real_exclude_paths:
             del dirnames[:]
             continue
-        elif PACKAGE_MANIFEST_FILENAME in filenames:
+        elif package_exists_at(dirpath):
             paths.append(os.path.relpath(dirpath, basepath))
             del dirnames[:]
             continue

@@ -16,9 +16,8 @@ import argparse
 import os
 import sys
 
-from ament_package import parse_package
-
 from ament_tools.helper import argparse_existing_package
+from ament_tools.package_types import parse_package
 
 
 def prepare_arguments(parser):

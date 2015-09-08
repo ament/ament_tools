@@ -23,7 +23,7 @@ from ament_tools.helper import determine_path_argument
 from ament_tools.verbs.build_pkg.cli import __get_cached_package_manifest
 from ament_tools.verbs.build_pkg.cli import get_build_type
 from ament_tools.verbs.build_pkg.cli import handle_build_action
-from ament_tools.verbs.build_pkg.cli import validate_package_manifest_path
+from ament_tools.verbs.build_pkg.cli import validate_package_path
 
 
 def add_path_argument(parser):
@@ -99,7 +99,7 @@ def update_options(opts):
         cwd, opts.directory, opts.install_space, 'install')
 
     try:
-        opts.path = validate_package_manifest_path(opts.path)
+        validate_package_path(opts.path)
     except ValueError as exc:
         sys.exit("Error: {0}".format(exc))
 
