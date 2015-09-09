@@ -341,10 +341,20 @@ class AmentPythonBuildType(BuildType):
         if os.path.exists(install_log):
             with open(install_log, 'r') as h:
                 lines = [l.rstrip() for l in h.readlines()]
+            directories = []
             for line in lines:
                 if os.path.exists(line) and \
                         line.startswith(context.install_space):
-                    os.remove(line)
+                    if not os.path.isdir(line):
+                        os.remove(line)
+                    else:
+                        directories.append(line)
+            for d in sorted(directories, reverse=True):
+                # only remove empty directories
+                try:
+                    os.rmdir(d)
+                except OSError:
+                    pass
             os.remove(install_log)
 
             # remove entry from easy-install.pth file
