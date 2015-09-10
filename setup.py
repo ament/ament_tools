@@ -6,6 +6,13 @@ setup(
     version='0.0.0',
     packages=find_packages(exclude=['test']),
     install_requires=['ament-package', 'osrf_pycommon'],
+    data_files=[
+        ('share/ament_tools/environment',
+            [
+                'completion/ament-completion.bash',
+                'completion/ament-completion.zsh',
+            ]),
+    ],
     author='Dirk Thomas, William Woodall',
     author_email='dthomas@osrfoundation.org, william@osrfoundation.org',
     maintainer='William Woodall',
