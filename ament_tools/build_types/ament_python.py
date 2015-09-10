@@ -29,6 +29,8 @@ from ament_package.templates import get_package_level_template_path
 from ament_tools.build_type import BuildAction
 from ament_tools.build_type import BuildType
 from ament_tools.helper import deploy_file
+from ament_tools.setup_arguments import get_data_files_mapping
+from ament_tools.setup_arguments import get_setup_arguments
 
 PYTHON_EXECUTABLE = sys.executable
 NOSETESTS_EXECUTABLE = None
@@ -48,13 +50,18 @@ class AmentPythonBuildType(BuildType):
     description = "ament package built with Python"
 
     def on_build(self, context):
+        self._update_context_with_setup_arguments(context)
+
         # expand all templates in build space
         yield BuildAction(self._build_action, type='function')
 
     def _build_action(self, context):
+        environment_hooks_path = os.path.join(
+            'share', context.package_manifest.name, 'environment')
+
         ext = '.sh' if not IS_WINDOWS else '.bat'
         path_environment_hook = os.path.join(
-            'share', context.package_manifest.name, 'environment', 'path' + ext)
+            environment_hooks_path, 'path' + ext)
         # expand environment hook for PYTHONPATH
         ext = '.sh.in' if not IS_WINDOWS else '.bat.in'
         template_path = get_environment_hook_template_path('pythonpath' + ext)
@@ -62,8 +69,7 @@ class AmentPythonBuildType(BuildType):
             'PYTHON_INSTALL_DIR': self._get_python_lib(context),
         })
         pythonpath_environment_hook = os.path.join(
-            'share', context.package_manifest.name, 'environment',
-            os.path.basename(template_path)[:-3])
+            environment_hooks_path, os.path.basename(template_path)[:-3])
         destination_path = os.path.join(
             context.build_space, pythonpath_environment_hook)
         destination_dir = os.path.dirname(destination_path)
@@ -75,25 +81,44 @@ class AmentPythonBuildType(BuildType):
         # expand package-level setup files
         for name in get_package_level_template_names():
             assert name.endswith('.in')
+
+            environment_hooks = []
+            if os.path.splitext(name[:-3])[1] in ['.sh', '.bat']:
+                environment_hooks += [
+                    path_environment_hook,
+                    pythonpath_environment_hook,
+                ]
+
+            # check if any data files are environment hooks
+            for data_file in context['setup.py']['data_files'].values():
+                if not data_file.startswith(environment_hooks_path):
+                    continue
+                # ignore data files with different extensions
+                if os.path.splitext(data_file)[1] != os.path.splitext(name[:-3])[1]:
+                    continue
+                environment_hooks.append(data_file)
+
             template_path = get_package_level_template_path(name)
             variables = {'CMAKE_INSTALL_PREFIX': context.install_space}
-            if name[:-3].endswith('.sh'):
-                variables['ENVIRONMENT_HOOKS'] = \
-                    'ament_append_value AMENT_ENVIRONMENT_HOOKS "%s"\n' % \
-                    ':'.join([
-                        os.path.join('$AMENT_CURRENT_PREFIX', path_environment_hook),
-                        os.path.join('$AMENT_CURRENT_PREFIX', pythonpath_environment_hook),
-                    ])
-            elif name[:-3].endswith('.bat'):
-                t = 'call:ament_append_value AMENT_ENVIRONMENT_HOOKS[%s] "%s"\n'
-                variables['ENVIRONMENT_HOOKS'] = t % (
-                    context.package_manifest.name,
-                    ';'.join([
-                        os.path.join('%AMENT_CURRENT_PREFIX%', path_environment_hook),
-                        os.path.join('%AMENT_CURRENT_PREFIX%', pythonpath_environment_hook),
-                    ])
-                )
+            if name[:-3].endswith('.bat'):
                 variables['PROJECT_NAME'] = context.package_manifest.name
+            if environment_hooks:
+                if name[:-3].endswith('.bat'):
+                    t = 'call:ament_append_value AMENT_ENVIRONMENT_HOOKS[%s] "%s"\n'
+                    variables['ENVIRONMENT_HOOKS'] = t % (
+                        context.package_manifest.name,
+                        ';'.join([
+                            os.path.join('%AMENT_CURRENT_PREFIX%', environment_hook)
+                            for environment_hook in environment_hooks
+                        ])
+                    )
+                else:
+                    variables['ENVIRONMENT_HOOKS'] = \
+                        'ament_append_value AMENT_ENVIRONMENT_HOOKS "%s"\n' % \
+                        ':'.join([
+                            os.path.join('$AMENT_CURRENT_PREFIX', environment_hook)
+                            for environment_hook in environment_hooks
+                        ])
             content = configure_file(template_path, variables)
             destination_path = os.path.join(
                 context.build_space,
@@ -139,6 +164,8 @@ class AmentPythonBuildType(BuildType):
         yield BuildAction(prefix + cmd, cwd=context.source_space)
 
     def on_install(self, context):
+        self._update_context_with_setup_arguments(context)
+
         yield BuildAction(self._install_action_files, type='function')
 
         # setup.py egg_info requires the --egg-base to exist
@@ -188,6 +215,8 @@ class AmentPythonBuildType(BuildType):
                 '--script-dir', os.path.join(context.install_space, 'bin'),
                 '--no-deps',
             ]
+            if context['setup.py']['data_files']:
+                cmd += ['install_data', '--install-dir', context.install_space]
             self._add_install_layout(context, cmd)
             yield BuildAction(prefix + cmd, cwd=context.build_space)
 
@@ -318,13 +347,18 @@ class AmentPythonBuildType(BuildType):
     def _install_action_python(self, context):
         self._undo_install(context)
 
-        # Symlink setup.py and all root-packages into build space
-        packages = setuptools.find_packages(
-            context.source_space, exclude=['*.*'])
-        packages.append('setup.py')
-        for package in packages:
-            src = os.path.join(context.source_space, package)
-            dst = os.path.join(context.build_space, package)
+        items = ['setup.py']
+        # add all first level packages
+        items += [p for p in context['setup.py']['packages'] if '.' not in p]
+        items += list(context['setup.py']['data_files'].keys())
+
+        # symlink files / folders from source space into build space
+        for item in items:
+            src = os.path.join(context.source_space, item)
+            dst = os.path.join(context.build_space, item)
+            dst_dir = os.path.dirname(dst)
+            if not os.path.exists(dst_dir):
+                os.makedirs(dst_dir)
             if os.path.exists(dst):
                 if not os.path.islink(dst) or \
                         not os.path.samefile(src, dst):
@@ -421,3 +455,14 @@ class AmentPythonBuildType(BuildType):
         except OSError:
             # directory is likely not empty
             pass
+
+    def _update_context_with_setup_arguments(self, context):
+        if 'setup.py' in context:
+            return
+        # check setup.py file for data files and packages
+        args = get_setup_arguments(os.path.join(context.source_space, 'setup.py'))
+        data_files = get_data_files_mapping(args.get('data_files', []))
+        context['setup.py'] = {
+            'data_files': data_files,
+            'packages': args['packages'],
+        }

@@ -80,3 +80,29 @@ def create_mock_setup_function(data):
         data.update(kwargs)
 
     return setup
+
+
+def get_data_files_mapping(data_files):
+    """
+    Transform the data_files structure into a dictionary.
+
+    :param data_files: either a list of source files or
+      a list of tuples where the first element is the destination path and
+      the second element is a list of source files
+    :returns: a dictionary mapping the source file to a destination file
+    """
+    mapping = {}
+    for data_file in data_files:
+        if isinstance(data_file, tuple):
+            assert len(data_file) == 2
+            dest = data_file[0]
+            assert not os.path.isabs(dest)
+            sources = data_file[1]
+            assert isinstance(sources, list)
+            for source in sources:
+                assert not os.path.isabs(source)
+                mapping[source] = os.path.join(dest, os.path.basename(source))
+        else:
+            assert not os.path.isabs(data_file)
+            mapping[data_file] = os.path.basename(data_file)
+    return mapping
