@@ -33,37 +33,43 @@ def parse_package(path):
     raise RuntimeError("Failed to parse package in '%s'" % path)
 
 
-def get_package_types():
-    entry_points = list(pkg_resources.iter_entry_points(group=AMENT_PACKAGE_TYPES_ENTRY_POINT))
-    if not entry_points:
-        raise RuntimeError('No package type entry points')
-    entry_points_data = [ep.load() for ep in entry_points]
+_cached_package_types = None
 
-    # ensure unique names
-    counter = Counter()
-    counter.update([d['name'] for d in entry_points_data])
-    most_common = counter.most_common(1)[0]
-    if most_common[1] > 1:
-        raise RuntimeError("Multiple package types with the same name '%s'" % most_common[0])
 
-    # order topologically
-    ordered = []
-    by_name = {d['name']: [set(d['depends']), d] for d in entry_points_data}
-    while by_name:
-        for name in sorted(by_name.keys()):
-            depends = by_name[name][0]
-            # take first entry with no unsatisfied dependencies
-            if not depends:
-                data = by_name[name][1]
-                ordered.append(data)
-                del by_name[name]
-                # remove name from dependency list of other entries
-                for v in by_name.values():
-                    v[0].remove(name)
-                break
-        else:
-            raise RuntimeError(
-                'Failed to determine topological order of the following package types: ' +
-                (', '.join(sorted(by_name.keys()))))
+def get_package_types(force_loading_entry_points=False):
+    global _cached_package_types
+    if _cached_package_types is None or force_loading_entry_points:
+        entry_points = list(pkg_resources.iter_entry_points(group=AMENT_PACKAGE_TYPES_ENTRY_POINT))
+        if not entry_points:
+            raise RuntimeError('No package type entry points')
+        entry_points_data = [ep.load() for ep in entry_points]
 
-    return ordered
+        # ensure unique names
+        counter = Counter()
+        counter.update([d['name'] for d in entry_points_data])
+        most_common = counter.most_common(1)[0]
+        if most_common[1] > 1:
+            raise RuntimeError("Multiple package types with the same name '%s'" % most_common[0])
+
+        # order topologically
+        ordered = []
+        by_name = {d['name']: [set(d['depends']), d] for d in entry_points_data}
+        while by_name:
+            for name in sorted(by_name.keys()):
+                depends = by_name[name][0]
+                # take first entry with no unsatisfied dependencies
+                if not depends:
+                    data = by_name[name][1]
+                    ordered.append(data)
+                    del by_name[name]
+                    # remove name from dependency list of other entries
+                    for v in by_name.values():
+                        v[0].remove(name)
+                    break
+            else:
+                raise RuntimeError(
+                    'Failed to determine topological order of the following package types: ' +
+                    (', '.join(sorted(by_name.keys()))))
+        _cached_package_types = ordered
+
+    return _cached_package_types
