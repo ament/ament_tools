@@ -57,14 +57,23 @@ class CmakeBuildType(BuildType):
             default=[],
             help="Arbitrary arguments which are passed to all CMake projects. "
                  "Argument collection can be terminated with '--'.")
+        parser.add_argument(
+            '--ctest-args',
+            nargs='*',
+            default=[],
+            help="Arbitrary arguments which are passed to all CTest invocations. "
+                 "The option is only used by the 'test*' verbs. "
+                 "Argument collection can be terminated with '--'.")
 
     def argument_preprocessor(self, args):
         # The CMake pass-through flag collects dashed options.
         # This requires special handling or argparse will complain about
         # unrecognized options.
         args, cmake_args = extract_argument_group(args, '--cmake-args')
+        args, ctest_args = extract_argument_group(args, '--ctest-args')
         extras = {
             'cmake_args': cmake_args,
+            'ctest_args': ctest_args,
         }
         return args, extras
 
@@ -75,6 +84,7 @@ class CmakeBuildType(BuildType):
             force_cmake_configure = True
         ce.add('force_cmake_configure', force_cmake_configure)
         ce.add('cmake_args', options.cmake_args)
+        ce.add('ctest_args', options.ctest_args)
         return ce
 
     def on_build(self, context):
@@ -170,8 +180,10 @@ class CmakeBuildType(BuildType):
                 if MAKE_EXECUTABLE is None:
                     raise VerbExecutionError("Could not find 'make' executable")
                 cmd = prefix + [MAKE_EXECUTABLE, 'test']
-                if 'ARGS' not in os.environ:
-                    cmd.append('ARGS="-V"')
+                args = [os.environ['ARGS']] if 'ARGS' in os.environ else ['-V']
+                args += context.ctest_args
+                if args:
+                    cmd.append('ARGS="%s"' % ' '.join(args))
                 yield BuildAction(cmd)
             else:
                 self.warn("Could not run tests for '{0}' package because it has no "
@@ -189,7 +201,8 @@ class CmakeBuildType(BuildType):
                 '-D', 'ExperimentalTest', '--no-compress-output',
                 # show all test output
                 '-V',
-                '--force-new-ctest-process'])
+                '--force-new-ctest-process'] +
+                context.ctest_args)
 
     def on_install(self, context):
         # Call cmake common on_install (defined in CmakeBuildType)
