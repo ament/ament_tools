@@ -180,10 +180,17 @@ class CmakeBuildType(BuildType):
                 if MAKE_EXECUTABLE is None:
                     raise VerbExecutionError("Could not find 'make' executable")
                 cmd = prefix + [MAKE_EXECUTABLE, 'test']
-                args = [os.environ['ARGS']] if 'ARGS' in os.environ else ['-V']
+                if 'ARGS' not in os.environ:
+                    args = ['-V']
+                elif os.environ['ARGS']:
+                    args = [os.environ['ARGS']]
+                else:
+                    args = []
                 args += context.ctest_args
                 if args:
-                    cmd.append('ARGS="%s"' % ' '.join(args))
+                    # the valus is not quoted here
+                    # since each item will be quoted by shlex.quote later if necessary
+                    cmd.append('ARGS=%s' % ' '.join(args))
                 yield BuildAction(cmd)
             else:
                 self.warn("Could not run tests for '{0}' package because it has no "
