@@ -241,8 +241,7 @@ class CmakeBuildType(BuildType):
         path_template_path = get_environment_hook_template_path('path' + ext)
         deploy_file(
             context, os.path.dirname(path_template_path), os.path.basename(path_template_path),
-            dst_subfolder=environment_hooks_path,
-            executable=True)
+            dst_subfolder=environment_hooks_path)
 
         environment_hooks = [path_template_path]
 
@@ -252,8 +251,7 @@ class CmakeBuildType(BuildType):
             deploy_file(
                 context,
                 os.path.dirname(library_template_path), os.path.basename(library_template_path),
-                dst_subfolder=environment_hooks_path,
-                executable=True)
+                dst_subfolder=environment_hooks_path)
             environment_hooks.append(library_template_path)
 
         # expand package-level setup files
@@ -266,7 +264,7 @@ class CmakeBuildType(BuildType):
                 context,
                 os.path.dirname(destination), os.path.basename(destination),
                 dst_subfolder=rel_destination_dir,
-                executable=True, skip_if_exists=True)
+                skip_if_exists=True)
 
     def _common_cmake_on_install(self, context):
         # Figure out if there is a setup file to source

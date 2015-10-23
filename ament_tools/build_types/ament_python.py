@@ -219,8 +219,7 @@ class AmentPythonBuildType(BuildType):
         template_path = get_environment_hook_template_path('path' + ext)
         deploy_file(
             context, os.path.dirname(template_path), os.path.basename(template_path),
-            dst_subfolder=os.path.join('share', context.package_manifest.name, 'environment'),
-            executable=True)
+            dst_subfolder=os.path.join('share', context.package_manifest.name, 'environment'))
 
         # deploy PYTHONPATH environment hook
         destination_file = 'pythonpath' + ('.sh' if not IS_WINDOWS else '.bat')
@@ -228,8 +227,7 @@ class AmentPythonBuildType(BuildType):
             context, context.build_space,
             os.path.join(
                 'share', context.package_manifest.name, 'environment',
-                destination_file),
-            executable=True)
+                destination_file))
 
         # deploy package-level setup files
         for name in get_package_level_template_names():
@@ -237,8 +235,7 @@ class AmentPythonBuildType(BuildType):
             deploy_file(
                 context, context.build_space,
                 os.path.join(
-                    'share', context.package_manifest.name, name[:-3]),
-                executable=True)
+                    'share', context.package_manifest.name, name[:-3]))
 
     def _add_install_layout(self, context, cmd):
         if 'dist-packages' in self._get_python_lib(context):
