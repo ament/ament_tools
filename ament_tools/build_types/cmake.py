@@ -16,11 +16,14 @@
 
 import os
 
+from ament_package.templates import get_environment_hook_template_path
+
 from ament_tools.build_type import BuildAction
 from ament_tools.build_type import BuildType
 
 from ament_tools.context import ContextExtender
 
+from ament_tools.helper import deploy_file
 from ament_tools.helper import extract_argument_group
 
 from ament_tools.build_types.cmake_common import CMAKE_EXECUTABLE
@@ -34,6 +37,7 @@ from ament_tools.build_types.cmake_common import MSBUILD_EXECUTABLE
 from ament_tools.build_types.cmake_common import project_file_exists_at
 from ament_tools.build_types.cmake_common import solution_file_exists_at
 
+from ament_tools.build_types.common import expand_package_level_setup_files
 from ament_tools.build_types.common import get_cached_config
 from ament_tools.build_types.common import set_cached_config
 
@@ -215,6 +219,52 @@ class CmakeBuildType(BuildType):
         # Call cmake common on_install (defined in CmakeBuildType)
         for step in self._common_cmake_on_install(context):
             yield step
+
+        # Install files needed to extend the environment for build dependents to use this package
+        # create marker file
+        marker_file = os.path.join(
+            context.install_space,
+            'share', 'ament_index', 'resource_index', 'packages',
+            context.package_manifest.name)
+        if not os.path.exists(marker_file):
+            marker_dir = os.path.dirname(marker_file)
+            if not os.path.exists(marker_dir):
+                os.makedirs(marker_dir)
+            with open(marker_file, 'w'):  # "touching" the file
+                pass
+
+        environment_hooks_path = \
+            os.path.join('share', context.package_manifest.name, 'environment')
+
+        # deploy PATH environment hook
+        ext = '.sh' if not IS_WINDOWS else '.bat'
+        path_template_path = get_environment_hook_template_path('path' + ext)
+        deploy_file(
+            context, os.path.dirname(path_template_path), os.path.basename(path_template_path),
+            dst_subfolder=environment_hooks_path)
+
+        environment_hooks = [path_template_path]
+
+        # deploy library path environment hook
+        if not IS_WINDOWS:
+            library_template_path = get_environment_hook_template_path('library_path.sh')
+            deploy_file(
+                context,
+                os.path.dirname(library_template_path), os.path.basename(library_template_path),
+                dst_subfolder=environment_hooks_path)
+            environment_hooks.append(library_template_path)
+
+        # expand package-level setup files
+        destinations = expand_package_level_setup_files(
+            context, environment_hooks, environment_hooks_path)
+        for destination in destinations:
+            rel_destination_dir = \
+                os.path.dirname(os.path.relpath(destination, context.build_space))
+            deploy_file(
+                context,
+                os.path.dirname(destination), os.path.basename(destination),
+                dst_subfolder=rel_destination_dir,
+                skip_if_exists=True)
 
     def _common_cmake_on_install(self, context):
         # Figure out if there is a setup file to source
