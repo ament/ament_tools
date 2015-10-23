@@ -237,7 +237,10 @@ def deploy_file(
     destination_path = os.path.join(
         context.install_space, dst_subfolder, filename)
     # If the file exists and we should skip if we didn't install it.
-    if os.path.exists(destination_path) and skip_if_exists:
+    if (
+        (os.path.exists(destination_path) or os.path.islink(destination_path)) and
+        skip_if_exists
+    ):
         # If the dest is not a symlink or if it is but it doesn't point to our source.
         if (
             not os.path.islink(destination_path) or
