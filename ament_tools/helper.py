@@ -222,16 +222,36 @@ def extract_argument_group(args, delimiting_option):
     return trimmed_args, extracted_args
 
 
-def deploy_file(context, source_base_path, filename, dst_subfolder='', executable=False):
+def deploy_file(
+    context,
+    source_base_path,
+    filename,
+    dst_subfolder='',
+    executable=False,
+    skip_if_exists=False
+):
+    # copy the file if not already there and identical
+    source_path = os.path.join(source_base_path, filename)
+
     # create destination folder if necessary
     destination_path = os.path.join(
         context.install_space, dst_subfolder, filename)
+    # If the file exists and we should skip if we didn't install it.
+    if os.path.exists(destination_path) and skip_if_exists:
+        # If the dest is not a symlink or if it is but it doesn't point to our source.
+        if (
+            not os.path.islink(destination_path) or
+            not os.path.samefile(source_path, destination_path)
+        ):
+            # Finally if the content is not the same.
+            if not filecmp.cmp(source_path, destination_path):
+                # We (probably) didn't install it and shouldn't overwrite it.
+                print("-- [ament] Skipping (would overwrite):", destination_path)
+                return
+    print("-- [ament] Deploying:", destination_path)
     destination_folder = os.path.dirname(destination_path)
     if not os.path.exists(destination_folder):
         os.makedirs(destination_folder)
-
-    # copy the file if not already there and identical
-    source_path = os.path.join(source_base_path, filename)
 
     # remove existing file / symlink if it is not already what is intended
     if os.path.exists(destination_path):
