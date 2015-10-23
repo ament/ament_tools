@@ -25,9 +25,9 @@ import sys
 from ament_package.templates import configure_file
 from ament_package.templates import get_environment_hook_template_path
 from ament_package.templates import get_package_level_template_names
-from ament_package.templates import get_package_level_template_path
 from ament_tools.build_type import BuildAction
 from ament_tools.build_type import BuildType
+from ament_tools.build_types.common import expand_package_level_setup_files
 from ament_tools.helper import deploy_file
 from ament_tools.setup_arguments import get_data_files_mapping
 from ament_tools.setup_arguments import get_setup_arguments
@@ -78,54 +78,13 @@ class AmentPythonBuildType(BuildType):
         with open(destination_path, 'w') as h:
             h.write(content)
 
+        environment_hooks = [
+            path_environment_hook,
+            pythonpath_environment_hook,
+        ]
+
         # expand package-level setup files
-        for name in get_package_level_template_names():
-            assert name.endswith('.in')
-
-            environment_hooks = []
-            if os.path.splitext(name[:-3])[1] in ['.sh', '.bat']:
-                environment_hooks += [
-                    path_environment_hook,
-                    pythonpath_environment_hook,
-                ]
-
-            # check if any data files are environment hooks
-            for data_file in context['setup.py']['data_files'].values():
-                if not data_file.startswith(environment_hooks_path):
-                    continue
-                # ignore data files with different extensions
-                if os.path.splitext(data_file)[1] != os.path.splitext(name[:-3])[1]:
-                    continue
-                environment_hooks.append(data_file)
-
-            template_path = get_package_level_template_path(name)
-            variables = {'CMAKE_INSTALL_PREFIX': context.install_space}
-            if name[:-3].endswith('.bat'):
-                variables['PROJECT_NAME'] = context.package_manifest.name
-            if environment_hooks:
-                if name[:-3].endswith('.bat'):
-                    t = 'call:ament_append_value AMENT_ENVIRONMENT_HOOKS[%s] "%s"\n'
-                    variables['ENVIRONMENT_HOOKS'] = t % (
-                        context.package_manifest.name,
-                        ';'.join([
-                            os.path.join('%AMENT_CURRENT_PREFIX%', environment_hook)
-                            for environment_hook in environment_hooks
-                        ])
-                    )
-                else:
-                    variables['ENVIRONMENT_HOOKS'] = \
-                        'ament_append_value AMENT_ENVIRONMENT_HOOKS "%s"\n' % \
-                        ':'.join([
-                            os.path.join('$AMENT_CURRENT_PREFIX', environment_hook)
-                            for environment_hook in environment_hooks
-                        ])
-            content = configure_file(template_path, variables)
-            destination_path = os.path.join(
-                context.build_space,
-                'share', context.package_manifest.name,
-                name[:-3])
-            with open(destination_path, 'w') as h:
-                h.write(content)
+        expand_package_level_setup_files(context, environment_hooks, environment_hooks_path)
 
     def on_test(self, context):
         # Execute nosetests
