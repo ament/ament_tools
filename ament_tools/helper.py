@@ -249,9 +249,9 @@ def deploy_file(
             # Finally if the content is not the same.
             if not filecmp.cmp(source_path, destination_path):
                 # We (probably) didn't install it and shouldn't overwrite it.
-                print("-- [ament] Skipping (would overwrite):", destination_path)
+                print('-- [ament] Skipping (would overwrite):', destination_path)
                 return
-    print("-- [ament] Deploying:", destination_path)
+    print('-- [ament] Deploying:', destination_path)
     destination_folder = os.path.dirname(destination_path)
     if not os.path.exists(destination_folder):
         os.makedirs(destination_folder)
