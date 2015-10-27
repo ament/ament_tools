@@ -222,6 +222,10 @@ def extract_argument_group(args, delimiting_option):
     return trimmed_args, extracted_args
 
 
+def compute_deploy_destination(context, filename, dst_subfolder=''):
+    return os.path.join(context.install_space, dst_subfolder, filename)
+
+
 def deploy_file(
     context,
     source_base_path,
@@ -234,8 +238,7 @@ def deploy_file(
     source_path = os.path.join(source_base_path, filename)
 
     # create destination folder if necessary
-    destination_path = os.path.join(
-        context.install_space, dst_subfolder, filename)
+    destination_path = compute_deploy_destination(context, filename, dst_subfolder)
     # If the file exists and we should skip if we didn't install it.
     if (
         (os.path.exists(destination_path) or os.path.islink(destination_path)) and
