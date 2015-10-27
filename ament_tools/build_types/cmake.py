@@ -247,8 +247,8 @@ class CmakeBuildType(BuildType):
                 os.path.basename(destination),
                 os.path.dirname(os.path.relpath(destination, context.build_space))
             )
-            if os.path.exists(destination_path):
-                os.unlink(destination_path)
+            if os.path.exists(destination_path) or os.path.islink(destination_path):
+                os.remove(destination_path)
 
         # Call cmake common on_install (defined in CmakeBuildType)
         for step in self._common_cmake_on_install(context):
