@@ -281,6 +281,7 @@ def expand_prefix_level_setup_files(context):
             template_path = get_prefix_level_template_path(name)
             content = configure_file(template_path, {
                 'CMAKE_INSTALL_PREFIX': context.install_space,
+                'PYTHON_EXECUTABLE': sys.executable,
             })
             destination_path = os.path.join(
                 context.build_space, name[:-3])
@@ -292,12 +293,11 @@ def deploy_prefix_level_setup_files(context):
     # deploy prefix-level setup files
     for name in get_prefix_level_template_names():
         if name.endswith('.in'):
-            deploy_file(context, context.build_space, name[:-3], executable=True)
+            deploy_file(context, context.build_space, name[:-3])
         else:
             template_path = get_prefix_level_template_path(name)
             deploy_file(
-                context, os.path.dirname(template_path), os.path.basename(template_path),
-                executable=True)
+                context, os.path.dirname(template_path), os.path.basename(template_path))
 
 
 def run(opts, context):
