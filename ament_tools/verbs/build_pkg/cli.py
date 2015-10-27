@@ -281,6 +281,7 @@ def expand_prefix_level_setup_files(context):
             template_path = get_prefix_level_template_path(name)
             content = configure_file(template_path, {
                 'CMAKE_INSTALL_PREFIX': context.install_space,
+                'PYTHON_EXECUTABLE': sys.executable,
             })
             destination_path = os.path.join(
                 context.build_space, name[:-3])
