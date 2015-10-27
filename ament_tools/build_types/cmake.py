@@ -243,7 +243,7 @@ class CmakeBuildType(BuildType):
             context, os.path.dirname(path_template_path), os.path.basename(path_template_path),
             dst_subfolder=environment_hooks_path)
 
-        environment_hooks = [path_template_path]
+        environment_hooks = [os.path.join(environment_hooks_path, 'path' + ext)]
 
         # deploy library path environment hook
         if not IS_WINDOWS:
@@ -252,7 +252,7 @@ class CmakeBuildType(BuildType):
                 context,
                 os.path.dirname(library_template_path), os.path.basename(library_template_path),
                 dst_subfolder=environment_hooks_path)
-            environment_hooks.append(library_template_path)
+            environment_hooks.append(os.path.join(environment_hooks_path, 'library_path.sh'))
 
         # expand package-level setup files
         destinations = expand_package_level_setup_files(
