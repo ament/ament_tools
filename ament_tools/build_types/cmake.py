@@ -23,6 +23,7 @@ from ament_tools.build_type import BuildType
 
 from ament_tools.context import ContextExtender
 
+from ament_tools.helper import compute_deploy_destination
 from ament_tools.helper import deploy_file
 from ament_tools.helper import extract_argument_group
 
@@ -216,6 +217,39 @@ class CmakeBuildType(BuildType):
                 context.ctest_args)
 
     def on_install(self, context):
+        # First determine the files being deployed with skip_if_exists=True and remove them.
+        environment_hooks_path = \
+            os.path.join('share', context.package_manifest.name, 'environment')
+
+        environment_hooks_to_be_deployed = []
+
+        # Prepare to deploy PATH environment hook
+        ext = '.sh' if not IS_WINDOWS else '.bat'
+        path_template_path = get_environment_hook_template_path('path' + ext)
+        environment_hooks_to_be_deployed.append(path_template_path)
+        environment_hooks = [os.path.join(environment_hooks_path, 'path' + ext)]
+
+        # Prepare to deploy library path environment hook if not on Windows
+        if not IS_WINDOWS:
+            library_template_path = get_environment_hook_template_path('library_path.sh')
+            environment_hooks_to_be_deployed.append(library_template_path)
+            environment_hooks.append(os.path.join(environment_hooks_path, 'library_path.sh'))
+
+        # Expand package level setup files
+        destinations = \
+            expand_package_level_setup_files(context, environment_hooks, environment_hooks_path)
+
+        # Remove package level setup files so they can be replaced correctly either in the
+        # cmake install step or later with deploy_file(..., skip_if_exists=True)
+        for destination in destinations:
+            destination_path = compute_deploy_destination(
+                context,
+                os.path.basename(destination),
+                os.path.dirname(os.path.relpath(destination, context.build_space))
+            )
+            if os.path.exists(destination_path) or os.path.islink(destination_path):
+                os.remove(destination_path)
+
         # Call cmake common on_install (defined in CmakeBuildType)
         for step in self._common_cmake_on_install(context):
             yield step
@@ -233,37 +267,18 @@ class CmakeBuildType(BuildType):
             with open(marker_file, 'w'):  # "touching" the file
                 pass
 
-        environment_hooks_path = \
-            os.path.join('share', context.package_manifest.name, 'environment')
-
-        # deploy PATH environment hook
-        ext = '.sh' if not IS_WINDOWS else '.bat'
-        path_template_path = get_environment_hook_template_path('path' + ext)
-        deploy_file(
-            context, os.path.dirname(path_template_path), os.path.basename(path_template_path),
-            dst_subfolder=environment_hooks_path)
-
-        environment_hooks = [os.path.join(environment_hooks_path, 'path' + ext)]
-
-        # deploy library path environment hook
-        if not IS_WINDOWS:
-            library_template_path = get_environment_hook_template_path('library_path.sh')
+        # Deploy environment hooks
+        for environment_hook in environment_hooks_to_be_deployed:
             deploy_file(
-                context,
-                os.path.dirname(library_template_path), os.path.basename(library_template_path),
+                context, os.path.dirname(environment_hook), os.path.basename(environment_hook),
                 dst_subfolder=environment_hooks_path)
-            environment_hooks.append(os.path.join(environment_hooks_path, 'library_path.sh'))
 
-        # expand package-level setup files
-        destinations = expand_package_level_setup_files(
-            context, environment_hooks, environment_hooks_path)
+        # Expand package-level setup files
         for destination in destinations:
-            rel_destination_dir = \
-                os.path.dirname(os.path.relpath(destination, context.build_space))
             deploy_file(
                 context,
                 os.path.dirname(destination), os.path.basename(destination),
-                dst_subfolder=rel_destination_dir,
+                dst_subfolder=os.path.dirname(os.path.relpath(destination, context.build_space)),
                 skip_if_exists=True)
 
     def _common_cmake_on_install(self, context):
