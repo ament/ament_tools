@@ -14,7 +14,8 @@
 
 
 class Context(dict):
-    """Encapsulates a set of configurations for a particular context.
+
+    """Encapsulate a set of configurations for a particular context.
 
     This is used by the build and build_pkg verbs, for example, to encapsulate
     the build configurations like build space location, and whether or not to
@@ -46,6 +47,7 @@ class Context(dict):
     configurations and the dictionary style access makes it more convenient to
     programatically extend.
     """
+
     def __init__(self, *args):
         dict.__init__(self, args)
 
@@ -66,7 +68,8 @@ class Context(dict):
 
 
 class ContextExtender(object):
-    """Stores a series of extensions for a Context which can be applied later.
+
+    """Store a series of extensions for a Context which can be applied later.
 
     This can be used to describe a series of extensions (add, replace,
     or extend) which can later be applied to a Context.
@@ -95,13 +98,11 @@ class ContextExtender(object):
           File "<stdin>", line 1, in <module>
           File "ament_tools/context.py", line 137, in add
             "Context key '{0}' will already exist.".format(key)
-        ament_tools.context.ContextAddExtensionException: Context key 'foo' \
-will already exist.
+        ament_tools.context.ContextAddExtensionException: Context key 'foo' will already exist.
         >>> ce.replace('foo', 'bar2')
         >>> ce.extend('foo', 'bar3')
         >>> ce.extensions
-        [['add', 'foo', 'bar'], ['replace', 'foo', 'bar2'], ['extend', \
-'foo', 'bar3']]
+        [['add', 'foo', 'bar'], ['replace', 'foo', 'bar2'], ['extend', 'foo', 'bar3']]
         >>> ce.apply_to_context(c)
         >>> c.items()
         [('foo', 'bar2bar3')]
@@ -122,6 +123,7 @@ will already exist.
     In the above case this error happens because the current value for ``foo``
     is a ``str``, but the value given for the ``extend`` action is a ``list``.
     """
+
     def __init__(self):
         self.__extensions = []
 

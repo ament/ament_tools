@@ -24,8 +24,6 @@ class _PackageDecorator(object):
     def __init__(self, package, path):
         self.package = package
         self.path = path
-        # full includes direct build depends and recursive
-        # run_depends of these build_depends
         self.depends_for_topological_order = None
 
     def __getattr__(self, name):
@@ -35,11 +33,13 @@ class _PackageDecorator(object):
 
     def calculate_depends_for_topological_order(self, packages):
         """
-        Sets self.depends_for_topological_order to the recursive
-        dependencies required for topological order. It contains all
-        direct build- and buildtool dependencies and their recursive
-        runtime dependencies. The set only contains packages which
-        are in the passed packages dictionary.
+        Calculate the recursive dependencies required for topological order.
+
+        The member depends_for_topological_order is populated with the
+        recursive dependencies containing all direct build, buildtool, and test
+        dependencies and their recursive runtime dependencies.
+        The set only contains packages which are in the passed packages
+        dictionary.
 
         :param packages: dict of name to ``_PackageDecorator``
         """
@@ -58,9 +58,13 @@ class _PackageDecorator(object):
         depends_for_topological_order
     ):
         """
-        Modifies depends_for_topological_order argument by adding
-        build_export/exec_depends of self recursively. Only packages
-        which are in the passed packages are added and recursed into.
+        Update the dependencies with the recursive run dependencies.
+
+        The member depends_for_topological_order is modified by adding
+        build_export, buildtool_export, and exec_dependencies of this package
+        recursively.
+        Only packages which are in the passed packages are added and recursed
+        into.
 
         :param packages: dict of name to ``_PackageDecorator``
         :param depends_for_topological_order: set to be extended
@@ -85,8 +89,7 @@ def topological_order(
     underlay_workspaces=None
 ):
     """
-    Crawls the filesystem to find packages and uses their
-    dependencies to return a topologically order list.
+    Crawl the filesystem and order the found packages topologically.
 
     :param root_dir: The path to search in, ``str``
     :param whitelisted: A list of whitelisted package names, ``list``
@@ -121,10 +124,10 @@ def topological_order_packages(
     underlay_packages=None
 ):
     """
-    Topologically orders packages.
+    Order packages topologically.
 
-    Returns packages based on direct build/buildtool_depends and
-    indirect recursive build_export/exec_depends.
+    Return packages based on direct build, buildtool, and test dependencies and
+    recursive build_export, buildtool_export, and exec dependencies.
 
     :param dict packages: A dict mapping relative paths to ``Package`` objects
     :param list whitelisted: A list of whitelisted package names
@@ -178,7 +181,7 @@ def topological_order_packages(
 
 def _reduce_cycle_set(packages_orig):
     """
-    Iteratively removes packages from a set that are not part of any cycle.
+    Remove packages from a set that are not part of any cycle.
 
     When there is a cycle in the package dependencies,
     ``_sort_decorated_packages`` only knows the set of packages containing
@@ -210,10 +213,11 @@ def _reduce_cycle_set(packages_orig):
 
 def _sort_decorated_packages(packages_orig):
     """
-    Sorts packages according to dependency ordering.
+    Sort packages according to dependency ordering.
 
-    When a circle is detected, a tuple with None and a string giving a
-    superset of the guilty packages.
+    When a circular dependency is detected, the returned list contains a single
+    tuple with None and a string listing a superset of the packages forming the
+    cycle.
 
     :param dict packages: A dict mapping package name to
         ``_PackageDecorator`` objects

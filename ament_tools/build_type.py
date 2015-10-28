@@ -18,7 +18,8 @@ from .context import ContextExtender
 
 
 class BuildAction(object):
-    """Represents an action to do at build time, either a command or a functor.
+
+    """Represent an action to do at build time, either a command or a functor.
 
     These objects are yielded from the ``on_*`` methodsin the BuildType class
     for a particular ``build_type``.
@@ -45,6 +46,7 @@ class BuildAction(object):
     The default working directory for commands is the build space which can be
     overridden with the optional ``cwd`` parameter.
     """
+
     def __init__(self, cmd, type='command', title=None, dry_run_cmd=None,
                  cwd=None):
         self.cmd = cmd
@@ -89,6 +91,7 @@ class DefaultBuildTypeLogger(object):
 
 
 class BuildType(object):
+
     """Base class interface for building a ``build_type`` with ament tools.
 
     This class provides an interface for how to handle building of ament
@@ -182,9 +185,9 @@ class BuildType(object):
         raise NotImplementedError
 
     def info(self, *args):
-        """Logs informational messages for this build."""
+        """Log informational messages for this build."""
         self.logger.info(*args)
 
     def warn(self, *args):
-        """Logs warning messages for this build."""
+        """Log warning messages for this build."""
         self.logger.warn(*args)

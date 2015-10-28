@@ -79,8 +79,9 @@ def main(opts):
 
 def collect_test_results(test_results_dir, verbose=False):
     """
-    Collect test results by parsing all xml files in a given path,
-    attempting to interpret them as JUnit results.
+    Collect test results by parsing all xml files in a given path.
+
+    Each file is interpreted as a JUnit result file.
 
     :param test_results_dir: str foldername
     :returns: dict {rel_path, (num_tests, num_errors, num_failures)}
