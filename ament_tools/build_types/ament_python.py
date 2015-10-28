@@ -258,7 +258,10 @@ class AmentPythonBuildType(BuildType):
         lines.append('@echo off')
         for path in context.build_dependencies:
             local_setup = os.path.join(path, 'local_setup.bat')
+            lines.append(
+                'if "%AMENT_TRACE_SETUP_FILES%" NEQ "" echo call "{0}"'.format(local_setup))
             lines.append('if exist "{0}" call "{0}"'.format(local_setup))
+            lines.append('')
         lines.append(
             'set "PYTHONPATH={0};%PYTHONPATH%"'
             .format(os.path.join(context.install_space,
@@ -282,9 +285,13 @@ class AmentPythonBuildType(BuildType):
         lines.append('#!/usr/bin/env sh\n')
         for path in context.build_dependencies:
             local_setup = os.path.join(path, 'local_setup.sh')
+            lines.append('if [ -n "$AMENT_TRACE_SETUP_FILES" ]; then')
+            lines.append('  echo ". \\"%s\\""' % local_setup)
+            lines.append('fi')
             lines.append('if [ -f "%s" ]; then' % local_setup)
             lines.append('  . "%s"' % local_setup)
             lines.append('fi')
+            lines.append('')
         lines.append(
             'export PYTHONPATH="%s:$PYTHONPATH"' %
             os.path.join(context.install_space, self._get_python_lib(context)))
