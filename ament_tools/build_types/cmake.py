@@ -324,15 +324,16 @@ class CmakeBuildType(BuildType):
     def _get_command_prefix_windows(self, name, context):
         lines = []
         lines.append('@echo off\n')
-        lines.append('if defined AMENT_TRACE_SETUP_FILES echo Inside %~0')
         for path in context.build_dependencies:
             local_setup = os.path.join(path, 'local_setup.bat')
-            lines.append('if exist "{0}" call "{0}"\n'.format(local_setup))
+            lines.append(
+                'if "%AMENT_TRACE_SETUP_FILES%" NEQ "" echo call "{0}"'.format(local_setup))
+            lines.append('if exist "{0}" call "{0}"'.format(local_setup))
+            lines.append('')
         lines.append(
             'set "CMAKE_PREFIX_PATH=%AMENT_PREFIX_PATH%;%CMAKE_PREFIX_PATH%"')
         lines.append('%*')
         lines.append('if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%')
-        lines.append('if defined AMENT_TRACE_SETUP_FILES echo Leaving %~0')
 
         generated_file = os.path.join(
             context.build_space, '%s__%s.bat' %
@@ -348,9 +349,13 @@ class CmakeBuildType(BuildType):
         lines.append('#!/usr/bin/env sh\n')
         for path in context.build_dependencies:
             local_setup = os.path.join(path, 'local_setup.sh')
+            lines.append('if [ -n "$AMENT_TRACE_SETUP_FILES" ]; then')
+            lines.append('  echo ". \\"%s\\""' % local_setup)
+            lines.append('fi')
             lines.append('if [ -f "%s" ]; then' % local_setup)
             lines.append('  . "%s"' % local_setup)
             lines.append('fi')
+            lines.append('')
         lines.append(
             'export CMAKE_PREFIX_PATH="$AMENT_PREFIX_PATH:$CMAKE_PREFIX_PATH"')
 
