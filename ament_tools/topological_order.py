@@ -138,7 +138,7 @@ def topological_order_packages(
     decorators_by_name = {}
     for path, package in packages.items():
         # skip non-whitelisted packages
-        if whitelisted and package.name not in whitelisted:
+        if whitelisted is not None and package.name not in whitelisted:
             continue
         # skip blacklisted packages
         if blacklisted and package.name in blacklisted:
