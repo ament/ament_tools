@@ -109,6 +109,7 @@ class AmentPythonBuildType(BuildType):
             '--with-xunit', '--xunit-file=%s' % xunit_file,
             '--with-coverage', '--cover-erase',
             '--cover-tests', '--cover-branches',
+            '--cover-inclusive',
             '--cover-xml', '--cover-xml-file=%s' % coverage_xml_file,
         ]
         if LooseVersion(nose.__version__) >= LooseVersion('1.3.5'):
