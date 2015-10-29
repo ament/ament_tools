@@ -29,7 +29,7 @@ class MissingPluginError(Exception):
 
 
 def get_class_for_build_type(build_type):
-    """Gets the class for a given package build type.
+    """Get the class for a given package build type.
 
     :param str build_type: name of build_type plugin, e.g. 'ament_cmake'
     :returns: class for the requirest build_type plugin

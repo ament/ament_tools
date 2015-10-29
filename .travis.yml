@@ -21,6 +21,9 @@ install:
   - cd ament_lint/ament_copyright
   - python setup.py install
   - cd ../..
+  - cd ament_lint/ament_pep257
+  - python setup.py install
+  - cd ../..
   - cd ament_lint/ament_pep8
   - python setup.py install
   - cd ../..
