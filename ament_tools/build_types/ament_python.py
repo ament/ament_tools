@@ -103,11 +103,14 @@ class AmentPythonBuildType(BuildType):
         if not os.path.exists(os.path.dirname(xunit_file)):
             os.makedirs(os.path.dirname(xunit_file))
         assert NOSETESTS_EXECUTABLE, 'Could not find nosetests'
+        coverage_xml_file = os.path.join(context.build_space, 'coverage.xml')
         cmd = NOSETESTS_EXECUTABLE + [
             '--nocapture',
             '--with-xunit', '--xunit-file=%s' % xunit_file,
             '--with-coverage', '--cover-erase',
             '--cover-tests', '--cover-branches',
+            '--cover-inclusive',
+            '--cover-xml', '--cover-xml-file=%s' % coverage_xml_file,
         ]
         if LooseVersion(nose.__version__) >= LooseVersion('1.3.5'):
             cmd += [
