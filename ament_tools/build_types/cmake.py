@@ -15,6 +15,7 @@
 """Implements the BuildType support for cmake based ament packages."""
 
 import os
+import sys
 
 from ament_package.templates import get_environment_hook_template_path
 
@@ -137,18 +138,16 @@ class CmakeBuildType(BuildType):
             if IS_WINDOWS:
                 vsv = get_visual_studio_version()
                 if vsv is None:
-                    print("VisualStudioVersion is not set, please run within "
-                          "a VS2013 or VS2015 Command Prompt.")
-                    raise VerbExecutionError(
-                        "Could not determine Visual Studio Version.")
-                generator = None
-                if vsv == '12.0':
-                    generator = 'Visual Studio 12 2013 Win64'
-                elif vsv == '14.0':
-                    generator = 'Visual Studio 14 2015 Win64'
-                else:
-                    raise VerbExecutionError("Unknown VS version: " + vsv)
-                cmake_args += ['-G', generator]
+                    sys.stderr.write(
+                        'VisualStudioVersion is not set, '
+                        'please run within a Visual Studio Command Prompt.\n')
+                    raise VerbExecutionError('Could not determine Visual Studio Version')
+                supported_vsv = {
+                    '14.0': 'Visual Studio 14 2015 Win64',
+                }
+                if vsv not in supported_vsv:
+                    raise VerbExecutionError('Unknown / unsupported VS version: ' + vsv)
+                cmake_args += ['-G', supported_vsv[vsv]]
             if CMAKE_EXECUTABLE is None:
                 raise VerbExecutionError("Could not find 'cmake' executable")
             yield BuildAction(prefix + [CMAKE_EXECUTABLE] + cmake_args)
