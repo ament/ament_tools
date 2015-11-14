@@ -237,6 +237,8 @@ def run_command(build_action, context):
         cwd = context.build_space
     print("==> '{0}' in '{1}'".format(
         " ".join(build_action.cmd), cwd))
+    # flush Python output before letting the external command write to the pipe
+    sys.stdout.flush()
     try:
         cmd = build_action.cmd
         if os.name != 'nt':
