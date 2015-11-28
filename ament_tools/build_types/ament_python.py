@@ -116,6 +116,8 @@ class AmentPythonBuildType(BuildType):
             cmd += [
                 '--xunit-testsuite-name=%s.nosetests' %
                 context.package_manifest.name]
+            if LooseVersion(nose.__version__) >= LooseVersion('1.3.8'):
+                cmd += ['--xunit-prefix-with-testsuite-name']
         # coverage for all root-packages
         packages = setuptools.find_packages(
             context.source_space, exclude=['*.*'])
