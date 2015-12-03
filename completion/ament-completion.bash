@@ -37,7 +37,7 @@ _ament()
       elif [[ "--cmake-args" == *${prev}* && ${cur} != -* ]] ; then
         COMPREPLY=($(compgen -W "-DCMAKE_BUILD_TYPE=" -- ${cur}))
       else
-        COMPREPLY=($(compgen -W "--ament-cmake-args --build-space --build-tests -C --cmake-args --end-with --force-ament-cmake-configure --force-cmake-configure --make-flags --install-space --isolated --only-package --skip-build --skip-install --start-with" -- ${cur}))
+        COMPREPLY=($(compgen -W "--ament-cmake-args --build-space --build-tests -C --cmake-args --end-with --force-ament-cmake-configure --force-cmake-configure --make-flags --install-space --isolated --only-package --skip-build --skip-install --start-with --symlink-install" -- ${cur}))
       fi
     elif [[ "${COMP_WORDS[@]}" == *" list_packages"* ]] ; then
       if [[ "--depends-on" == *${prev}* && ${cur} != -* ]] ; then
