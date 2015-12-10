@@ -16,7 +16,7 @@ from ament_package import package_exists_at
 from ament_package import PACKAGE_MANIFEST_FILENAME
 from ament_package import parse_package
 
-__all__ = ['entry_point_data']
+__all__ = ('entry_point_data')
 
 # meta information of the entry point
 entry_point_data = dict(

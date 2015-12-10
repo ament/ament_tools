@@ -17,7 +17,7 @@ from ament_tools.verbs.build.cli import argument_preprocessor
 from .cli import main
 from .cli import prepare_arguments
 
-__all__ = ['entry_point_data']
+__all__ = ('entry_point_data')
 
 # meta information of the entry point
 entry_point_data = dict(
