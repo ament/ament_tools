@@ -21,7 +21,7 @@ from ament_package.package import Package
 
 from ament_tools.setup_arguments import get_setup_arguments
 
-__all__ = ['entry_point_data']
+__all__ = ('entry_point_data')
 
 
 def package_exists_at(path):

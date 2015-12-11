@@ -19,7 +19,7 @@ from ament_package.dependency import Dependency
 from ament_package.export import Export
 from ament_package.package import Package
 
-__all__ = ['entry_point_data']
+__all__ = ('entry_point_data')
 
 
 def package_exists_at(path):
