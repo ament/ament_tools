@@ -185,7 +185,10 @@ class CmakeBuildType(BuildType):
                     raise VerbExecutionError("Could not find 'make' executable")
                 cmd = prefix + [MAKE_EXECUTABLE, 'test']
                 if 'ARGS' not in os.environ:
-                    args = ['-V']
+                    args = [
+                        '-V',
+                        # verbose output and generate xml of test summary
+                        '-D', 'ExperimentalTest', '--no-compress-output']
                 elif os.environ['ARGS']:
                     args = [os.environ['ARGS']]
                 else:
