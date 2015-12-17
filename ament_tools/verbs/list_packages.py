@@ -39,7 +39,13 @@ def prepare_arguments(parser):
         '--names-only',
         action='store_true',
         default=False,
-        help='Print the name of the packages not the path',
+        help='Print the names of the packages but not the path',
+    )
+    parser.add_argument(
+        '--paths-only',
+        action='store_true',
+        default=False,
+        help='Print the paths of the packages but not the name',
     )
     parser.add_argument(
         '--depends-on',
@@ -62,9 +68,10 @@ def get_unique_depend_names(package):
 
 
 def main(options):
+    lines = []
     if not options.topological_order:
         package_paths = find_package_paths(options.basepath)
-        for package_path in sorted(package_paths):
+        for package_path in package_paths:
             package = None
             package_abs_path = os.path.join(options.basepath, package_path)
             if options.depends_on is not None:
@@ -73,9 +80,12 @@ def main(options):
                     continue
             if options.names_only:
                 package = package or parse_package(package_abs_path)
-                print(package.name)
+                lines.append(package.name)
+            elif options.paths_only:
+                lines.append(package_path)
             else:
-                print(package_path)
+                package = package or parse_package(package_abs_path)
+                lines.append(package.name + ' ' + package_path)
     else:
         packages = find_unique_packages(options.basepath)
         packages = topological_order_packages(packages)
@@ -84,14 +94,19 @@ def main(options):
                 if options.depends_on not in get_unique_depend_names(package):
                     continue
             if options.names_only:
-                print(package.name)
+                lines.append(package.name)
+            elif options.paths_only:
+                lines.append(package_path)
             else:
-                print(package_path)
+                lines.append(package.name + ' ' + package_path)
+    lines.sort()
+    for line in lines:
+        print(line)
 
 # meta information of the entry point
 entry_point_data = dict(
     verb='list_packages',
-    description='List relative paths of packages',
+    description='List names and relative paths of packages',
     # Called for execution, given parsed arguments object
     main=main,
     # Called first to setup argparse, given argparse parser
