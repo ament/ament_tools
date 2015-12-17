@@ -43,12 +43,12 @@ _ament()
       if [[ "--depends-on" == *${prev}* && ${cur} != -* ]] ; then
         COMPREPLY=($(compgen -W "$(ament list_packages --names-only)" -- ${cur}))
       else
-        COMPREPLY=($(compgen -W "--depends-on --names-only --topological-order" -- ${cur}))
+        COMPREPLY=($(compgen -W "--depends-on --names-only --paths-only --topological-order" -- ${cur}))
       fi
     elif [[ "${COMP_WORDS[@]}" == *" package_name"* ]] ; then
       COMPREPLY=($(compgen -d -S / -o nospace -- ${cur}))
     elif [[ "${COMP_WORDS[@]}" == *" package_version"* ]] ; then
-      COMPREPLY=($(compgen -W "$(ament list_packages)" -- ${cur}))
+      COMPREPLY=($(compgen -W "$(ament list_packages --paths-only)" -- ${cur}))
     elif [[ "${COMP_WORDS[@]}" == *" test_results"* ]] ; then
       COMPREPLY=($(compgen -W "--verbose" -- ${cur}))
     fi
