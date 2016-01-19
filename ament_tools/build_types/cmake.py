@@ -166,10 +166,11 @@ class CmakeBuildType(BuildType):
                 raise VerbExecutionError("Could not find 'msbuild' executable")
             solution_file = solution_file_exists_at(
                 context.build_space, context.package_manifest.name)
+            cmd = prefix + [MSBUILD_EXECUTABLE]
             if '-j1' in context.make_flags:
-                yield BuildAction(prefix + [MSBUILD_EXECUTABLE, solution_file])
-            else:
-                yield BuildAction(prefix + [MSBUILD_EXECUTABLE, '/m', solution_file])
+                cmd += ['/m']
+            cmd += ['/p:Configuration=Release', solution_file]
+            yield BuildAction(cmd)
 
     def on_test(self, context):
         for step in self._common_cmake_on_test(context, 'cmake'):
@@ -210,7 +211,7 @@ class CmakeBuildType(BuildType):
             yield BuildAction(prefix + [
                 CTEST_EXECUTABLE,
                 # choose configuration on e.g. Windows
-                '-C', 'Debug',
+                '-C', 'Release',
                 # generate xml of test summary
                 '-D', 'ExperimentalTest', '--no-compress-output',
                 # show all test output
@@ -301,7 +302,9 @@ class CmakeBuildType(BuildType):
             if install_project_file is not None:
                 if MSBUILD_EXECUTABLE is None:
                     raise VerbExecutionError("Could not find 'msbuild' executable")
-                yield BuildAction(prefix + [MSBUILD_EXECUTABLE, install_project_file])
+                yield BuildAction(
+                    prefix +
+                    [MSBUILD_EXECUTABLE, '/p:Configuration=Release', install_project_file])
             else:
                 self.warn("Could not find Visual Studio project file 'INSTALL.vcxproj'")
 
