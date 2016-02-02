@@ -169,7 +169,9 @@ class CmakeBuildType(BuildType):
             cmd = prefix + [MSBUILD_EXECUTABLE]
             if '-j1' in context.make_flags:
                 cmd += ['/m']
-            cmd += ['/p:Configuration=Release', solution_file]
+            cmd += [
+                '/p:Configuration=%s' %
+                self._get_visual_studio_configuration(context), solution_file]
             yield BuildAction(cmd)
 
     def on_test(self, context):
@@ -211,13 +213,36 @@ class CmakeBuildType(BuildType):
             yield BuildAction(prefix + [
                 CTEST_EXECUTABLE,
                 # choose configuration on e.g. Windows
-                '-C', 'Release',
+                '-C', self._get_visual_studio_configuration(context),
                 # generate xml of test summary
                 '-D', 'ExperimentalTest', '--no-compress-output',
                 # show all test output
                 '-V',
                 '--force-new-ctest-process'] +
                 context.ctest_args)
+
+    def _get_visual_studio_configuration(self, context):
+        # check for CMake build type in the command line arguments
+        arg_prefix = '-DCMAKE_BUILD_TYPE='
+        build_type = None
+        for cmake_arg in context.cmake_args:
+            if cmake_arg.startswith(arg_prefix):
+                build_type = cmake_arg[len(arg_prefix):]
+                break
+        else:
+            # get for CMake build type from the CMake cache
+            line_prefix = 'CMAKE_BUILD_TYPE:STRING='
+            cmake_cache = os.path.join(context.build_space, 'CMakeCache.txt')
+            if os.path.exists(cmake_cache):
+                with open(cmake_cache, 'r') as h:
+                    lines = h.read().splitlines()
+                for line in lines:
+                    if line.startswith(line_prefix):
+                        build_type = line[len(line_prefix):]
+                        break
+        if build_type in ['Debug']:
+            return 'Debug'
+        return 'Release'
 
     def on_install(self, context):
         # First determine the files being deployed with skip_if_exists=True and remove them.
