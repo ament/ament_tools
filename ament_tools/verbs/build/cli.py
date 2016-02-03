@@ -109,6 +109,11 @@ def prepare_arguments(parser, args):
         '--only',
         help='Only process a particular package, implies --start-with <pkg> and --end-with <pkg>'
     )
+    parser.add_argument(
+        '--skip-packages',
+        nargs='*',
+        help='List of packages to skip'
+    )
 
     # Allow all available build_type's to provide additional arguments
     for build_type in yield_supported_build_types():
@@ -158,6 +163,18 @@ def print_topological_order(opts, packages):
         sys.exit("Package '{0}' specified with --end-with was not found."
                  .format(opts.end_with))
 
+    opts.skip_packages = opts.skip_packages or []
+    nonexistent_skip_packages = []
+    for skip_package in opts.skip_packages:
+        if skip_package not in package_names:
+            nonexistent_skip_packages.append(skip_package)
+        if skip_package == opts.only_package:
+            sys.exit("Cannot --skip-packages and --only-package the same package: '{0}'."
+                     .format(skip_package))
+    if nonexistent_skip_packages:
+            sys.exit('Packages [{0}] specified with --skip-packages were not found.'
+                     .format(', '.join(nonexistent_skip_packages)))
+
     if opts.only_package:
         if opts.start_with or opts.end_with:
             # The argprase mutually exclusive mechanism is broken for subparsers
@@ -190,7 +207,12 @@ def print_topological_order(opts, packages):
     for (path, package, _) in packages:
         if package.name == opts.start_with:
             start_with_found = True
+        should_skip = False
         if not start_with_found or (opts.end_with and end_with_found):
+            should_skip = True
+        if package.name in opts.skip_packages:
+            should_skip = True
+        if should_skip:
             print(' - (%s)' % package.name)
         else:
             print(' - %s' % package.name)
@@ -200,38 +222,39 @@ def print_topological_order(opts, packages):
 
 def iterate_packages(opts, packages, per_package_callback):
     start_with_found = not opts.start_with
+    opts.skip_packages = opts.skip_packages or []
     install_space_base = opts.install_space
     package_dict = dict([(path, package) for path, package, _ in packages])
     for (path, package, depends) in packages:
         if package.name == opts.start_with:
             start_with_found = True
-        if not start_with_found:
+        if not start_with_found or package.name in opts.skip_packages:
             print('# Skipping: %s' % package.name)
-            continue
-        pkg_path = os.path.join(opts.basepath, path)
-        opts.path = pkg_path
-        if opts.isolated:
-            opts.install_space = os.path.join(install_space_base, package.name)
-
-        # get recursive package dependencies in topological order
-        ordered_depends = topological_order_packages(
-            package_dict, whitelisted=depends)
-        ordered_depends = [
-            pkg.name
-            for _, pkg, _ in ordered_depends
-            if pkg.name != package.name]
-        # get package share folder for each package
-        opts.build_dependencies = []
-        for depend in ordered_depends:
-            install_space = install_space_base
+        else:
+            pkg_path = os.path.join(opts.basepath, path)
+            opts.path = pkg_path
             if opts.isolated:
-                install_space = os.path.join(install_space, depend)
-            package_share = os.path.join(install_space, 'share', depend)
-            opts.build_dependencies.append(package_share)
+                opts.install_space = os.path.join(install_space_base, package.name)
 
-        rc = per_package_callback(opts)
-        if rc:
-            return rc
+            # get recursive package dependencies in topological order
+            ordered_depends = topological_order_packages(
+                package_dict, whitelisted=depends)
+            ordered_depends = [
+                pkg.name
+                for _, pkg, _ in ordered_depends
+                if pkg.name != package.name]
+            # get package share folder for each package
+            opts.build_dependencies = []
+            for depend in ordered_depends:
+                install_space = install_space_base
+                if opts.isolated:
+                    install_space = os.path.join(install_space, depend)
+                package_share = os.path.join(install_space, 'share', depend)
+                opts.build_dependencies.append(package_share)
+
+            rc = per_package_callback(opts)
+            if rc:
+                return rc
         if package.name == opts.end_with:
             print("Stopped after package '{0}'".format(package.name))
             break
