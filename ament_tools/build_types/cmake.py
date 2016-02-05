@@ -328,8 +328,10 @@ class CmakeBuildType(BuildType):
                 if MSBUILD_EXECUTABLE is None:
                     raise VerbExecutionError("Could not find 'msbuild' executable")
                 yield BuildAction(
-                    prefix +
-                    [MSBUILD_EXECUTABLE, '/p:Configuration=Release', install_project_file])
+                    prefix + [
+                        MSBUILD_EXECUTABLE,
+                        '/p:Configuration=' + self._get_visual_studio_configuration(context),
+                        install_project_file])
             else:
                 self.warn("Could not find Visual Studio project file 'INSTALL.vcxproj'")
 
