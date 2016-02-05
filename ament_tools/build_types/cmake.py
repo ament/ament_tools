@@ -231,14 +231,18 @@ class CmakeBuildType(BuildType):
                 break
         else:
             # get for CMake build type from the CMake cache
-            line_prefix = 'CMAKE_BUILD_TYPE:STRING='
+            line_prefix = 'CMAKE_BUILD_TYPE:'
             cmake_cache = os.path.join(context.build_space, 'CMakeCache.txt')
             if os.path.exists(cmake_cache):
                 with open(cmake_cache, 'r') as h:
                     lines = h.read().splitlines()
                 for line in lines:
                     if line.startswith(line_prefix):
-                        build_type = line[len(line_prefix):]
+                        try:
+                            index = line.index('=')
+                        except ValueError:
+                            continue
+                        build_type = line[index + 1:]
                         break
         if build_type in ['Debug']:
             return 'Debug'
