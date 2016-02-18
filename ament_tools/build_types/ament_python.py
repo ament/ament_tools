@@ -318,6 +318,9 @@ class AmentPythonBuildType(BuildType):
         items = ['setup.py']
         # add all first level packages
         items += [p for p in context['setup.py']['packages'] if '.' not in p]
+        # relative python-ish paths are allowed as entries in py_modules, see:
+        # https://docs.python.org/3.5/distutils/setupscript.html#listing-individual-modules
+        items += [re.sub(r'\.', os.path.sep, p) for p in context['setup.py']['py_modules']]
         items += list(context['setup.py']['data_files'].keys())
 
         # symlink files / folders from source space into build space
@@ -433,4 +436,5 @@ class AmentPythonBuildType(BuildType):
         context['setup.py'] = {
             'data_files': data_files,
             'packages': args['packages'],
+            'py_modules': args['py_modules'],
         }
