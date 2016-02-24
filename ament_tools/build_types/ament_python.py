@@ -322,7 +322,7 @@ class AmentPythonBuildType(BuildType):
         # https://docs.python.org/3.5/distutils/setupscript.html#listing-individual-modules
         py_modules = context['setup.py'].get('py_modules')
         if py_modules:
-            py_modules_list = [re.sub(r'\.', os.path.sep, p) + '.py' for p in py_modules]
+            py_modules_list = [p.replace('.', os.path.sep) + '.py' for p in py_modules]
             for py_module in py_modules_list:
                 if not os.path.exists(os.path.join(context.source_space, py_module)):
                     raise RuntimeError(
