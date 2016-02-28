@@ -28,7 +28,7 @@ _ament()
     COMPREPLY=( $( compgen -P "-DCMAKE_BUILD_TYPE=" -W "Debug MinSizeRel None Release RelWithDebInfo" -- "${cur:19}" ) )
   else
     if [[ "${COMP_WORDS[@]}" == *" build_pkg"* || "${COMP_WORDS[@]}" == *" test_pkg"* ]] ; then
-      COMPREPLY=($(compgen -W "--build-space --build-tests --install-space --make-flags --skip-build --skip-install --symlink-install" -- ${cur}))
+      COMPREPLY=($(compgen -W "--ament-cmake-args --build-space --build-tests --cmake-args --ctest-args --force-ament-cmake-configure --force-cmake-configure --install-space --make-flags --skip-build --skip-install --symlink-install" -- ${cur}))
     elif [[ "${COMP_WORDS[@]}" == *" build"* || "${COMP_WORDS[@]}" == *" test"* ]] ; then
       if [[ "--start-with" == *${prev}* && ${cur} != -* ]] ; then
         COMPREPLY=($(compgen -W "$(ament list_packages --names-only)" -- ${cur}))
