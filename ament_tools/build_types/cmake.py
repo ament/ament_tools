@@ -181,7 +181,11 @@ class CmakeBuildType(BuildType):
     def _common_cmake_on_test(self, context, build_type):
         assert context.build_tests
         # Figure out if there is a setup file to source
-        prefix = self._get_command_prefix('test', context)
+        # also pass the exec dependencies into the command prefix file
+        prefix = self._get_command_prefix(
+            'test', context,
+            additional_dependencies=context.exec_dependency_paths_in_workspace
+        )
         if not IS_WINDOWS:
             if has_make_target(context.build_space, 'test') or context.dry_run:
                 if MAKE_EXECUTABLE is None:
@@ -366,16 +370,16 @@ class CmakeBuildType(BuildType):
             else:
                 self.warn("Could not find Visual Studio project file 'UNINSTALL.vcxproj'")
 
-    def _get_command_prefix(self, name, context):
+    def _get_command_prefix(self, name, context, additional_dependencies=None):
         if not IS_WINDOWS:
-            return self._get_command_prefix_unix(name, context)
+            return self._get_command_prefix_unix(name, context, additional_dependencies or [])
         else:
-            return self._get_command_prefix_windows(name, context)
+            return self._get_command_prefix_windows(name, context, additional_dependencies or [])
 
-    def _get_command_prefix_windows(self, name, context):
+    def _get_command_prefix_windows(self, name, context, additional_dependencies):
         lines = []
         lines.append('@echo off\n')
-        for path in context.build_dependencies:
+        for path in context.build_dependencies + additional_dependencies:
             local_setup = os.path.join(path, 'local_setup.bat')
             lines.append(
                 'if "%AMENT_TRACE_SETUP_FILES%" NEQ "" echo call "{0}"'.format(local_setup))
@@ -395,10 +399,10 @@ class CmakeBuildType(BuildType):
 
         return [generated_file]
 
-    def _get_command_prefix_unix(self, name, context):
+    def _get_command_prefix_unix(self, name, context, additional_dependencies):
         lines = []
         lines.append('#!/usr/bin/env sh\n')
-        for path in context.build_dependencies:
+        for path in context.build_dependencies + additional_dependencies:
             local_setup = os.path.join(path, 'local_setup.sh')
             lines.append('if [ -n "$AMENT_TRACE_SETUP_FILES" ]; then')
             lines.append('  echo ". \\"%s\\""' % local_setup)

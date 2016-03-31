@@ -95,8 +95,12 @@ class AmentPythonBuildType(BuildType):
             additional_lines.append('export COVERAGE_FILE="%s"' % coverage_file)
         else:
             additional_lines.append('set "COVERAGE_FILE=%s"' % coverage_file)
+        # also pass the exec dependencies into the command prefix file
         prefix = self._get_command_prefix(
-            'test', context, additional_lines=additional_lines)
+            'test', context,
+            additional_lines=additional_lines,
+            additional_dependencies=context.exec_dependency_paths_in_workspace,
+        )
         xunit_file = os.path.join(
             context.build_space, 'test_results',
             context.package_manifest.name, 'nosetests.xunit.xml')
@@ -250,18 +254,30 @@ class AmentPythonBuildType(BuildType):
         path = get_python_lib(prefix=context.install_space)
         return os.path.relpath(path, start=context.install_space)
 
-    def _get_command_prefix(self, name, context, additional_lines=None):
+    def _get_command_prefix(
+        self,
+        name,
+        context,
+        additional_lines=None,
+        additional_dependencies=None,
+    ):
         if not IS_WINDOWS:
-            return self._get_command_prefix_unix(name, context,
-                                                 additional_lines)
+            return self._get_command_prefix_unix(
+                name, context, additional_lines, additional_dependencies or [])
         else:
-            return self._get_command_prefix_windows(name, context,
-                                                    additional_lines)
+            return self._get_command_prefix_windows(
+                name, context, additional_lines, additional_dependencies or [])
 
-    def _get_command_prefix_windows(self, name, context, additional_lines):
+    def _get_command_prefix_windows(
+        self,
+        name,
+        context,
+        additional_lines,
+        additional_dependencies,
+    ):
         lines = []
         lines.append('@echo off')
-        for path in context.build_dependencies:
+        for path in context.build_dependencies + additional_dependencies:
             local_setup = os.path.join(path, 'local_setup.bat')
             lines.append(
                 'if "%AMENT_TRACE_SETUP_FILES%" NEQ "" echo call "{0}"'.format(local_setup))
@@ -285,10 +301,10 @@ class AmentPythonBuildType(BuildType):
 
         return [generated_file]
 
-    def _get_command_prefix_unix(self, name, context, additional_lines):
+    def _get_command_prefix_unix(self, name, context, additional_lines, additional_dependencies):
         lines = []
         lines.append('#!/usr/bin/env sh\n')
-        for path in context.build_dependencies:
+        for path in context.build_dependencies + additional_dependencies:
             local_setup = os.path.join(path, 'local_setup.sh')
             lines.append('if [ -n "$AMENT_TRACE_SETUP_FILES" ]; then')
             lines.append('  echo ". \\"%s\\""' % local_setup)

@@ -225,6 +225,7 @@ def iterate_packages(opts, packages, per_package_callback):
     opts.skip_packages = opts.skip_packages or []
     install_space_base = opts.install_space
     package_dict = dict([(path, package) for path, package, _ in packages])
+    workspace_package_names = [pkg.name for pkg in package_dict.values()]
     for (path, package, depends) in packages:
         if package.name == opts.start_with:
             start_with_found = True
@@ -251,6 +252,19 @@ def iterate_packages(opts, packages, per_package_callback):
                     install_space = os.path.join(install_space, depend)
                 package_share = os.path.join(install_space, 'share', depend)
                 opts.build_dependencies.append(package_share)
+
+            # get the package share folder for each exec depend of the package
+            opts.exec_dependency_paths_in_workspace = []
+            for dep_object in package.exec_depends:
+                dep_name = dep_object.name
+                if dep_name not in workspace_package_names:
+                    # do not add to this list if the dependency is not in the workspace
+                    continue
+                install_space = install_space_base
+                if opts.isolated:
+                    install_space = os.path.join(install_space, dep_name)
+                package_share = os.path.join(install_space, 'share', dep_name)
+                opts.exec_dependency_paths_in_workspace.append(package_share)
 
             rc = per_package_callback(opts)
             if rc:
