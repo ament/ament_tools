@@ -353,6 +353,8 @@ def create_context(opts):
     context.install = True
     context.build_dependencies = opts.build_dependencies \
         if 'build_dependencies' in opts else []
+    context.exec_dependency_paths_in_workspace = opts.exec_dependency_paths_in_workspace \
+        if 'exec_dependency_paths_in_workspace' in opts else []
     context.symlink_install = opts.symlink_install
     context.make_flags = opts.make_flags
     context.dry_run = False
