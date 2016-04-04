@@ -18,7 +18,6 @@ from .context import ContextExtender
 
 
 class BuildAction(object):
-
     """Represent an action to do at build time, either a command or a functor.
 
     These objects are yielded from the ``on_*`` methodsin the BuildType class
@@ -91,7 +90,6 @@ class DefaultBuildTypeLogger(object):
 
 
 class BuildType(object):
-
     """Base class interface for building a ``build_type`` with ament tools.
 
     This class provides an interface for how to handle building of ament

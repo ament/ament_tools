@@ -14,7 +14,6 @@
 
 
 class Context(dict):
-
     """Encapsulate a set of configurations for a particular context.
 
     This is used by the build and build_pkg verbs, for example, to encapsulate
@@ -68,7 +67,6 @@ class Context(dict):
 
 
 class ContextExtender(object):
-
     """Store a series of extensions for a Context which can be applied later.
 
     This can be used to describe a series of extensions (add, replace,
