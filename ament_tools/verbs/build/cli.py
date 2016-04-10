@@ -163,7 +163,8 @@ def print_topological_order(opts, packages):
         sys.exit("Package '{0}' specified with --end-with was not found."
                  .format(opts.end_with))
 
-    opts.skip_packages = opts.skip_packages or []
+    if 'skip_packages' not in opts:
+        opts.skip_packages = []
     nonexistent_skip_packages = []
     for skip_package in opts.skip_packages:
         if skip_package not in package_names:
