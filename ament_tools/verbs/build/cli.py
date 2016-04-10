@@ -165,6 +165,8 @@ def print_topological_order(opts, packages):
 
     if 'skip_packages' not in opts:
         opts.skip_packages = []
+    else:
+        opts.skip_packages = opts.skip_packages or []
     nonexistent_skip_packages = []
     for skip_package in opts.skip_packages:
         if skip_package not in package_names:
