@@ -106,10 +106,11 @@ def yield_supported_build_types(name=None):
                 for build_type, entry_point in known_build_types.items()]
 
     if name not in known_build_types:
-        raise RuntimeError(
-            "This script does not support the build type '%s'\n" % name +
-            'Only the following build types are supported: %s' %
-            ', '.join(known_build_types.keys()))
+        name = 'cmake'
+        #raise RuntimeError(
+        #    "This script does not support the build type '%s'\n" % name +
+        #    'Only the following build types are supported: %s' %
+        #    ', '.join(known_build_types.keys()))
     return Loader(name, known_build_types[name])
 
 
