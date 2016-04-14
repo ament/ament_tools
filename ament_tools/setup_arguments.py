@@ -30,6 +30,7 @@ def get_setup_arguments(setup_py_path):
     assert os.path.basename(setup_py_path) == 'setup.py'
     # change to the directory containing the setup.py file
     old_cwd = os.getcwd()
+    fullpath = os.path.abspath(setup_py_path)
     os.chdir(os.path.dirname(os.path.abspath(setup_py_path)))
     try:
         data = {}
@@ -46,7 +47,9 @@ def get_setup_arguments(setup_py_path):
                 pass
             # evaluate the setup.py file
             with open('setup.py', 'r') as h:
-                exec(h.read())
+                g = dict(globals())
+                g['__file__'] = fullpath
+                exec(compile(h.read(), fullpath, 'exec'), g)
         finally:
             distutils.core.setup = distutils_setup
             try:
