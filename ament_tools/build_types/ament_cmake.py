@@ -93,8 +93,7 @@ class AmentCmakeBuildType(CmakeBuildType):
         # Calculate any extra cmake args which are not common between cmake build types
         extra_cmake_args = []
         if should_run_configure:
-            if context.build_tests:
-                extra_cmake_args += ["-DAMENT_ENABLE_TESTING=1"]
+            extra_cmake_args += ["-DBUILD_TESTING=%d" % int(context.build_tests)]
             if context.symlink_install:
                 extra_cmake_args += ['-DAMENT_CMAKE_SYMLINK_INSTALL=1']
             extra_cmake_args += context.cmake_args
