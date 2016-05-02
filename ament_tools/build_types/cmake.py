@@ -258,12 +258,20 @@ class CmakeBuildType(BuildType):
             os.path.join('share', context.package_manifest.name, 'environment')
 
         environment_hooks_to_be_deployed = []
+        environment_hooks = []
+
+        # Prepare to deploy AMENT_PREFIX_PATH environment hook
+        ext = '.sh' if not IS_WINDOWS else '.bat'
+        ament_prefix_path_template_path = get_environment_hook_template_path(
+            'ament_prefix_path' + ext)
+        environment_hooks_to_be_deployed.append(ament_prefix_path_template_path)
+        environment_hooks.append(os.path.join(environment_hooks_path, 'ament_prefix_path' + ext))
 
         # Prepare to deploy PATH environment hook
         ext = '.sh' if not IS_WINDOWS else '.bat'
         path_template_path = get_environment_hook_template_path('path' + ext)
         environment_hooks_to_be_deployed.append(path_template_path)
-        environment_hooks = [os.path.join(environment_hooks_path, 'path' + ext)]
+        environment_hooks.append(os.path.join(environment_hooks_path, 'path' + ext))
 
         # Prepare to deploy library path environment hook if not on Windows
         if not IS_WINDOWS:
