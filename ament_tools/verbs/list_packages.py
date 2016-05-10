@@ -86,6 +86,7 @@ def main(options):
             else:
                 package = package or parse_package(package_abs_path)
                 lines.append(package.name + ' ' + package_path)
+        lines.sort()
     else:
         packages = find_unique_packages(options.basepath)
         packages = topological_order_packages(packages)
@@ -99,7 +100,6 @@ def main(options):
                 lines.append(package_path)
             else:
                 lines.append(package.name + ' ' + package_path)
-    lines.sort()
     for line in lines:
         print(line)
 
