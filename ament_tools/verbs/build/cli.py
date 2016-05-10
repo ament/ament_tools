@@ -201,7 +201,7 @@ def print_topological_order(opts, packages):
                 if not test_start_with_found:
                     sys.exit("The --end-with package '{0}' occurs topologically "
                              "before the --start-with package '{1}'"
-                             .format(opts.start_with, opts.end_with))
+                             .format(opts.end_with, opts.start_with))
                 break
 
     print('# Topological order')
