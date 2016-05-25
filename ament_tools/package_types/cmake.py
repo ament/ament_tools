@@ -46,8 +46,17 @@ def extract_data(cmakelists):
     if not data['name']:
         raise RuntimeError("Failed to extract project name from '%s'" % cmakelists)
 
-    build_depends = extract_build_dependencies(content)
-    data['build_depends'] = [Dependency(name) for name in build_depends]
+    # Extract build dependencies from all CMakeLists.txt in the project folder.
+    build_depends_content = content
+    for root, dirs, files in os.walk(os.path.dirname(cmakelists)):
+        for name in files:
+            if name.endswith('CMakeLists.txt'):
+                with open(os.path.join(root, name), 'r') as h:
+                    build_depends_content += h.read()
+    build_depends_content = remove_cmake_comments(build_depends_content)
+    build_depends = extract_build_dependencies(build_depends_content)
+    # Convert to Dependency objects, exclude self references.
+    data['build_depends'] = [Dependency(name) for name in build_depends if name != data['name']]
 
     return data
 
