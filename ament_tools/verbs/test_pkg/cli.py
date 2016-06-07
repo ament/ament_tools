@@ -54,6 +54,7 @@ def prepare_arguments(parser, args, skip_build_pkg_arguments=False):
 def main(opts):
     opts.build_tests = True
     context = build_pkg_get_context(opts)
+    context.retest_until_pass = (opts.retest_until_pass > 0)
     rc = build_pkg_run(opts, context)
     if rc:
         return rc
@@ -65,7 +66,7 @@ def main(opts):
     # Run the test command
     pkg_name = context.package_manifest.name
     print("+++ Testing '{0}'".format(pkg_name))
-    test_iteration = 0
+    context.test_iteration = 0
     while True:
         try:
             on_test_ret = build_type_impl.on_test(context)
@@ -77,16 +78,16 @@ def main(opts):
             handle_build_action(on_test_ret, context)
         except SystemExit:
             # check if tests should be rerun
-            if opts.retest_until_pass > test_iteration:
-                test_iteration += 1
+            if opts.retest_until_pass > context.test_iteration:
+                context.test_iteration += 1
                 print("+++ Testing '%s' again (retry #%d of %d)" %
-                      (pkg_name, test_iteration, opts.retest_until_pass))
+                      (pkg_name, context.test_iteration, opts.retest_until_pass))
                 continue
             return 1
         # check if tests should be rerun
-        if opts.retest_until_fail > test_iteration:
-            test_iteration += 1
+        if opts.retest_until_fail > context.test_iteration:
+            context.test_iteration += 1
             print("+++ Testing '%s' again (retry #%d of %d)" %
-                  (pkg_name, test_iteration, opts.retest_until_fail))
+                  (pkg_name, context.test_iteration, opts.retest_until_fail))
             continue
         break
