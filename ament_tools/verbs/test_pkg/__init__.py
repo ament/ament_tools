@@ -13,9 +13,9 @@
 # limitations under the License.
 
 from ament_tools.verbs.build_pkg import argument_preprocessor
-from ament_tools.verbs.build_pkg import prepare_arguments
 
 from .cli import main
+from .cli import prepare_arguments
 
 __all__ = ('entry_point_data')
 
