@@ -201,6 +201,8 @@ class CmakeBuildType(BuildType):
                 else:
                     args = []
                 args += context.ctest_args
+                if context.retest_until_pass and context.test_iteration:
+                    args += ['--rerun-failed']
                 if args:
                     # the valus is not quoted here
                     # since each item will be quoted by shlex.quote later if necessary

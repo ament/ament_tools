@@ -18,20 +18,12 @@ from ament_tools.verbs.build import prepare_arguments \
     as build_prepare_arguments
 from ament_tools.verbs.build.cli import main as build_main
 from ament_tools.verbs.test_pkg import main as test_pkg_main
+from ament_tools.verbs.test_pkg import prepare_arguments \
+    as test_pkg_prepare_arguments
 
 
 def prepare_arguments(parser, args):
-    """Add parameters to argparse for the build_pkg verb and its plugins.
-
-    After adding the generic verb arguments, this function tries to determine
-    the build type of the target package. This is done by gracefully trying
-    to get the positional ``path`` argument from the arguments, falling back
-    to the default ``os.curdir``. Then it searches for a package manifest in
-    that path. If it finds the package manifest it then determines the build
-    type of the package, e.g. ``ament_cmake``. It then trys to load a build
-    type plugin for that build type. If the loading is successful it will allow
-    the plugin to add additional arguments to the parser in a new
-    :py:class:`argparse.ArgumentGroup` for that build type.
+    """Add parameters to argparse for the test verb and its plugins.
 
     :param parser: ArgumentParser object to which arguments are added
     :type parser: :py:class:`argparse.ArgumentParser`
@@ -40,11 +32,12 @@ def prepare_arguments(parser, args):
     :rtype: :py:class:`argparse.ArgumentParser`
     """
     parser = build_prepare_arguments(parser, args)
+    test_pkg_prepare_arguments(parser, args, skip_build_pkg_arguments=True)
     parser.add_argument(
         '--abort-on-test-error',
         action='store_true',
         default=False,
-        help='Stop after tests with errors or failures',
+        help='Abort after a package with test errors or failures',
     )
     return parser
 
