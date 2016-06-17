@@ -1,11 +1,11 @@
 language: python
 python:
 #  - "2.7"
-  - "3.3"
+  - "3.5"
 sudo: false
 install:
   - pip install nose
-  - pip install pep8 pyflakes
+  - pip install pep8 pydocstyle pyflakes
 # For now install ament_package from git
   - git clone https://github.com/ament/ament_package.git
   - cd ament_package
