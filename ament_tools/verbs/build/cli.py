@@ -14,6 +14,8 @@
 
 from __future__ import print_function
 
+from collections import OrderedDict
+import copy
 import os
 import shutil
 import sys
@@ -229,6 +231,7 @@ def iterate_packages(opts, packages, per_package_callback):
     install_space_base = opts.install_space
     package_dict = dict([(path, package) for path, package, _ in packages])
     workspace_package_names = [pkg.name for pkg in package_dict.values()]
+    jobs = OrderedDict()
     for (path, package, depends) in packages:
         if package.name == opts.start_with:
             start_with_found = True
@@ -236,9 +239,10 @@ def iterate_packages(opts, packages, per_package_callback):
             print('# Skipping: %s' % package.name)
         else:
             pkg_path = os.path.join(opts.basepath, path)
-            opts.path = pkg_path
-            if opts.isolated:
-                opts.install_space = os.path.join(install_space_base, package.name)
+            package_opts = copy.copy(opts)
+            package_opts.path = pkg_path
+            if package_opts.isolated:
+                package_opts.install_space = os.path.join(install_space_base, package.name)
 
             # get recursive package dependencies in topological order
             ordered_depends = topological_order_packages(
@@ -248,33 +252,39 @@ def iterate_packages(opts, packages, per_package_callback):
                 for _, pkg, _ in ordered_depends
                 if pkg.name != package.name]
             # get package share folder for each package
-            opts.build_dependencies = []
+            package_opts.build_dependencies = []
             for depend in ordered_depends:
                 install_space = install_space_base
-                if opts.isolated:
+                if package_opts.isolated:
                     install_space = os.path.join(install_space, depend)
                 package_share = os.path.join(install_space, 'share', depend)
-                opts.build_dependencies.append(package_share)
+                package_opts.build_dependencies.append(package_share)
 
             # get the package share folder for each exec depend of the package
-            opts.exec_dependency_paths_in_workspace = []
+            package_opts.exec_dependency_paths_in_workspace = []
             for dep_object in package.exec_depends:
                 dep_name = dep_object.name
                 if dep_name not in workspace_package_names:
                     # do not add to this list if the dependency is not in the workspace
                     continue
                 install_space = install_space_base
-                if opts.isolated:
+                if package_opts.isolated:
                     install_space = os.path.join(install_space, dep_name)
                 package_share = os.path.join(install_space, 'share', dep_name)
-                opts.exec_dependency_paths_in_workspace.append(package_share)
+                package_opts.exec_dependency_paths_in_workspace.append(package_share)
 
-            rc = per_package_callback(opts)
-            if rc:
-                return rc
+            jobs[package.name] = {
+                'callback': per_package_callback,
+                'opts': package_opts,
+                'depends': ordered_depends,
+            }
         if package.name == opts.end_with:
-            print("Stopped after package '{0}'".format(package.name))
             break
+
+    rc = processSequentially(jobs)
+
+    if not rc and opts.end_with:
+        print("Stopped after package '{0}'".format(opts.end_with))
 
     # expand prefix-level setup files for the root of the install-space
     if opts.isolated:
@@ -301,3 +311,13 @@ def iterate_packages(opts, packages, per_package_callback):
                         shutil.copy(template_path, dst)
                     else:
                         os.symlink(template_path, dst)
+
+
+def processSequentially(jobs):
+    rc = 0
+    for package_name in jobs:
+        job = jobs[package_name]
+        rc = job['callback'](job['opts'])
+        if rc:
+            return rc
+    return rc
