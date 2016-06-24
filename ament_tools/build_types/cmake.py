@@ -167,12 +167,28 @@ class CmakeBuildType(BuildType):
             solution_file = solution_file_exists_at(
                 context.build_space, context.package_manifest.name)
             cmd = prefix + [MSBUILD_EXECUTABLE]
-            if '-j1' in context.make_flags:
-                cmd += ['/m']
+            env = None
+            # Convert make parallelism flags into msbuild flags
+            msbuild_flags = [
+                x.replace('-j', '/m:') for x in context.make_flags if x.startswith('-j')
+            ]
+            if msbuild_flags:
+                cmd += msbuild_flags
+                # If there is a parallelism flag in msbuild_flags and it's not /m1,
+                # then turn on /MP for the compiler (intra-project parallelism)
+                if any([x.startswith('/m') for x in msbuild_flags]) and \
+                   '/m:1' not in msbuild_flags:
+                    env = dict(os.environ)
+                    if 'CL' in env:
+                        # make sure env['CL'] doesn't include an /MP already
+                        if not any([x.startswith('/MP') for x in env['CL'].split(' ')]):
+                            env['CL'] += ' /MP'
+                    else:  # CL not in environment; let's add it with our flag
+                        env['CL'] = '/MP'
             cmd += [
                 '/p:Configuration=%s' %
                 self._get_visual_studio_configuration(context), solution_file]
-            yield BuildAction(cmd)
+            yield BuildAction(cmd, env=env)
 
     def on_test(self, context):
         for step in self._common_cmake_on_test(context, 'cmake'):

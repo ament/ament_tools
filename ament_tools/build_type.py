@@ -20,11 +20,12 @@ from .context import ContextExtender
 class BuildAction(object):
     """Represent an action to do at build time, either a command or a functor.
 
-    These objects are yielded from the ``on_*`` methodsin the BuildType class
+    These objects are yielded from the ``on_*`` methods in the BuildType class
     for a particular ``build_type``.
 
     The constructor for this class takes a cmd, a type, optionally a title,
-    and optionally a dry run cmd.
+    optionally a dry run cmd, optionally a different current working directory
+    (``cwd``), and optionally different environment variables (``env``).
 
     The cmd (command) is either a list of arguments as strings which is meant
     to be executed as a subprocess, or a callable Python object like
@@ -44,15 +45,19 @@ class BuildAction(object):
 
     The default working directory for commands is the build space which can be
     overridden with the optional ``cwd`` parameter.
+
+    The environment used when running the command can be overridden using the
+    the optional ``env`` parameter.
     """
 
     def __init__(self, cmd, type='command', title=None, dry_run_cmd=None,
-                 cwd=None):
+                 cwd=None, env=None):
         self.cmd = cmd
         self.type = self.__validate_type(type, cmd, dry_run_cmd)
         self.title = title
         self.dry_run_cmd = dry_run_cmd
         self.cwd = cwd
+        self.env = env
 
     def __validate_type(self, type_str, cmd, dry_run_cmd):
         if type_str not in ['command', 'function']:
