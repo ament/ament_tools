@@ -232,7 +232,7 @@ class CmakeBuildType(BuildType):
                 raise VerbExecutionError("Could not find 'ctest' executable")
             # invoke CTest directly in order to pass arguments
             # it needs a specific configuration and currently there are no conf. specific tests
-            yield BuildAction(prefix + [
+            cmd = prefix + [
                 CTEST_EXECUTABLE,
                 # choose configuration on e.g. Windows
                 '-C', self._get_visual_studio_configuration(context),
@@ -240,8 +240,11 @@ class CmakeBuildType(BuildType):
                 '-D', 'ExperimentalTest', '--no-compress-output',
                 # show all test output
                 '-V',
-                '--force-new-ctest-process'] +
-                context.ctest_args)
+                '--force-new-ctest-process'] + \
+                context.ctest_args
+            if context.retest_until_pass and context.test_iteration:
+                cmd += ['--rerun-failed']
+            yield BuildAction(cmd)
 
     def _get_visual_studio_configuration(self, context):
         # check for CMake build type in the command line arguments
