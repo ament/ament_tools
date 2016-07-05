@@ -18,6 +18,9 @@ try:
     import setuptools
 except ImportError:
     pass
+from threading import Lock
+
+setup_lock = None
 
 
 def get_setup_arguments(setup_py_path):
@@ -27,36 +30,41 @@ def get_setup_arguments(setup_py_path):
     :param setup_py_path: the path to the setup.py file
     :returns: a dictionary containing the arguments of the setup() function
     """
+    global setup_lock
+    if not setup_lock:
+        setup_lock = Lock()
     assert os.path.basename(setup_py_path) == 'setup.py'
-    # change to the directory containing the setup.py file
-    old_cwd = os.getcwd()
-    os.chdir(os.path.dirname(os.path.abspath(setup_py_path)))
-    try:
-        data = {}
-        mock_setup = create_mock_setup_function(data)
-        # replace setup() function of distutils and setuptools
-        # in order to capture its arguments
+    # prevent side effects in other threads
+    with setup_lock:
+        # change to the directory containing the setup.py file
+        old_cwd = os.getcwd()
+        os.chdir(os.path.dirname(os.path.abspath(setup_py_path)))
         try:
-            distutils_setup = distutils.core.setup
-            distutils.core.setup = mock_setup
+            data = {}
+            mock_setup = create_mock_setup_function(data)
+            # replace setup() function of distutils and setuptools
+            # in order to capture its arguments
             try:
-                setuptools_setup = setuptools.setup
-                setuptools.setup = mock_setup
-            except NameError:
-                pass
-            # evaluate the setup.py file
-            with open('setup.py', 'r') as h:
-                exec(h.read())
-        finally:
-            distutils.core.setup = distutils_setup
-            try:
-                setuptools.setup = setuptools_setup
-            except NameError:
-                pass
-        return data
+                distutils_setup = distutils.core.setup
+                distutils.core.setup = mock_setup
+                try:
+                    setuptools_setup = setuptools.setup
+                    setuptools.setup = mock_setup
+                except NameError:
+                    pass
+                # evaluate the setup.py file
+                with open('setup.py', 'r') as h:
+                    exec(h.read())
+            finally:
+                distutils.core.setup = distutils_setup
+                try:
+                    setuptools.setup = setuptools_setup
+                except NameError:
+                    pass
+            return data
 
-    finally:
-        os.chdir(old_cwd)
+        finally:
+            os.chdir(old_cwd)
 
 
 def create_mock_setup_function(data):
