@@ -211,7 +211,7 @@ def get_build_type(path):
         print("The package in '%s' exports multiple build types" % path,
               file=sys.stderr)
 
-    default_build_type = '<not-specified>'
+    default_build_type = 'catkin'
     if not build_type_exports:
         return default_build_type
 
