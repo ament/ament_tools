@@ -1,5 +1,11 @@
+from __future__ import print_function
+import sys
 from setuptools import find_packages
 from setuptools import setup
+
+if sys.version_info < (3, 5):
+    print('ament requires Python 3.5 or higher.', file=sys.stderr)
+    sys.exit(1)
 
 setup(
     name='ament_tools',
