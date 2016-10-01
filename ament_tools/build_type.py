@@ -18,7 +18,8 @@ from .context import ContextExtender
 
 
 class BuildAction(object):
-    """Represent an action to do at build time, either a command or a functor.
+    """
+    Represent an action to do at build time, either a command or a functor.
 
     These objects are yielded from the ``on_*`` methods in the BuildType class
     for a particular ``build_type``.
@@ -95,7 +96,8 @@ class DefaultBuildTypeLogger(object):
 
 
 class BuildType(object):
-    """Base class interface for building a ``build_type`` with ament tools.
+    """
+    Base class interface for building a ``build_type`` with ament tools.
 
     This class provides an interface for how to handle building of ament
     ``build_type``'s, but it cannot be used as is and requires subclassing.
@@ -107,14 +109,16 @@ class BuildType(object):
     """
 
     build_type = None
-    """Build type identification string.
+    """
+    Build type identification string.
 
     This should be set by the subclass and should match the ``built_type``
     set in the package manifest of applicable packages.
     """
 
     description = None
-    """Description of this build type.
+    """
+    Description of this build type.
 
     This should be set by the subclass.
     """
@@ -123,7 +127,8 @@ class BuildType(object):
     """Logging singleton, allows executor to hook in a custom logger."""
 
     def prepare_arguments(self, parser):
-        """Add BuildType specific arguments to the command line options.
+        """
+        Add BuildType specific arguments to the command line options.
 
         Override this function to extend the command line arguments using the
         provided argparse ArgumentParser.
@@ -149,7 +154,8 @@ class BuildType(object):
         return parser
 
     def argument_preprocessor(self, args):
-        """Process arguments before being processed with argparse.
+        """
+        Process arguments before being processed with argparse.
 
         Override this function to perform preprocessing on the arguments
         before they are passed to argparse.
@@ -160,7 +166,8 @@ class BuildType(object):
         return args, extra_opts
 
     def extend_context(self, opts):
-        """Convert arguments into a ContextExtender object.
+        """
+        Convert arguments into a ContextExtender object.
 
         Override this function to be able to convert resulting options from
         argparse into a ContextExtender object which will be used to extend

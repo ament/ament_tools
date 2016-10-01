@@ -37,7 +37,8 @@ def add_path_argument(parser):
 
 
 def prepare_arguments(parser, args):
-    """Add parameters to argparse for the uninstall_pkg verb.
+    """
+    Add parameters to argparse for the uninstall_pkg verb.
 
     :param parser: ArgumentParser object to which arguments are added
     :type parser: :py:class:`argparse.ArgumentParser`

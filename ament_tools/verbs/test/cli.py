@@ -23,7 +23,8 @@ from ament_tools.verbs.test_pkg import prepare_arguments \
 
 
 def prepare_arguments(parser, args):
-    """Add parameters to argparse for the test verb and its plugins.
+    """
+    Add parameters to argparse for the test verb and its plugins.
 
     :param parser: ArgumentParser object to which arguments are added
     :type parser: :py:class:`argparse.ArgumentParser`

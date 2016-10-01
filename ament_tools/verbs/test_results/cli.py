@@ -23,7 +23,8 @@ from ament_tools.helper import argparse_existing_dir
 
 
 def prepare_arguments(parser, args):
-    """Add parameters to argparse for the build verb and available plugins.
+    """
+    Add parameters to argparse for the build verb and available plugins.
 
     After adding the generic verb arguments, this function loads all available
     build_type plugins and then allows the plugins to add additional arguments
