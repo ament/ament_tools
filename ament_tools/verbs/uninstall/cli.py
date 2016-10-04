@@ -28,7 +28,8 @@ from ament_tools.verbs.uninstall_pkg.cli import add_arguments \
 
 
 def prepare_arguments(parser, args):
-    """Add parameters to argparse for the uninstall verb and available plugins.
+    """
+    Add parameters to argparse for the uninstall verb and available plugins.
 
     :param parser: ArgumentParser object to which arguments are added
     :type parser: :py:class:`argparse.ArgumentParser`

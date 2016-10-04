@@ -44,7 +44,8 @@ from ament_tools.verbs.build_pkg.cli import add_arguments \
 
 
 def argument_preprocessor(args):
-    """Run verb and build_type plugin preprocessors on arguments.
+    """
+    Run verb and build_type plugin preprocessors on arguments.
 
     The preprocessors take in raw arguments and return potentially trimmed
     arguments and extra options to be added to the argparse NameSpace object.
@@ -70,7 +71,8 @@ def argument_preprocessor(args):
 
 
 def prepare_arguments(parser, args):
-    """Add parameters to argparse for the build verb and available plugins.
+    """
+    Add parameters to argparse for the build verb and available plugins.
 
     After adding the generic verb arguments, this function loads all available
     build_type plugins and then allows the plugins to add additional arguments

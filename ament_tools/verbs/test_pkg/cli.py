@@ -27,7 +27,8 @@ from ament_tools.verbs.build_pkg.cli import run as build_pkg_run
 
 
 def prepare_arguments(parser, args, skip_build_pkg_arguments=False):
-    """Add parameters to argparse for the test_pkg verb and its plugins.
+    """
+    Add parameters to argparse for the test_pkg verb and its plugins.
 
     :param parser: ArgumentParser object to which arguments are added
     :type parser: :py:class:`argparse.ArgumentParser`

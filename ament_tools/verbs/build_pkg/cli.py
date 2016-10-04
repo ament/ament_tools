@@ -50,7 +50,8 @@ def add_path_argument(parser):
 
 
 def argument_preprocessor(args):
-    """Run verb and plugin preprocessors on arguments.
+    """
+    Run verb and plugin preprocessors on arguments.
 
     The preprocessors take in raw arguments and return potentially trimmed
     arguments and extra options to be added to the argparse NameSpace object.
@@ -87,7 +88,8 @@ def argument_preprocessor(args):
 
 
 def prepare_arguments(parser, args):
-    """Add parameters to argparse for the build_pkg verb and its plugins.
+    """
+    Add parameters to argparse for the build_pkg verb and its plugins.
 
     After adding the generic verb arguments, this function tries to determine
     the build type of the target package. This is done by gracefully trying
@@ -198,7 +200,8 @@ def __get_cached_package_manifest(path):
 
 
 def get_build_type(path):
-    """Extract the build_type from the package manifest at the given path.
+    """
+    Extract the build_type from the package manifest at the given path.
 
     :param str path: path to a package manifest file
     :returns: build_type as a string
@@ -219,7 +222,8 @@ def get_build_type(path):
 
 
 def validate_package_path(path):
-    """Assert the given path is a directory with a package.
+    """
+    Assert the given path is a directory with a package.
 
     :param str path: directory containing a package
     :raises: ValueError if path is not valid or does not contain a package

@@ -49,7 +49,8 @@ def determine_path_argument(cwd, base_path, argument, default):
 
 
 def extract_jobs_flags(arguments):
-    """Extract make job flags from a list of other make flags, i.e. -j8 -l8.
+    """
+    Extract make job flags from a list of other make flags, i.e. -j8 -l8.
 
     :param arguments: string of space separated arguments which may or may not
         contain make job flags
@@ -68,7 +69,8 @@ def extract_jobs_flags(arguments):
 
 
 def combine_make_flags(make_flags, args, extras):
-    """Combine make flags and arg's make job flags with make_flags in extras.
+    """
+    Combine make flags and arg's make job flags with make_flags in extras.
 
     :param list make_flags: existing make_flags, extracted from args already.
     :param list args: command line args with ``--make-flags ...`` extracted.
@@ -89,7 +91,8 @@ def combine_make_flags(make_flags, args, extras):
 
 
 def ensure_make_job_flags(input_make_args):
-    """Ensure that make will get correct job flags, either from args or env.
+    """
+    Ensure that make will get correct job flags, either from args or env.
 
     If no job flags are present and there are none in the MAKEFLAGS environment
     variable, then make flags are set to the cpu_count, e.g. -j4 -l4.
@@ -122,7 +125,8 @@ def ensure_make_job_flags(input_make_args):
 
 
 def extract_argument_group(args, delimiting_option):
-    """Extract a group of arguments from a list of arguments using a delimiter.
+    """
+    Extract a group of arguments from a list of arguments using a delimiter.
 
     Here is an example:
 

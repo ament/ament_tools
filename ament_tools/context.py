@@ -14,7 +14,8 @@
 
 
 class Context(dict):
-    """Encapsulate a set of configurations for a particular context.
+    """
+    Encapsulate a set of configurations for a particular context.
 
     This is used by the build and build_pkg verbs, for example, to encapsulate
     the build configurations like build space location, and whether or not to
@@ -67,7 +68,8 @@ class Context(dict):
 
 
 class ContextExtender(object):
-    """Store a series of extensions for a Context which can be applied later.
+    """
+    Store a series of extensions for a Context which can be applied later.
 
     This can be used to describe a series of extensions (add, replace,
     or extend) which can later be applied to a Context.
@@ -130,7 +132,8 @@ class ContextExtender(object):
         return self.__extensions
 
     def apply_to_context(self, context):
-        """Apply extensions to given context.
+        """
+        Apply extensions to given context.
 
         Iterates through extensions (add, replace, extend) in the order they
         were added and tries to apply them to the given context.
@@ -162,7 +165,8 @@ class ContextExtender(object):
                     context[key] = value
 
     def add(self, key, value):
-        """Extend Context by adding the key and value.
+        """
+        Extend Context by adding the key and value.
 
         This will fail immediately if there is already an extension for
         this key.
@@ -180,7 +184,8 @@ class ContextExtender(object):
         self.__extensions.append(['add', key, value])
 
     def replace(self, key, value):
-        """Extend Context by replacing, if necessary, the key and value.
+        """
+        Extend Context by replacing, if necessary, the key and value.
 
         If other extensions exist for this key, then they will replaced in the
         order in which they were added.
@@ -191,7 +196,8 @@ class ContextExtender(object):
         self.__extensions.append(['replace', key, value])
 
     def extend(self, key, value):
-        """Extend Context by extending the existing value, otherwise add.
+        """
+        Extend Context by extending the existing value, otherwise add.
 
         If the key does not exist in the Context, then this key and value pair
         are added to the Context, otherwise the existing value is extended
