@@ -84,7 +84,11 @@ def main(opts):
                 print("+++ Testing '%s' again (retry #%d of %d)" %
                       (pkg_name, context.test_iteration, opts.retest_until_pass))
                 continue
-            return 1
+            # there is no way to distinguish why the test returned non zero
+            # the test invocation itself could have failed:
+            # return e.code
+            # but it could have also run successful and only failed some tests:
+            return
         # check if tests should be rerun
         if opts.retest_until_fail > context.test_iteration:
             context.test_iteration += 1

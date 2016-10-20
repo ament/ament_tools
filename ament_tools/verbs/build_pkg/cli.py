@@ -252,8 +252,10 @@ def run_command(build_action, context):
         cmd_msg = exc.cmd
         if isinstance(cmd_msg, list):
             cmd_msg = ' '.join(cmd_msg)
-        sys.exit("<== Command '{0}' failed in '{1}' with exit code '{2}'"
-                 .format(cmd_msg, cwd, exc.returncode))
+        msg = "<== Command '{0}' failed in '{1}' with exit code '{2}'" \
+            .format(cmd_msg, cwd, exc.returncode)
+        print(msg, file=sys.stderr)
+        sys.exit(msg)
 
 
 def handle_build_action(build_action_ret, context):

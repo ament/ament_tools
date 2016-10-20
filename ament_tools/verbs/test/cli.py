@@ -14,6 +14,8 @@
 
 from __future__ import print_function
 
+import sys
+
 from ament_tools.verbs.build import prepare_arguments \
     as build_prepare_arguments
 from ament_tools.verbs.build.cli import main as build_main
@@ -49,6 +51,9 @@ def main(opts):
     def test_pkg_main_wrapper(opts):
         rc = test_pkg_main(opts)
         if rc:
+            print(
+                "'test_pkg' for package '%s' failed: %s" % (opts.path, rc),
+                file=sys.stderr)
             rc_storage['rc'] = rc
             if opts.abort_on_test_error:
                 return rc
