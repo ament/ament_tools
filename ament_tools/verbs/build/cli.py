@@ -114,14 +114,14 @@ def prepare_arguments(parser, args):
         help='End with a particular package',
     )
     parser.add_argument(
-        '--only-package',
-        '--only',
-        help='Only process a particular package, implies --start-with <pkg> and --end-with <pkg>'
+        '--only-packages',
+        nargs='+', default=[],
+        help='Only process a particular set of packages'
     )
     parser.add_argument(
         '--skip-packages',
-        nargs='*',
-        help='List of packages to skip'
+        nargs='*', default=[],
+        help='Set of packages to skip'
     )
     parser.add_argument(
         '--parallel',
@@ -161,14 +161,20 @@ def main(opts, per_package_main=build_pkg_main):
         raise VerbExecutionError('Circular dependency within the following '
                                  'packages: %s' % circular_dependencies[0])
 
-    print_topological_order(opts, packages)
+    pkg_names = [p.name for _, p, _ in packages]
+    check_opts(opts, pkg_names)
+    consolidate_package_selection(opts, pkg_names)
+    print_topological_order(opts, pkg_names)
+
+    if set(pkg_names) <= set(opts.skip_packages):
+        print('All selected packages are being skipped. Nothing to do.',
+              file=sys.stderr)
+        return 0
 
     return iterate_packages(opts, packages, per_package_main)
 
 
-def print_topological_order(opts, packages):
-    package_names = [p.name for _, p, _ in packages]
-
+def check_opts(opts, package_names):
     if opts.start_with and opts.start_with not in package_names:
         sys.exit("Package '{0}' specified with --start-with was not found."
                  .format(opts.start_with))
@@ -177,77 +183,73 @@ def print_topological_order(opts, packages):
         sys.exit("Package '{0}' specified with --end-with was not found."
                  .format(opts.end_with))
 
-    if 'skip_packages' not in opts:
-        opts.skip_packages = []
-    else:
-        opts.skip_packages = opts.skip_packages or []
-    nonexistent_skip_packages = []
-    for skip_package in opts.skip_packages:
-        if skip_package not in package_names:
-            nonexistent_skip_packages.append(skip_package)
-        if skip_package == opts.only_package:
-            sys.exit("Cannot --skip-packages and --only-package the same package: '{0}'."
-                     .format(skip_package))
+    nonexistent_skip_packages = set(opts.skip_packages) - set(package_names)
     if nonexistent_skip_packages:
-            sys.exit('Packages [{0}] specified with --skip-packages were not found.'
-                     .format(', '.join(nonexistent_skip_packages)))
+        sys.exit('Packages [{0}] specified with --skip-packages were not found.'
+                 .format(', '.join(sorted(nonexistent_skip_packages))))
 
-    if opts.only_package:
+    if opts.only_packages:
         if opts.start_with or opts.end_with:
             # The argprase mutually exclusive mechanism is broken for subparsers
             # See: http://bugs.python.org/issue10680
             # So we'll check it manually here
             sys.exit("The --start-with and --end-with options cannot be used with "
-                     "the --only-package option.")
-        if opts.only_package not in package_names:
-            sys.exit("Package '{0}' specified with --only-package was not found."
-                     .format(opts.only_package))
-        opts.start_with = opts.only_package
-        opts.end_with = opts.only_package
+                     "the --only-packages option.")
+        for only_package in opts.only_packages:
+            if only_package not in package_names:
+                sys.exit("Package '{0}' specified with --only-packages was not found."
+                         .format(only_package))
 
-    if opts.start_with and opts.end_with and not opts.only_package:
+    if opts.start_with and opts.end_with:
         # Make sure that the --end-with doesn't come before the --start-with package.
         test_start_with_found = False
-        for (path, package, _) in packages:
-            if package.name == opts.start_with:
+        for pkg_name in package_names:
+            if pkg_name == opts.start_with:
                 test_start_with_found = True
-            if package.name == opts.end_with:
+            if pkg_name == opts.end_with:
                 if not test_start_with_found:
                     sys.exit("The --end-with package '{0}' occurs topologically "
                              "before the --start-with package '{1}'"
                              .format(opts.end_with, opts.start_with))
                 break
 
-    print('# Topological order')
+
+def consolidate_package_selection(opts, package_names):
+    # after this function opts.skip_packages will contain the information from:
+    # start_with, end_with, only_packages
     start_with_found = not opts.start_with
     end_with_found = not opts.end_with
-    for (path, package, _) in packages:
-        if package.name == opts.start_with:
+    for pkg_name in package_names:
+        if pkg_name == opts.start_with:
             start_with_found = True
         should_skip = False
         if not start_with_found or (opts.end_with and end_with_found):
             should_skip = True
-        if package.name in opts.skip_packages:
+        if opts.only_packages and pkg_name not in opts.only_packages:
             should_skip = True
         if should_skip:
-            print(' - (%s)' % package.name)
-        else:
-            print(' - %s' % package.name)
-        if package.name == opts.end_with:
+            if pkg_name not in opts.skip_packages:
+                opts.skip_packages.append(pkg_name)
+        if pkg_name == opts.end_with:
             end_with_found = True
 
 
+def print_topological_order(opts, package_names):
+    print('# Topological order')
+    for pkg_name in package_names:
+        if pkg_name in opts.skip_packages:
+            print(' - (%s)' % pkg_name)
+        else:
+            print(' - %s' % pkg_name)
+
+
 def iterate_packages(opts, packages, per_package_callback):
-    start_with_found = not opts.start_with
-    opts.skip_packages = opts.skip_packages or []
     install_space_base = opts.install_space
     package_dict = dict([(path, package) for path, package, _ in packages])
     workspace_package_names = [pkg.name for pkg in package_dict.values()]
     jobs = OrderedDict()
     for (path, package, depends) in packages:
-        if package.name == opts.start_with:
-            start_with_found = True
-        if not start_with_found or package.name in opts.skip_packages:
+        if package.name in opts.skip_packages:
             print('# Skipping: %s' % package.name)
         else:
             pkg_path = os.path.join(opts.basepath, path)
