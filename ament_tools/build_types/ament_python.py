@@ -369,14 +369,18 @@ class AmentPythonBuildType(BuildType):
         if os.path.exists(install_log):
             with open(install_log, 'r') as h:
                 lines = [l.rstrip() for l in h.readlines()]
-            directories = []
+            directories = set()
+            install_space = context.install_space + os.sep
             for line in lines:
                 if os.path.exists(line) and \
-                        line.startswith(context.install_space):
+                        line.startswith(install_space):
                     if not os.path.isdir(line):
                         os.remove(line)
-                    else:
-                        directories.append(line)
+                        while True:
+                            line = os.path.dirname(line)
+                            if not line.startswith(install_space):
+                                break
+                            directories.add(line)
             for d in sorted(directories, reverse=True):
                 # only remove empty directories
                 try:
