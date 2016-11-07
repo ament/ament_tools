@@ -315,6 +315,12 @@ def run(opts, context):
     pkg_name = context.package_manifest.name
 
     if not opts.skip_build:
+        ignore_file = os.path.join(context.build_space, 'AMENT_IGNORE')
+        if not os.path.exists(ignore_file) and not context.dry_run:
+            os.makedirs(context.build_space, exist_ok=True)
+            with open(ignore_file, 'w'):
+                pass
+
         # Run the build command
         print("+++ Building '{0}'".format(pkg_name))
         on_build_ret = build_type_impl.on_build(context)
