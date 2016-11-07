@@ -14,7 +14,7 @@
 
 _ament()
 {
-  local cur prev ament_verbs
+  local cur prev
 
   COMPREPLY=()
 
@@ -27,9 +27,9 @@ _ament()
     # autocomplete CMake argument CMAKE_BUILD_TYPE with its options
     COMPREPLY=( $( compgen -P "-DCMAKE_BUILD_TYPE=" -W "Debug MinSizeRel None Release RelWithDebInfo" -- "${cur:19}" ) )
   else
-    if [[ "${COMP_WORDS[@]}" == *" build_pkg"* || "${COMP_WORDS[@]}" == *" test_pkg"* ]] ; then
+    if [[ "${COMP_WORDS[@]}" == *" build_pkg "* || "${COMP_WORDS[@]}" == *" test_pkg "* ]] ; then
       COMPREPLY=($(compgen -W "--ament-cmake-args --build-space --build-tests --cmake-args --ctest-args --force-ament-cmake-configure --force-cmake-configure --install-space --make-flags --skip-build --skip-install --symlink-install" -- ${cur}))
-    elif [[ "${COMP_WORDS[@]}" == *" build"* || "${COMP_WORDS[@]}" == *" test"* ]] ; then
+    elif [[ "${COMP_WORDS[@]}" == *" build "* || "${COMP_WORDS[@]}" == *" test "* ]] ; then
       if [[ "--start-with" == *${prev}* && ${cur} != -* ]] ; then
         COMPREPLY=($(compgen -W "$(ament list_packages --names-only)" -- ${cur}))
       elif [[ "--end-with" == *${prev}* && ${cur} != -* ]] ; then
@@ -41,18 +41,18 @@ _ament()
       else
         COMPREPLY=($(compgen -W "--ament-cmake-args --build-space --build-tests -C --cmake-args --end-with --force-ament-cmake-configure --force-cmake-configure --make-flags --install-space --isolated --only-package --parallel --skip-build --skip-install --start-with --symlink-install" -- ${cur}))
       fi
-    elif [[ "${COMP_WORDS[@]}" == *" list_packages"* ]] ; then
+    elif [[ "${COMP_WORDS[@]}" == *" list_packages "* ]] ; then
       if [[ "--depends-on" == *${prev}* && ${cur} != -* ]] ; then
         COMPREPLY=($(compgen -W "$(ament list_packages --names-only)" -- ${cur}))
       else
         COMPREPLY=($(compgen -W "--depends-on --names-only --paths-only --topological-order" -- ${cur}))
       fi
-    elif [[ "${COMP_WORDS[@]}" == *" package_name"* ]] ; then
+    elif [[ "${COMP_WORDS[@]}" == *" package_name "* ]] ; then
       COMPREPLY=($(compgen -d -S / -o nospace -- ${cur}))
-    elif [[ "${COMP_WORDS[@]}" == *" package_version"* ]] ; then
+    elif [[ "${COMP_WORDS[@]}" == *" package_version "* ]] ; then
       COMPREPLY=($(compgen -W "$(ament list_packages --paths-only)" -- ${cur}))
-    elif [[ "${COMP_WORDS[@]}" == *" test_results"* ]] ; then
-      COMPREPLY=($(compgen -W "--verbose" -- ${cur}))
+    elif [[ "${COMP_WORDS[@]}" == *" test_results "* ]] ; then
+      COMPREPLY=($(compgen -W "--verbose" -d -o nospace -- ${cur}))
     fi
   fi
 
