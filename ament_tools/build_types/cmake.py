@@ -108,6 +108,7 @@ class CmakeBuildType(BuildType):
         cmake_config = {
             'cmake_args': context.cmake_args,
             'build_tests': context.build_tests,
+            'install_space': context.install_space,
             'symlink_install': context.symlink_install,
         }
         if cmake_config != cached_cmake_config:
