@@ -15,12 +15,15 @@
 from __future__ import print_function
 
 import os
+import sys
 
 from ament_tools.helper import argparse_existing_dir
 from ament_tools.helper import determine_path_argument
 from ament_tools.topological_order import topological_order
 from ament_tools.topological_order import topological_order_packages
 from ament_tools.verbs import VerbExecutionError
+from ament_tools.verbs.build.cli import check_opts
+from ament_tools.verbs.build.cli import consolidate_package_selection
 from ament_tools.verbs.build.cli import print_topological_order
 from ament_tools.verbs.uninstall_pkg import main as uninstall_pkg_main
 from ament_tools.verbs.uninstall_pkg.cli import add_arguments \
@@ -60,9 +63,14 @@ def prepare_arguments(parser, args):
         help='End with a particular package',
     )
     parser.add_argument(
-        '--only-package',
-        '--only',
-        help='Only process a particular package, implies --start-with <pkg> and --end-with <pkg>'
+        '--only-packages',
+        nargs='+', default=[],
+        help='Only process a particular set of packages'
+    )
+    parser.add_argument(
+        '--skip-packages',
+        nargs='*', default=[],
+        help='Set of packages to skip'
     )
 
     return parser
@@ -88,39 +96,45 @@ def main(opts, per_package_main=uninstall_pkg_main):
         raise VerbExecutionError('Circular dependency within the following '
                                  'packages: %s' % circular_dependencies[0])
 
-    print_topological_order(opts, packages)
+    pkg_names = [p.name for _, p, _ in packages]
+    check_opts(opts, pkg_names)
+    consolidate_package_selection(opts, pkg_names)
+    print_topological_order(opts, pkg_names)
 
-    iterate_packages(opts, packages, per_package_main)
+    if set(pkg_names) <= set(opts.skip_packages):
+        print('All selected packages are being skipped. Nothing to do.',
+              file=sys.stderr)
+        return 0
+
+    return iterate_packages(opts, packages, per_package_main)
 
 
 def iterate_packages(opts, packages, per_package_callback):
-    end_with_found = not opts.end_with
     package_dict = dict([(path, package) for path, package, _ in packages])
     for (path, package, depends) in reversed(packages):
-        if package.name == opts.end_with:
-            end_with_found = True
-        if not end_with_found:
+        if package.name in opts.skip_packages:
             print('# Skipping: %s' % package.name)
-            continue
-        pkg_path = os.path.join(opts.basepath, path)
-        opts.path = pkg_path
+        else:
+            pkg_path = os.path.join(opts.basepath, path)
+            opts.path = pkg_path
 
-        # get recursive package dependencies in topological order
-        ordered_depends = topological_order_packages(
-            package_dict, whitelisted=depends)
-        ordered_depends = [
-            pkg.name
-            for _, pkg, _ in ordered_depends
-            if pkg.name != package.name]
-        # get package share folder for each package
-        opts.build_dependencies = []
-        for depend in ordered_depends:
-            package_share = os.path.join(opts.install_space, 'share', depend)
-            opts.build_dependencies.append(package_share)
+            # get recursive package dependencies in topological order
+            ordered_depends = topological_order_packages(
+                package_dict, whitelisted=depends)
+            ordered_depends = [
+                pkg.name
+                for _, pkg, _ in ordered_depends
+                if pkg.name != package.name]
+            # get package share folder for each package
+            opts.build_dependencies = []
+            for depend in ordered_depends:
+                package_share = os.path.join(
+                    opts.install_space, 'share', depend)
+                opts.build_dependencies.append(package_share)
 
-        rc = per_package_callback(opts)
-        if rc:
-            return rc
+            rc = per_package_callback(opts)
+            if rc:
+                return rc
         if package.name == opts.start_with:
             print("Stopped after package '{0}'".format(package.name))
             break
