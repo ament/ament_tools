@@ -80,6 +80,7 @@ class AmentCmakeBuildType(CmakeBuildType):
             'cmake_args': context.cmake_args,
             'ament_cmake_args': context.ament_cmake_args,
             'build_tests': context.build_tests,
+            'install_space': context.install_space,
             'symlink_install': context.symlink_install,
         }
         if ament_cmake_config != cached_ament_cmake_config:
