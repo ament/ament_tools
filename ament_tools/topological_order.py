@@ -47,6 +47,7 @@ class _PackageDecorator(object):
         # skip external dependencies, meaning names that are not known packages
         deps = (self.package.build_depends +
                 self.package.buildtool_depends +
+                self.package.exec_depends +
                 self.package.test_depends)
         for name in [d.name for d in deps if d.name in packages.keys()]:
             packages[name]._add_recursive_run_depends(
