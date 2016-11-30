@@ -67,7 +67,7 @@ def main(opts):
 
     try:
         results = collect_test_results(opts.basepath, verbose=opts.verbose)
-        _, sum_errors, sum_failures = aggregate_results(results)
+        _, sum_errors, sum_failures, sum_skipped = aggregate_results(results)
         print_summary(results, show_stable=opts.verbose)
         if sum_errors or sum_failures:
             return 1
@@ -95,7 +95,7 @@ def collect_test_results(test_results_dir, verbose=False):
             filename_abs = os.path.join(dirpath, filename)
             name = filename_abs[len(test_results_dir) + 1:]
             try:
-                num_tests, num_errors, num_failures = read_junit(filename_abs)
+                num_tests, num_errors, num_failures, num_skipped = read_junit(filename_abs)
             except TypeError as e:
                 if verbose:
                     print("Skipping '%s': %s" % (name, str(e)), file=sys.stderr)
@@ -106,7 +106,7 @@ def collect_test_results(test_results_dir, verbose=False):
                        in traceback.format_exception_only(type(e), e)])),
                       file=sys.stderr)
                 continue
-            results[name] = (num_tests, num_errors, num_failures)
+            results[name] = (num_tests, num_errors, num_failures, num_skipped)
     return results
 
 
@@ -131,7 +131,8 @@ def read_junit(filename):
     num_tests = int(root.attrib['tests'])
     num_errors = int(root.attrib.get('errors', 0))
     num_failures = int(root.attrib['failures'])
-    return (num_tests, num_errors, num_failures)
+    num_skipped = int(root.attrib.get('skip', 0))
+    return (num_tests, num_errors, num_failures, num_skipped)
 
 
 def aggregate_results(results, callback_per_result=None):
@@ -141,15 +142,16 @@ def aggregate_results(results, callback_per_result=None):
     :param results: dict as from test_results()
     :returns: tuple (num_tests, num_errors, num_failures)
     """
-    sum_tests = sum_errors = sum_failures = 0
+    sum_tests = sum_errors = sum_failures = sum_skipped = 0
     for name in sorted(results.keys()):
-        (num_tests, num_errors, num_failures) = results[name]
+        (num_tests, num_errors, num_failures, num_skipped) = results[name]
         sum_tests += num_tests
         sum_errors += num_errors
         sum_failures += num_failures
+        sum_skipped += num_skipped
         if callback_per_result:
-            callback_per_result(name, num_tests, num_errors, num_failures)
-    return sum_tests, sum_errors, sum_failures
+            callback_per_result(name, num_tests, num_errors, num_failures, num_skipped)
+    return sum_tests, sum_errors, sum_failures, sum_skipped
 
 
 def print_summary(results, show_stable=False, show_unstable=True):
@@ -160,12 +162,12 @@ def print_summary(results, show_stable=False, show_unstable=True):
     :param show_stable: print tests without errors or failures
     :param show_unstable: print tests with errors or failures
     """
-    def callback(name, num_tests, num_errors, num_failures):
-        if show_stable and not num_errors and not num_failures:
-            print('%s: %d tests' % (name, num_tests))
+    def callback(name, num_tests, num_errors, num_failures, num_skipped):
+        if show_stable and not (num_errors or num_failures):
+            print('%s: %d tests, %d skipped' % (name, num_tests, num_skipped))
         if show_unstable and (num_errors or num_failures):
-            print('%s: %d tests, %d errors, %d failures' %
-                  (name, num_tests, num_errors, num_failures))
-    sum_tests, sum_errors, sum_failures = aggregate_results(results, callback)
-    print('Summary: %d tests, %d errors, %d failures' %
-          (sum_tests, sum_errors, sum_failures))
+            print('%s: %d tests, %d skipped, %d errors, %d failures' %
+                  (name, num_tests, num_skipped, num_errors, num_failures))
+    sum_tests, sum_errors, sum_failures, sum_skipped = aggregate_results(results, callback)
+    print('Summary: %d tests, %d errors, %d failures, %d skipped' %
+          (sum_tests, sum_errors, sum_failures, sum_skipped))
