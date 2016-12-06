@@ -132,6 +132,7 @@ def read_junit(filename):
     num_errors = int(root.attrib.get('errors', 0))
     num_failures = int(root.attrib['failures'])
     num_skipped = int(root.attrib.get('skip', 0))
+    num_skipped += int(root.attrib.get('disabled', 0))
     return (num_tests, num_errors, num_failures, num_skipped)
 
 
