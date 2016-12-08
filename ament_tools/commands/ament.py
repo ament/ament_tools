@@ -12,16 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
-
 import argparse
 import sys
+
+from ament_tools.verbs import VerbExecutionError
 
 from osrf_pycommon.cli_utils.verb_pattern import create_subparsers
 from osrf_pycommon.cli_utils.verb_pattern import list_verbs
 from osrf_pycommon.cli_utils.verb_pattern import split_arguments_by_verb
-
-from ament_tools.verbs import VerbExecutionError
 
 COMMAND_NAME = 'ament'
 

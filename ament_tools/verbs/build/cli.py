@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
-
 from collections import OrderedDict
 from concurrent.futures import CancelledError
 from concurrent.futures import FIRST_COMPLETED
@@ -24,8 +22,6 @@ from multiprocessing import cpu_count
 import os
 import shutil
 import sys
-
-from osrf_pycommon.cli_utils.verb_pattern import call_prepare_arguments
 
 from ament_package.templates import configure_file
 from ament_package.templates import get_isolated_prefix_level_template_names
@@ -41,6 +37,8 @@ from ament_tools.verbs import VerbExecutionError
 from ament_tools.verbs.build_pkg import main as build_pkg_main
 from ament_tools.verbs.build_pkg.cli import add_arguments \
     as build_pkg_add_arguments
+
+from osrf_pycommon.cli_utils.verb_pattern import call_prepare_arguments
 
 
 def argument_preprocessor(args):

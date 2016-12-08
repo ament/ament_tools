@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
-
 import copy
 
 from .packages import find_unique_packages as _find_unique_packages

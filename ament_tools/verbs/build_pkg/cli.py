@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
-
 import argparse
 import inspect
 import os
@@ -25,9 +23,8 @@ from ament_package.templates import configure_file
 from ament_package.templates import get_prefix_level_template_names
 from ament_package.templates import get_prefix_level_template_path
 
-from ament_tools.build_type_discovery import MissingPluginError
 from ament_tools.build_type_discovery import get_class_for_build_type
-
+from ament_tools.build_type_discovery import MissingPluginError
 from ament_tools.context import Context
 from ament_tools.helper import combine_make_flags
 from ament_tools.helper import deploy_file
