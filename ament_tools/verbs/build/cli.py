@@ -236,7 +236,7 @@ def print_topological_order(opts, package_names):
     print('# Topological order')
     for pkg_name in package_names:
         if pkg_name in opts.skip_packages:
-            print(' - (%s)' % pkg_name)
+            print(' - ( %s )' % pkg_name)
         else:
             print(' - %s' % pkg_name)
 
