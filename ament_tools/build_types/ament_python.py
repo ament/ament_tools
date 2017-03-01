@@ -60,6 +60,10 @@ class AmentPythonBuildType(BuildType):
             'share', context.package_manifest.name, 'environment')
 
         ext = '.sh' if not IS_WINDOWS else '.bat'
+        # expand environment hook for AMENT_PREFIX_PATH
+        ament_prefix_path_environment_hook = os.path.join(
+            environment_hooks_path, 'ament_prefix_path' + ext)
+        # expand environment hook for PATH
         path_environment_hook = os.path.join(
             environment_hooks_path, 'path' + ext)
         # expand environment hook for PYTHONPATH
@@ -70,6 +74,7 @@ class AmentPythonBuildType(BuildType):
         })
         pythonpath_environment_hook = os.path.join(
             environment_hooks_path, os.path.basename(template_path)[:-3])
+
         destination_path = os.path.join(
             context.build_space, pythonpath_environment_hook)
         destination_dir = os.path.dirname(destination_path)
@@ -79,6 +84,7 @@ class AmentPythonBuildType(BuildType):
             h.write(content)
 
         environment_hooks = [
+            ament_prefix_path_environment_hook,
             path_environment_hook,
             pythonpath_environment_hook,
         ]
@@ -223,11 +229,17 @@ class AmentPythonBuildType(BuildType):
             with open(marker_file, 'w'):  # "touching" the file
                 pass
 
-        # deploy PATH environment hook
         ext = '.sh' if not IS_WINDOWS else '.bat'
-        template_path = get_environment_hook_template_path('path' + ext)
+        # deploy PATH environment hook
+        app_template_path = get_environment_hook_template_path('ament_prefix_path' + ext)
         deploy_file(
-            context, os.path.dirname(template_path), os.path.basename(template_path),
+            context, os.path.dirname(app_template_path), os.path.basename(app_template_path),
+            dst_subfolder=os.path.join('share', context.package_manifest.name, 'environment'))
+
+        # deploy PATH environment hook
+        path_template_path = get_environment_hook_template_path('path' + ext)
+        deploy_file(
+            context, os.path.dirname(path_template_path), os.path.basename(path_template_path),
             dst_subfolder=os.path.join('share', context.package_manifest.name, 'environment'))
 
         # deploy PYTHONPATH environment hook
