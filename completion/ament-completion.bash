@@ -22,7 +22,7 @@ _ament()
   prev=${COMP_WORDS[COMP_CWORD-1]}
 
   if [[ ${COMP_CWORD} -eq 1  ]] ; then
-    COMPREPLY=($(compgen -W "build build_pkg list_packages package_name package_version test test_pkg test_results uninstall uninstall_pkg" -- ${cur}))
+    COMPREPLY=($(compgen -W "build build_pkg list_dependencies list_packages package_name package_version test test_pkg test_results uninstall uninstall_pkg" -- ${cur}))
   elif [[ "$cur" == "-DCMAKE_BUILD_TYPE="* ]]; then
     # autocomplete CMake argument CMAKE_BUILD_TYPE with its options
     COMPREPLY=( $( compgen -P "-DCMAKE_BUILD_TYPE=" -W "Debug MinSizeRel None Release RelWithDebInfo" -- "${cur:19}" ) )
@@ -40,6 +40,19 @@ _ament()
         COMPREPLY=($(compgen -W "-DCMAKE_BUILD_TYPE=" -- ${cur}))
       else
         COMPREPLY=($(compgen -W "--ament-cmake-args --build-space --build-tests -C --cmake-args --end-with --force-ament-cmake-configure --force-cmake-configure --make-flags --install-space --isolated --only-packages --parallel --skip-build --skip-install --start-with --symlink-install" -- ${cur}))
+      fi
+    elif [[ "${COMP_WORDS[@]}" == *" list_dependencies "* ]] ; then
+      if [[ "--basepath" == *${prev} && ${cur} != -* ]] ; then
+        COMPREPLY=($(compgen -o dirnames ${cur}))
+      else
+	BASEPATH="./"
+	for i in "${!COMP_WORDS[@]}"; do
+	  if [[ "${COMP_WORDS[$i]}" == "--basepath" ]] ; then
+	    BASEPATH=${COMP_WORDS[$i+1]}
+	    break
+	  fi
+	done
+	COMPREPLY=($(compgen -W "--basepath --build-deps --exec-deps --test-deps $(ament list_packages --names-only $BASEPATH)" -- ${cur}))
       fi
     elif [[ "${COMP_WORDS[@]}" == *" list_packages "* ]] ; then
       if [[ "--depends-on" == *${prev}* && ${cur} != -* ]] ; then
