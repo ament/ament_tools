@@ -169,7 +169,23 @@ def main(opts, per_package_main=build_pkg_main):
               file=sys.stderr)
         return 0
 
-    return iterate_packages(opts, packages, per_package_main)
+    try:
+        return iterate_packages(opts, packages, per_package_main)
+    finally:
+        # On exit, let the user know about any package.xml parsing warnings.
+        warning_strings = []
+        for path, package, _ in packages:
+            for warning in getattr(package, 'parsing_warnings', []):
+                warning_strings.append(
+                    "  - Warning from parsing '%s' for package '%s': %s"
+                    % (os.path.abspath(package.filename), package.name, warning)
+                )
+        if warning_strings:
+            print("\n/!\\ Notice /!\\", file=sys.stderr)
+            print("There were some warnings while parsing package manifests:", file=sys.stderr)
+            for warning in warning_strings:
+                print(warning, file=sys.stderr)
+            print("", file=sys.stderr)
 
 
 def check_opts(opts, package_names):

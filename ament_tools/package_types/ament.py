@@ -24,6 +24,6 @@ entry_point_data = dict(
     description="A package containing a '%s' manifest file." % PACKAGE_MANIFEST_FILENAME,
     package_exists_at=package_exists_at,
     parse_package=lambda path:
-      parse_package(path, package_name_warning_not_error=True),
+        parse_package(path, package_name_warning_not_error=True),
     depends=[],
 )
