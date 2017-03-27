@@ -14,6 +14,7 @@
 
 import argparse
 import sys
+import os
 
 from ament_tools.verbs import VerbExecutionError
 
@@ -29,6 +30,8 @@ VERBS_ENTRY_POINT = '{0}.verbs'.format(COMMAND_NAME)
 def main(sysargs=None):
     # Assign sysargs if not set
     sysargs = sys.argv[1:] if sysargs is None else sysargs
+
+    os.environ['AMENT_TOOLS'] = '1'
 
     # Create a top level parser
     parser = argparse.ArgumentParser(
