@@ -294,9 +294,9 @@ def iterate_packages(opts, packages, per_package_callback):
             break
 
     if not opts.parallel:
-        rc = processSequentially(jobs)
+        rc = process_sequentially(jobs)
     else:
-        rc = processInParallel(jobs)
+        rc = process_in_parallel(jobs)
 
     if not rc and opts.end_with:
         print("Stopped after package '{0}'".format(opts.end_with))
@@ -330,7 +330,7 @@ def iterate_packages(opts, packages, per_package_callback):
     return rc
 
 
-def processSequentially(jobs):
+def process_sequentially(jobs):
     rc = 0
     for package_name in jobs:
         job = jobs[package_name]
@@ -340,7 +340,7 @@ def processSequentially(jobs):
     return rc
 
 
-def processInParallel(jobs):
+def process_in_parallel(jobs):
     for package_name, job in jobs.items():
         job['depends'] = [n for n in job['depends'] if n in jobs.keys()]
     max_workers = cpu_count()
