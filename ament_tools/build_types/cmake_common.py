@@ -22,6 +22,7 @@ CMAKE_EXECUTABLE = which('cmake')
 CTEST_EXECUTABLE = which('ctest')
 MAKE_EXECUTABLE = which('make')
 MSBUILD_EXECUTABLE = which('msbuild')
+NINJA_EXECUTABLE = which('ninja')
 
 __target_re = re.compile(r'^([a-zA-Z0-9][a-zA-Z0-9_\.]*):')
 
@@ -42,6 +43,11 @@ def cmakecache_exists_at(path):
 def makefile_exists_at(path):
     makefile = os.path.join(path, 'Makefile')
     return os.path.isfile(makefile)
+
+
+def ninjabuild_exists_at(path):
+    ninjabuild = os.path.join(path, 'build.ninja')
+    return os.path.isfile(ninjabuild)
 
 
 def solution_file_exists_at(path, package_name):

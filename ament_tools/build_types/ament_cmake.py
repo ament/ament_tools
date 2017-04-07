@@ -20,7 +20,7 @@ from ament_tools.helper import extract_argument_group
 
 from ament_tools.build_types.cmake_common import cmakecache_exists_at
 from ament_tools.build_types.cmake_common import makefile_exists_at
-
+from ament_tools.build_types.cmake_common import ninjabuild_exists_at
 from ament_tools.build_types.cmake import CmakeBuildType
 
 from ament_tools.build_types.common import get_cached_config
@@ -69,6 +69,8 @@ class AmentCmakeBuildType(CmakeBuildType):
         should_run_configure = False
         if context.force_ament_cmake_configure or context.force_cmake_configure:
             should_run_configure = True
+        elif context.use_ninja and not ninjabuild_exists_at(context.build_space):
+            should_run_configure = True
         elif not makefile_exists_at(context.build_space) or \
                 not cmakecache_exists_at(context.build_space):
             # If either the Makefile or the CMake cache does not exist
@@ -99,6 +101,8 @@ class AmentCmakeBuildType(CmakeBuildType):
                 extra_cmake_args += ['-DAMENT_CMAKE_SYMLINK_INSTALL=1']
             extra_cmake_args += context.cmake_args
             extra_cmake_args += context.ament_cmake_args
+        if context.use_ninja:
+            extra_cmake_args += ['-G', 'Ninja']
         # Yield the cmake common on_build (defined in CmakeBuildType)
         for step in self._common_cmake_on_build(
             should_run_configure, context, prefix, extra_cmake_args

@@ -36,6 +36,8 @@ from ament_tools.build_types.cmake_common import has_make_target
 from ament_tools.build_types.cmake_common import MAKE_EXECUTABLE
 from ament_tools.build_types.cmake_common import makefile_exists_at
 from ament_tools.build_types.cmake_common import MSBUILD_EXECUTABLE
+from ament_tools.build_types.cmake_common import NINJA_EXECUTABLE
+from ament_tools.build_types.cmake_common import ninjabuild_exists_at
 from ament_tools.build_types.cmake_common import project_file_exists_at
 from ament_tools.build_types.cmake_common import solution_file_exists_at
 
@@ -70,6 +72,10 @@ class CmakeBuildType(BuildType):
             help="Arbitrary arguments which are passed to all CTest invocations. "
                  "The option is only used by the 'test*' verbs. "
                  "Argument collection can be terminated with '--'.")
+        parser.add_argument(
+            '--use-ninja',
+            action='store_true',
+            help="Invoke 'cmake' with '-G Ninja' and call ninja instead of make.")
 
     def argument_preprocessor(self, args):
         # The CMake pass-through flag collects dashed options.
@@ -91,12 +97,15 @@ class CmakeBuildType(BuildType):
         ce.add('force_cmake_configure', force_cmake_configure)
         ce.add('cmake_args', options.cmake_args)
         ce.add('ctest_args', options.ctest_args)
+        ce.add('use_ninja', options.use_ninja)
         return ce
 
     def on_build(self, context):
         # Regardless of dry-run, try to determine if CMake should be invoked
         should_run_configure = False
         if context.force_cmake_configure:
+            should_run_configure = True
+        elif context.use_ninja and not ninjabuild_exists_at(context.build_space):
             should_run_configure = True
         elif not makefile_exists_at(context.build_space) or \
                 not cmakecache_exists_at(context.build_space):
@@ -123,6 +132,8 @@ class CmakeBuildType(BuildType):
         extra_cmake_args = []
         if should_run_configure:
             extra_cmake_args += context.cmake_args
+        if context.use_ninja:
+            extra_cmake_args += ['-G', 'Ninja']
         # Yield the cmake common on_build
         for step in self._common_cmake_on_build(
             should_run_configure, context, prefix, extra_cmake_args
@@ -159,9 +170,14 @@ class CmakeBuildType(BuildType):
             yield BuildAction(cmd)
         # Now execute the build step
         if not IS_WINDOWS:
-            if MAKE_EXECUTABLE is None:
-                raise VerbExecutionError("Could not find 'make' executable")
-            yield BuildAction(prefix + [MAKE_EXECUTABLE] + context.make_flags)
+            if context.use_ninja:
+                if NINJA_EXECUTABLE is None:
+                    raise VerbExecutionError("Could not find 'make' executable")
+                yield BuildAction(prefix + [NINJA_EXECUTABLE] + context.make_flags)
+            else:
+                if MAKE_EXECUTABLE is None:
+                    raise VerbExecutionError("Could not find 'make' executable")
+                yield BuildAction(prefix + [MAKE_EXECUTABLE] + context.make_flags)
         else:
             if MSBUILD_EXECUTABLE is None:
                 raise VerbExecutionError("Could not find 'msbuild' executable")
@@ -352,16 +368,20 @@ class CmakeBuildType(BuildType):
         prefix = self._get_command_prefix('install', context)
 
         if not IS_WINDOWS:
-            if has_make_target(context.build_space, 'install') or context.dry_run:
-                if MAKE_EXECUTABLE is None:
-                    raise VerbExecutionError("Could not find 'make' executable")
-                yield BuildAction(prefix + [MAKE_EXECUTABLE, 'install'])
+            if context.use_ninja:
+                if NINJA_EXECUTABLE is None:
+                    raise VerbExecutionError("Could not find 'ninja' executable")
+                yield BuildAction(prefix + [NINJA_EXECUTABLE, 'install'])
             else:
-                self.warn('Could not run installation for package because it has no '
-                          "'install' target")
+                if has_make_target(context.build_space, 'install') or context.dry_run:
+                    if MAKE_EXECUTABLE is None:
+                        raise VerbExecutionError("Could not find 'make' executable")
+                    yield BuildAction(prefix + [MAKE_EXECUTABLE, 'install'])
+                else:
+                    self.warn('Could not run installation for package because it has no '
+                              "'install' target")
         else:
-            install_project_file = project_file_exists_at(
-                context.build_space, 'INSTALL')
+            install_project_file = project_file_exists_at(context.build_space, 'INSTALL')
             if install_project_file is not None:
                 if MSBUILD_EXECUTABLE is None:
                     raise VerbExecutionError("Could not find 'msbuild' executable")
