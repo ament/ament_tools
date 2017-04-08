@@ -15,6 +15,7 @@
 """Implements the BuildType support for cmake based ament packages."""
 
 import os
+import platform
 import sys
 
 from ament_package.templates import get_environment_hook_template_path
@@ -40,6 +41,7 @@ from ament_tools.build_types.cmake_common import NINJA_EXECUTABLE
 from ament_tools.build_types.cmake_common import ninjabuild_exists_at
 from ament_tools.build_types.cmake_common import project_file_exists_at
 from ament_tools.build_types.cmake_common import solution_file_exists_at
+from ament_tools.build_types.cmake_common import XCODEBUILD_EXECUTABLE
 
 from ament_tools.build_types.common import expand_package_level_setup_files
 from ament_tools.build_types.common import get_cached_config
@@ -47,6 +49,8 @@ from ament_tools.build_types.common import set_cached_config
 
 from ament_tools.verbs import VerbExecutionError
 
+IS_LINUX = platform.system() == 'Linux'
+IS_MACOSX = platform.system() == 'Darwin'
 IS_WINDOWS = os.name == 'nt'
 
 
@@ -72,6 +76,11 @@ class CmakeBuildType(BuildType):
             help="Arbitrary arguments which are passed to all CTest invocations. "
                  "The option is only used by the 'test*' verbs. "
                  "Argument collection can be terminated with '--'.")
+        if IS_MACOSX:
+            parser.add_argument(
+                '--use-xcode',
+                action='store_true',
+                help="Use Xcode instead of Make")
         parser.add_argument(
             '--use-ninja',
             action='store_true',
@@ -97,6 +106,7 @@ class CmakeBuildType(BuildType):
         ce.add('force_cmake_configure', force_cmake_configure)
         ce.add('cmake_args', options.cmake_args)
         ce.add('ctest_args', options.ctest_args)
+        ce.add('use_xcode', getattr(options, 'use_xcode', False))
         ce.add('use_ninja', options.use_ninja)
         return ce
 
@@ -140,6 +150,25 @@ class CmakeBuildType(BuildType):
         ):
             yield step
 
+    def _make_or_ninja_build(self, context, prefix):
+        if context.use_ninja:
+            if NINJA_EXECUTABLE is None:
+                raise VerbExecutionError("Could not find 'make' executable")
+            return BuildAction(prefix + [NINJA_EXECUTABLE] + context.make_flags)
+        else:
+            if MAKE_EXECUTABLE is None:
+                raise VerbExecutionError("Could not find 'make' executable")
+            return BuildAction(prefix + [MAKE_EXECUTABLE] + context.make_flags)
+
+    def _using_xcode_generator(self, context):
+        # Check CMake was invoked to generate a Xcode or Make project
+        # The Xcode CMake generator will produce a file named
+        # ALL_BUILD_cmakeRulesBuildPhase.makeRelease if the Xcode generator
+        # was used, whether the build type is Release, Debug or anything else
+        all_build_cmake_file_path = os.path.join(
+            context.build_space, 'CMakeScripts', 'ALL_BUILD_cmakeRulesBuildPhase.makeRelease')
+        return os.path.isfile(all_build_cmake_file_path)
+
     def _common_cmake_on_build(self, should_run_configure, context, prefix, extra_cmake_args):
         # Execute the configure step
         # (either cmake or the cmake_check_build_system make target)
@@ -160,25 +189,23 @@ class CmakeBuildType(BuildType):
                 if vsv not in supported_vsv:
                     raise VerbExecutionError('Unknown / unsupported VS version: ' + vsv)
                 cmake_args += ['-G', supported_vsv[vsv]]
+            elif IS_MACOSX:
+                if context.use_xcode or self._using_xcode_generator(context):
+                    cmake_args += ['-G', 'Xcode']
+                else:
+                    cmake_args += ['-G', 'Unix Makefiles']
             if CMAKE_EXECUTABLE is None:
                 raise VerbExecutionError("Could not find 'cmake' executable")
             yield BuildAction(prefix + [CMAKE_EXECUTABLE] + cmake_args)
-        elif not IS_WINDOWS:  # Check for reconfigure if available.
+        elif IS_LINUX:  # Check for reconfigure if available.
             if MAKE_EXECUTABLE is None:
                 raise VerbExecutionError("Could not find 'make' executable")
             cmd = prefix + [MAKE_EXECUTABLE, 'cmake_check_build_system']
             yield BuildAction(cmd)
         # Now execute the build step
-        if not IS_WINDOWS:
-            if context.use_ninja:
-                if NINJA_EXECUTABLE is None:
-                    raise VerbExecutionError("Could not find 'make' executable")
-                yield BuildAction(prefix + [NINJA_EXECUTABLE] + context.make_flags)
-            else:
-                if MAKE_EXECUTABLE is None:
-                    raise VerbExecutionError("Could not find 'make' executable")
-                yield BuildAction(prefix + [MAKE_EXECUTABLE] + context.make_flags)
-        else:
+        if IS_LINUX:
+            yield self._make_or_ninja_build(context, prefix)
+        elif IS_WINDOWS:
             if MSBUILD_EXECUTABLE is None:
                 raise VerbExecutionError("Could not find 'msbuild' executable")
             solution_file = solution_file_exists_at(
@@ -204,12 +231,59 @@ class CmakeBuildType(BuildType):
                         env['CL'] = '/MP'
             cmd += [
                 '/p:Configuration=%s' %
-                self._get_visual_studio_configuration(context), solution_file]
+                self._get_configuration_from_cmake(context), solution_file]
             yield BuildAction(cmd, env=env)
+        elif IS_MACOSX:
+            if self._using_xcode_generator(context):
+                if XCODEBUILD_EXECUTABLE is None:
+                    raise VerbExecutionError("Could not find 'xcodebuild' executable")
+                cmd = prefix + [XCODEBUILD_EXECUTABLE]
+                cmd += ['build']
+                xcodebuild_flags = []
+                for flag in context.make_flags:
+                    if flag.startswith('-j'):
+                        xcodebuild_flags.append(flag.replace(
+                            '-j', '-IDEBuildOperationMaxNumberOfConcurrentCompileTasks='))
+                    elif not flag.startswith('-l'):
+                        xcodebuild_flags.append(flag)
+                xcodebuild_flags += ['-configuration']
+                xcodebuild_flags += [self._get_configuration_from_cmake(context)]
+                cmd.extend(xcodebuild_flags)
+                yield BuildAction(cmd)
+            else:
+                yield self._make_or_ninja_build(context, prefix)
+        else:
+            raise VerbExecutionError('Could not determine operating system')
 
     def on_test(self, context):
         for step in self._common_cmake_on_test(context, 'cmake'):
             yield step
+
+    def _make_test(self, context, build_type, prefix):
+        if has_make_target(context.build_space, 'test') or context.dry_run:
+            if MAKE_EXECUTABLE is None:
+                raise VerbExecutionError("Could not find 'make' executable")
+            cmd = prefix + [MAKE_EXECUTABLE, 'test']
+            if 'ARGS' not in os.environ:
+                args = [
+                    '-V',
+                    # verbose output and generate xml of test summary
+                    '-D', 'ExperimentalTest', '--no-compress-output']
+            elif os.environ['ARGS']:
+                args = [os.environ['ARGS']]
+            else:
+                args = []
+            args += context.ctest_args
+            if context.retest_until_pass and context.test_iteration:
+                args += ['--rerun-failed']
+            if args:
+                # the valus is not quoted here
+                # since each item will be quoted by shlex.quote later if necessary
+                cmd.append('ARGS=%s' % ' '.join(args))
+            return BuildAction(cmd)
+        else:
+            self.warn("Could not run tests for '{0}' package because it has no "
+                      "'test' target".format(build_type))
 
     def _common_cmake_on_test(self, context, build_type):
         assert context.build_tests
@@ -219,32 +293,11 @@ class CmakeBuildType(BuildType):
             'test', context,
             additional_dependencies=context.exec_dependency_paths_in_workspace
         )
-        if not IS_WINDOWS:
-            if has_make_target(context.build_space, 'test') or context.dry_run:
-                if MAKE_EXECUTABLE is None:
-                    raise VerbExecutionError("Could not find 'make' executable")
-                cmd = prefix + [MAKE_EXECUTABLE, 'test']
-                if 'ARGS' not in os.environ:
-                    args = [
-                        '-V',
-                        # verbose output and generate xml of test summary
-                        '-D', 'ExperimentalTest', '--no-compress-output']
-                elif os.environ['ARGS']:
-                    args = [os.environ['ARGS']]
-                else:
-                    args = []
-                args += context.ctest_args
-                if context.retest_until_pass and context.test_iteration:
-                    args += ['--rerun-failed']
-                if args:
-                    # the valus is not quoted here
-                    # since each item will be quoted by shlex.quote later if necessary
-                    cmd.append('ARGS=%s' % ' '.join(args))
-                yield BuildAction(cmd)
-            else:
-                self.warn("Could not run tests for '{0}' package because it has no "
-                          "'test' target".format(build_type))
-        else:
+        if IS_LINUX:
+            build_action = self._make_test(context, build_type, prefix)
+            if build_action:
+                yield build_action
+        elif IS_WINDOWS:
             if CTEST_EXECUTABLE is None:
                 raise VerbExecutionError("Could not find 'ctest' executable")
             # invoke CTest directly in order to pass arguments
@@ -252,7 +305,7 @@ class CmakeBuildType(BuildType):
             cmd = prefix + [
                 CTEST_EXECUTABLE,
                 # choose configuration on e.g. Windows
-                '-C', self._get_visual_studio_configuration(context),
+                '-C', self._get_configuration_from_cmake(context),
                 # generate xml of test summary
                 '-D', 'ExperimentalTest', '--no-compress-output',
                 # show all test output
@@ -262,8 +315,23 @@ class CmakeBuildType(BuildType):
             if context.retest_until_pass and context.test_iteration:
                 cmd += ['--rerun-failed']
             yield BuildAction(cmd)
+        elif IS_MACOSX:
+            if self._using_xcode_generator(context):
+                if XCODEBUILD_EXECUTABLE is None:
+                    raise VerbExecutionError("Could not find 'xcodebuild' executable")
+                xcodebuild_args = ['build']
+                xcodebuild_args += ['-configuration']
+                xcodebuild_args += [self._get_configuration_from_cmake(context)]
+                xcodebuild_args += ['-target', 'RUN_TESTS']
+                yield BuildAction(prefix + [XCODEBUILD_EXECUTABLE] + xcodebuild_args)
+            else:
+                build_action = self._make_test(context, build_type, prefix)
+                if build_action:
+                    yield build_action
+        else:
+            raise VerbExecutionError('Could not determine operating system')
 
-    def _get_visual_studio_configuration(self, context):
+    def _get_configuration_from_cmake(self, context):
         # check for CMake build type in the command line arguments
         arg_prefix = '-DCMAKE_BUILD_TYPE='
         build_type = None
@@ -363,55 +431,87 @@ class CmakeBuildType(BuildType):
                 dst_subfolder=os.path.dirname(os.path.relpath(destination, context.build_space)),
                 skip_if_exists=True)
 
+    def _make_or_ninja_install(self, context, prefix):
+        if context.use_ninja:
+            if NINJA_EXECUTABLE is None:
+                raise VerbExecutionError("Could not find 'ninja' executable")
+            return BuildAction(prefix + [NINJA_EXECUTABLE, 'install'])
+        else:
+            if has_make_target(context.build_space, 'install') or context.dry_run:
+                if MAKE_EXECUTABLE is None:
+                    raise VerbExecutionError("Could not find 'make' executable")
+                return BuildAction(prefix + [MAKE_EXECUTABLE, 'install'])
+            else:
+                self.warn('Could not run installation for package because it has no '
+                          "'install' target")
+
     def _common_cmake_on_install(self, context):
         # Figure out if there is a setup file to source
         prefix = self._get_command_prefix('install', context)
 
-        if not IS_WINDOWS:
-            if context.use_ninja:
-                if NINJA_EXECUTABLE is None:
-                    raise VerbExecutionError("Could not find 'ninja' executable")
-                yield BuildAction(prefix + [NINJA_EXECUTABLE, 'install'])
-            else:
-                if has_make_target(context.build_space, 'install') or context.dry_run:
-                    if MAKE_EXECUTABLE is None:
-                        raise VerbExecutionError("Could not find 'make' executable")
-                    yield BuildAction(prefix + [MAKE_EXECUTABLE, 'install'])
-                else:
-                    self.warn('Could not run installation for package because it has no '
-                              "'install' target")
-        else:
-            install_project_file = project_file_exists_at(context.build_space, 'INSTALL')
+        if IS_LINUX:
+            build_action = self._make_or_ninja_install(context, prefix)
+            if build_action:
+                yield build_action
+        elif IS_WINDOWS:
+            install_project_file = project_file_exists_at(
+                context.build_space, 'INSTALL')
             if install_project_file is not None:
                 if MSBUILD_EXECUTABLE is None:
                     raise VerbExecutionError("Could not find 'msbuild' executable")
                 yield BuildAction(
                     prefix + [
                         MSBUILD_EXECUTABLE,
-                        '/p:Configuration=' + self._get_visual_studio_configuration(context),
+                        '/p:Configuration=' + self._get_configuration_from_cmake(context),
                         install_project_file])
             else:
                 self.warn("Could not find Visual Studio project file 'INSTALL.vcxproj'")
+        elif IS_MACOSX:
+            if self._using_xcode_generator(context):
+                # The Xcode CMake generator will produce a file named
+                # install_postBuildPhase.makeRelease in the CMakeScripts directory if there is an
+                # install command in the CMakeLists.txt file of the package. We use that to only
+                # call xcodebuild's install target if there is anything to install
+                install_cmake_file_path = os.path.join(
+                    context.build_space, 'CMakeScripts', 'install_postBuildPhase.makeRelease')
+                install_cmake_file = os.path.isfile(install_cmake_file_path)
+                if install_cmake_file:
+                    if XCODEBUILD_EXECUTABLE is None:
+                        raise VerbExecutionError("Could not find 'xcodebuild' executable")
+                    cmd = prefix + [XCODEBUILD_EXECUTABLE]
+                    cmd += ['-target', 'install']
+                    yield BuildAction(cmd)
+            else:
+                build_action = self._make_or_ninja_install(context, prefix)
+                if build_action:
+                    yield build_action
+        else:
+            raise VerbExecutionError('Could not determine operating system')
 
     def on_uninstall(self, context):
         # Call cmake common on_uninstall (defined in CmakeBuildType)
         for step in self._common_cmake_on_uninstall(context, 'cmake'):
             yield step
 
+    def _make_uninstall(self, context, build_type, prefix):
+        if has_make_target(context.build_space, 'uninstall'):
+            if MAKE_EXECUTABLE is None:
+                raise VerbExecutionError("Could not find 'make' executable")
+            cmd = prefix + [MAKE_EXECUTABLE, 'uninstall']
+            return BuildAction(cmd)
+        else:
+            self.warn("Could not run uninstall for '{0}' package because it has no "
+                      "'uninstall' target".format(build_type))
+
     def _common_cmake_on_uninstall(self, context, build_type):
         # Figure out if there is a setup file to source
         prefix = self._get_command_prefix('uninstall', context)
 
-        if not IS_WINDOWS:
-            if has_make_target(context.build_space, 'uninstall'):
-                if MAKE_EXECUTABLE is None:
-                    raise VerbExecutionError("Could not find 'make' executable")
-                cmd = prefix + [MAKE_EXECUTABLE, 'uninstall']
-                yield BuildAction(cmd)
-            else:
-                self.warn("Could not run uninstall for '{0}' package because it has no "
-                          "'uninstall' target".format(build_type))
-        else:
+        if IS_LINUX:
+            build_action = self._make_uninstall(context, build_type, prefix)
+            if build_action:
+                yield build_action
+        elif IS_WINDOWS:
             if MSBUILD_EXECUTABLE is None:
                 raise VerbExecutionError("Could not find 'msbuild' executable")
             uninstall_project_file = project_file_exists_at(context.build_space, 'UNINSTALL')
@@ -419,6 +519,19 @@ class CmakeBuildType(BuildType):
                 yield BuildAction(prefix + [MSBUILD_EXECUTABLE, uninstall_project_file])
             else:
                 self.warn("Could not find Visual Studio project file 'UNINSTALL.vcxproj'")
+        elif IS_MACOSX:
+            if self._using_xcode_generator(context):
+                if XCODEBUILD_EXECUTABLE is None:
+                    raise VerbExecutionError("Could not find 'xcodebuild' executable")
+                cmd = prefix + [XCODEBUILD_EXECUTABLE]
+                cmd += ['-target', 'uninstall']
+                yield BuildAction(cmd)
+            else:
+                build_action = self._make_uninstall(context, build_type, prefix)
+                if build_action:
+                    yield build_action
+        else:
+            raise VerbExecutionError('Could not determine operating system')
 
     def _get_command_prefix(self, name, context, additional_dependencies=None):
         if not IS_WINDOWS:

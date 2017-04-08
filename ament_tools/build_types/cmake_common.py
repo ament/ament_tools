@@ -23,6 +23,7 @@ CTEST_EXECUTABLE = which('ctest')
 MAKE_EXECUTABLE = which('make')
 MSBUILD_EXECUTABLE = which('msbuild')
 NINJA_EXECUTABLE = which('ninja')
+XCODEBUILD_EXECUTABLE = which('xcodebuild')
 
 __target_re = re.compile(r'^([a-zA-Z0-9][a-zA-Z0-9_\.]*):')
 
