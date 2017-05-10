@@ -308,7 +308,7 @@ def iterate_packages(opts, packages, per_package_callback):
             if name.endswith('.in'):
                 content = configure_file(template_path, {
                     'CMAKE_INSTALL_PREFIX': install_space_base,
-                    'PYTHON_EXECUTABLE': sys.executable,
+                    'PYTHON_EXECUTABLE': opts.python_interpreter,
                 })
                 destination_path = os.path.join(
                     install_space_base, name[:-3])
