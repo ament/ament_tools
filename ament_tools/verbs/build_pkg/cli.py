@@ -185,6 +185,13 @@ def add_arguments(parser):
         default=False,
         help='Use symlinks instead of copying files wherever possible',
     )
+    parser.add_argument(
+        '--python-interpreter',
+        default=sys.executable,
+        help="Use a different Python interpreter for invoking subprocesses"
+             " (default '%s')" % sys.executable,
+    )
+
 
 package_manifest_cache_ = {}
 
@@ -285,7 +292,7 @@ def expand_prefix_level_setup_files(context):
             template_path = get_prefix_level_template_path(name)
             content = configure_file(template_path, {
                 'CMAKE_INSTALL_PREFIX': context.install_space,
-                'PYTHON_EXECUTABLE': sys.executable,
+                'PYTHON_EXECUTABLE': context.python_interpreter,
             })
             destination_path = os.path.join(
                 context.build_space, name[:-3])
@@ -367,6 +374,7 @@ def create_context(opts):
     context.make_flags = opts.make_flags
     context.dry_run = False
     context.build_tests = opts.build_tests
+    context.python_interpreter = opts.python_interpreter
     print('')
     print("Process package '{0}' with context:".format(pkg_name))
     print("-" * 80)

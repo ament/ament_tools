@@ -20,7 +20,6 @@ import os
 import re
 import setuptools
 import shutil
-import sys
 
 from ament_package.templates import configure_file
 from ament_package.templates import get_environment_hook_template_path
@@ -32,15 +31,10 @@ from ament_tools.helper import deploy_file
 from ament_tools.setup_arguments import get_data_files_mapping
 from ament_tools.setup_arguments import get_setup_arguments
 
-PYTHON_EXECUTABLE = sys.executable
-NOSETESTS_EXECUTABLE = None
 try:
     import nose
-    # Use the -m module option for executing nose, to ensure we get the desired version.
-    # Looking for just nosetest or nosetest3 on the PATH was not reliable in virtualenvs.
-    NOSETESTS_EXECUTABLE = [PYTHON_EXECUTABLE, '-m', nose.__name__]
 except ImportError:
-    pass
+    nose = None
 
 IS_WINDOWS = os.name == 'nt'
 
@@ -112,9 +106,12 @@ class AmentPythonBuildType(BuildType):
             context.package_manifest.name, 'nosetests.xunit.xml')
         if not os.path.exists(os.path.dirname(xunit_file)):
             os.makedirs(os.path.dirname(xunit_file))
-        assert NOSETESTS_EXECUTABLE, 'Could not find nosetests'
+        assert nose, 'Could not find nosetests'
+        # Use the -m module option for executing nose, to ensure we get the desired version.
+        # Looking for just nosetest or nosetest3 on the PATH was not reliable in virtualenvs.
+        NOSETESTS_CMD = [context.python_interpreter, '-m', nose.__name__]
         coverage_xml_file = os.path.join(context.build_space, 'coverage.xml')
-        cmd = NOSETESTS_EXECUTABLE + [
+        cmd = NOSETESTS_CMD + [
             '--nocapture',
             '--with-xunit', '--xunit-file=%s' % xunit_file,
             '--with-coverage', '--cover-erase',
@@ -161,7 +158,7 @@ class AmentPythonBuildType(BuildType):
             # Execute the setup.py install step with lots of arguments
             # to avoid placing any files in the source space
             cmd = [
-                PYTHON_EXECUTABLE, 'setup.py',
+                context.python_interpreter, 'setup.py',
                 'egg_info', '--egg-base', context.build_space,
                 'build', '--build-base', os.path.join(
                     context.build_space, 'build'),
@@ -184,7 +181,7 @@ class AmentPythonBuildType(BuildType):
             # Execute the setup.py develop step in build space
             # to avoid placing any files in the source space
             cmd = [
-                PYTHON_EXECUTABLE, 'setup.py',
+                context.python_interpreter, 'setup.py',
                 'develop', '--prefix', context.install_space,
                 '--script-dir', os.path.join(context.install_space, 'bin'),
                 '--no-deps',
@@ -204,7 +201,7 @@ class AmentPythonBuildType(BuildType):
                 os.path.exists(setup_py_build_space) and \
                 os.path.islink(setup_py_build_space):
             cmd = [
-                PYTHON_EXECUTABLE, 'setup.py',
+                context.python_interpreter, 'setup.py',
                 'develop', '--prefix', context.install_space,
                 '--uninstall',
             ]
