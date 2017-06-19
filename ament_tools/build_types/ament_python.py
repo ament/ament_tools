@@ -258,78 +258,23 @@ class AmentPythonBuildType(BuildType):
         return os.path.relpath(path, start=context.install_space)
 
     def _get_command_prefix(
-        self,
-        name,
-        context,
-        additional_lines=None,
-        additional_dependencies=None,
+        self, name, context, *,
+        additional_dependencies=None, additional_lines=None
     ):
+        if additional_lines is None:
+            additional_lines = []
         if not IS_WINDOWS:
-            return self._get_command_prefix_unix(
-                name, context, additional_lines, additional_dependencies or [])
+            additional_lines.append(
+                'export PYTHONPATH="%s:$PYTHONPATH"' % os.path.join(
+                    context.install_space, self._get_python_lib(context)))
         else:
-            return self._get_command_prefix_windows(
-                name, context, additional_lines, additional_dependencies or [])
-
-    def _get_command_prefix_windows(
-        self,
-        name,
-        context,
-        additional_lines,
-        additional_dependencies,
-    ):
-        lines = []
-        lines.append('@echo off')
-        for path in context.build_dependencies + additional_dependencies:
-            local_setup = os.path.join(path, 'local_setup.bat')
-            lines.append(
-                'if "%AMENT_TRACE_SETUP_FILES%" NEQ "" echo call "{0}"'.format(local_setup))
-            lines.append('if exist "{0}" call "{0}"'.format(local_setup))
-            lines.append('')
-        lines.append(
-            'set "PYTHONPATH={0};%PYTHONPATH%"'
-            .format(os.path.join(context.install_space,
-                                 self._get_python_lib(context))))
-        if additional_lines:
-            lines += additional_lines
-        lines += ['%*']
-        lines += ['if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%']
-
-        generated_file = os.path.join(
-            context.build_space, '%s__%s.bat' %
-            (AmentPythonBuildType.build_type, name))
-        with open(generated_file, 'w') as h:
-            for line in lines:
-                h.write('%s\n' % line)
-
-        return [generated_file]
-
-    def _get_command_prefix_unix(self, name, context, additional_lines, additional_dependencies):
-        lines = []
-        lines.append('#!/usr/bin/env sh\n')
-        for path in context.build_dependencies + additional_dependencies:
-            local_setup = os.path.join(path, 'local_setup.sh')
-            lines.append('if [ -n "$AMENT_TRACE_SETUP_FILES" ]; then')
-            lines.append('  echo ". \\"%s\\""' % local_setup)
-            lines.append('fi')
-            lines.append('if [ -f "%s" ]; then' % local_setup)
-            lines.append('  . "%s"' % local_setup)
-            lines.append('fi')
-            lines.append('')
-        lines.append(
-            'export PYTHONPATH="%s:$PYTHONPATH"' %
-            os.path.join(context.install_space, self._get_python_lib(context)))
-        if additional_lines:
-            lines += additional_lines
-
-        generated_file = os.path.join(
-            context.build_space, '%s__%s.sh' %
-            (AmentPythonBuildType.build_type, name))
-        with open(generated_file, 'w') as h:
-            for line in lines:
-                h.write('%s\n' % line)
-
-        return ['.', generated_file, '&&']
+            additional_lines.append(
+                'set "PYTHONPATH={0};%PYTHONPATH%"'.format(os.path.join(
+                    context.install_space, self._get_python_lib(context))))
+        return super(AmentPythonBuildType, self)._get_command_prefix(
+            AmentPythonBuildType.build_type, name, context,
+            additional_dependencies=additional_dependencies,
+            additional_lines=additional_lines)
 
     def _install_action_python(self, context):
         self._undo_install(context)
