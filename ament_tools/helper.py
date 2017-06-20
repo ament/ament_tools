@@ -259,9 +259,7 @@ def deploy_file(
                 print('-- [ament] Skipping (would overwrite):', destination_path)
                 return
     print('-- [ament] Deploying:', destination_path)
-    destination_folder = os.path.dirname(destination_path)
-    if not os.path.exists(destination_folder):
-        os.makedirs(destination_folder)
+    os.makedirs(os.path.dirname(destination_path), exist_ok=True)
 
     # remove existing file / symlink if it is not already what is intended
     if os.path.exists(destination_path):

@@ -412,9 +412,7 @@ class CmakeBuildType(BuildType):
             'share', 'ament_index', 'resource_index', 'packages',
             context.package_manifest.name)
         if not os.path.exists(marker_file):
-            marker_dir = os.path.dirname(marker_file)
-            if not os.path.exists(marker_dir):
-                os.makedirs(marker_dir)
+            os.makedirs(os.path.dirname(marker_file), exist_ok=True)
             with open(marker_file, 'w'):  # "touching" the file
                 pass
 
