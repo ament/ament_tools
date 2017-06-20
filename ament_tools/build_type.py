@@ -210,42 +210,52 @@ class BuildType(object):
     ):
         if additional_dependencies is None:
             additional_dependencies = []
-        lines = []
+        return get_command_prefix(
+            '%s__%s' % (build_type, name),
+            context.build_space,
+            dependencies=context.build_dependencies + additional_dependencies,
+            additional_lines=additional_lines)
+
+
+def get_command_prefix(
+    generated_filename, build_space, dependencies, additional_lines=None
+):
+    lines = []
+    if not IS_WINDOWS:
+        lines.append('#!/usr/bin/env sh\n')
+        extension = 'sh'
+    else:
+        lines.append('@echo off\n')
+        extension = 'bat'
+
+    for path in dependencies:
+        local_setup = os.path.join(path, 'local_setup.%s' % extension)
         if not IS_WINDOWS:
-            lines.append('#!/usr/bin/env sh\n')
-            extension = 'sh'
+            lines.append('if [ -n "$AMENT_TRACE_SETUP_FILES" ]; then')
+            lines.append('  echo ". \\"%s\\""' % local_setup)
+            lines.append('fi')
+            lines.append('if [ -f "%s" ]; then' % local_setup)
+            lines.append('  . "%s"' % local_setup)
+            lines.append('fi')
         else:
-            lines.append('@echo off\n')
-            extension = 'bat'
+            lines.append(
+                'if "%AMENT_TRACE_SETUP_FILES%" NEQ "" echo call "{0}"'.format(local_setup))
+            lines.append('if exist "{0}" call "{0}"'.format(local_setup))
+        lines.append('')
 
-        for path in context.build_dependencies + additional_dependencies:
-            local_setup = os.path.join(path, 'local_setup.%s' % extension)
-            if not IS_WINDOWS:
-                lines.append('if [ -n "$AMENT_TRACE_SETUP_FILES" ]; then')
-                lines.append('  echo ". \\"%s\\""' % local_setup)
-                lines.append('fi')
-                lines.append('if [ -f "%s" ]; then' % local_setup)
-                lines.append('  . "%s"' % local_setup)
-                lines.append('fi')
-            else:
-                lines.append(
-                    'if "%AMENT_TRACE_SETUP_FILES%" NEQ "" echo call "{0}"'.format(local_setup))
-                lines.append('if exist "{0}" call "{0}"'.format(local_setup))
-            lines.append('')
+    lines.extend(additional_lines or [])
 
-        lines.extend(additional_lines or [])
+    if IS_WINDOWS:
+        lines.append('%*')
+        lines.append('if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%')
 
-        if IS_WINDOWS:
-            lines.append('%*')
-            lines.append('if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%')
+    generated_file = os.path.join(
+        build_space, '%s.%s' % (generated_filename, extension))
+    with open(generated_file, 'w') as h:
+        for line in lines:
+            h.write('%s\n' % line)
 
-        generated_file = os.path.join(
-            context.build_space, '%s__%s.%s' % (build_type, name, extension))
-        with open(generated_file, 'w') as h:
-            for line in lines:
-                h.write('%s\n' % line)
-
-        if not IS_WINDOWS:
-            return ['.', generated_file, '&&']
-        else:
-            return [generated_file]
+    if not IS_WINDOWS:
+        return ['.', generated_file, '&&']
+    else:
+        return [generated_file]
