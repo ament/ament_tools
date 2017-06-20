@@ -71,9 +71,7 @@ class AmentPythonBuildType(BuildType):
 
         destination_path = os.path.join(
             context.build_space, pythonpath_environment_hook)
-        destination_dir = os.path.dirname(destination_path)
-        if not os.path.exists(destination_dir):
-            os.makedirs(destination_dir)
+        os.makedirs(os.path.dirname(destination_path), exist_ok=True)
         with open(destination_path, 'w') as h:
             h.write(content)
 
@@ -104,8 +102,7 @@ class AmentPythonBuildType(BuildType):
         xunit_file = os.path.join(
             context.build_space, 'test_results',
             context.package_manifest.name, 'nosetests.xunit.xml')
-        if not os.path.exists(os.path.dirname(xunit_file)):
-            os.makedirs(os.path.dirname(xunit_file))
+        os.makedirs(os.path.dirname(xunit_file), exist_ok=True)
         assert nose, 'Could not find nosetests'
         # Use the -m module option for executing nose, to ensure we get the desired version.
         # Looking for just nosetest or nosetest3 on the PATH was not reliable in virtualenvs.
@@ -140,13 +137,11 @@ class AmentPythonBuildType(BuildType):
         yield BuildAction(self._install_action_files, type='function')
 
         # setup.py egg_info requires the --egg-base to exist
-        if not os.path.exists(context.build_space):
-            os.makedirs(context.build_space)
+        os.makedirs(context.build_space, exist_ok=True)
         # setup.py install/develop requires the PYTHONPATH to exist
         python_path = os.path.join(
             context.install_space, self._get_python_lib(context))
-        if not os.path.exists(python_path):
-            os.makedirs(python_path)
+        os.makedirs(python_path, exist_ok=True)
 
         # Figure out if there is a setup file to source
         prefix = self._get_command_prefix('install', context)
@@ -221,8 +216,7 @@ class AmentPythonBuildType(BuildType):
             context.package_manifest.name)
         if not os.path.exists(marker_file):
             marker_dir = os.path.dirname(marker_file)
-            if not os.path.exists(marker_dir):
-                os.makedirs(marker_dir)
+            os.makedirs(marker_dir, exist_ok=True)
             with open(marker_file, 'w'):  # "touching" the file
                 pass
 
@@ -360,8 +354,7 @@ class AmentPythonBuildType(BuildType):
             src = os.path.join(context.source_space, item)
             dst = os.path.join(context.build_space, item)
             dst_dir = os.path.dirname(dst)
-            if not os.path.exists(dst_dir):
-                os.makedirs(dst_dir)
+            os.makedirs(dst_dir, exist_ok=True)
             if os.path.exists(dst):
                 if not os.path.islink(dst) or \
                         not os.path.samefile(src, dst):

@@ -65,9 +65,7 @@ def expand_package_level_setup_files(context, environment_hooks, environment_hoo
             context.build_space,
             'share', context.package_manifest.name,
             name[:-3])
-        destination_dir = os.path.dirname(destination_path)
-        if not os.path.exists(destination_dir):
-            os.makedirs(destination_dir)
+        os.makedirs(os.path.dirname(destination_path), exist_ok=True)
         destinations.append(destination_path)
         with open(destination_path, 'w') as h:
             h.write(content)
@@ -88,7 +86,7 @@ def set_cached_config(build_space, name, value):
         assert not os.path.isfile(build_space), \
             ("build_space cannot be a file: {build_space}"
              .format(build_space=build_space))
-        os.makedirs(build_space)
+        os.makedirs(build_space, exist_ok=True)
     path = os.path.join(build_space, '{name}.cache'.format(name=name))
     with open(path, 'w') as f:
         f.write(json.dumps(value, sort_keys=True))
