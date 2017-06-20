@@ -29,7 +29,7 @@ from ament_tools.build_type import BuildType
 from ament_tools.build_types.common import expand_package_level_setup_files
 from ament_tools.helper import deploy_file
 from ament_tools.setup_arguments import get_data_files_mapping
-from ament_tools.setup_arguments import get_setup_arguments
+from ament_tools.setup_arguments import get_setup_arguments_with_context
 
 try:
     import nose
@@ -405,7 +405,8 @@ class AmentPythonBuildType(BuildType):
         if 'setup.py' in context:
             return
         # check setup.py file for data files and packages
-        args = get_setup_arguments(os.path.join(context.source_space, 'setup.py'))
+        args = get_setup_arguments_with_context(
+            AmentPythonBuildType.build_type, context)
         data_files = get_data_files_mapping(args.get('data_files', []))
         context['setup.py'] = {
             'data_files': data_files,

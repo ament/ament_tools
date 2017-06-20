@@ -12,20 +12,65 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
+import ast
 import distutils.core
+import os
 try:
     import setuptools
 except ImportError:
     pass
+import subprocess
+import sys
 from threading import Lock
 
+from ament_tools.build_type import get_command_prefix
+
 setup_lock = None
+
+
+def get_setup_arguments_with_context(build_type, context):
+    """
+    Capture the arguments of the setup() function in the setup.py file.
+
+    To provide a custom environment when introspecting the setup() function
+    a separate Python interpreter is being used which can have an extended
+    PYTHONPATH etc.
+
+    :param build_type: the build type
+    :param context: the context
+    :type context: :py:class:`ament_tools.context.Context`
+    :returns: a dictionary containing the arguments of the setup() function
+    """
+    prefix = get_command_prefix(
+        '%s__setup' % build_type, context.build_space,
+        context.build_dependencies)
+    ament_tools_path = os.path.dirname(os.path.dirname(__file__))
+    setuppy = os.path.join(context.source_space, 'setup.py')
+    if os.name == 'nt':
+        ament_tools_path = ament_tools_path.replace(os.sep, os.altsep)
+        setuppy = setuppy.replace(os.sep, os.altsep)
+    code_lines = [
+        'import sys',
+        "sys.path.insert(0, '%s')" % ament_tools_path,
+        'from ament_tools.setup_arguments import get_setup_arguments',
+        "print(repr(get_setup_arguments('%s')))" % setuppy]
+
+    # invoke get_setup_arguments() in a separate interpreter
+    cmd = prefix + [sys.executable, '-c', '"%s"' % ';'.join(code_lines)]
+    result = subprocess.run(
+        ' '.join(cmd), stdout=subprocess.PIPE, shell=True, check=True)
+    output = result.stdout.decode()
+
+    return ast.literal_eval(output)
 
 
 def get_setup_arguments(setup_py_path):
     """
     Capture the arguments of the setup() function in the setup.py file.
+
+    The function is being run within the current Python interpreter.
+    Therefore the processed setup.py file can not have any additional
+    dependencies not available in the current environment.
 
     :param setup_py_path: the path to the setup.py file
     :returns: a dictionary containing the arguments of the setup() function
