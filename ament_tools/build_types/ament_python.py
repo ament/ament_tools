@@ -18,7 +18,6 @@ from distutils.sysconfig import get_python_lib
 from distutils.version import LooseVersion
 import os
 import re
-import setuptools
 import shutil
 
 from ament_package.templates import configure_file
@@ -35,6 +34,8 @@ try:
     import nose
 except ImportError:
     nose = None
+
+import setuptools
 
 IS_WINDOWS = os.name == 'nt'
 

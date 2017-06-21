@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import argparse
-import sys
 import os
+import sys
 
 from ament_tools.verbs import VerbExecutionError
 

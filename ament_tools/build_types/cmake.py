@@ -23,15 +23,9 @@ from ament_package.templates import get_environment_hook_template_path
 from ament_tools.build_type import BuildAction
 from ament_tools.build_type import BuildType
 
-from ament_tools.context import ContextExtender
-
-from ament_tools.helper import compute_deploy_destination
-from ament_tools.helper import deploy_file
-from ament_tools.helper import extract_argument_group
-
 from ament_tools.build_types.cmake_common import CMAKE_EXECUTABLE
-from ament_tools.build_types.cmake_common import CTEST_EXECUTABLE
 from ament_tools.build_types.cmake_common import cmakecache_exists_at
+from ament_tools.build_types.cmake_common import CTEST_EXECUTABLE
 from ament_tools.build_types.cmake_common import get_visual_studio_version
 from ament_tools.build_types.cmake_common import has_make_target
 from ament_tools.build_types.cmake_common import MAKE_EXECUTABLE
@@ -46,6 +40,12 @@ from ament_tools.build_types.cmake_common import XCODEBUILD_EXECUTABLE
 from ament_tools.build_types.common import expand_package_level_setup_files
 from ament_tools.build_types.common import get_cached_config
 from ament_tools.build_types.common import set_cached_config
+
+from ament_tools.context import ContextExtender
+
+from ament_tools.helper import compute_deploy_destination
+from ament_tools.helper import deploy_file
+from ament_tools.helper import extract_argument_group
 
 from ament_tools.verbs import VerbExecutionError
 

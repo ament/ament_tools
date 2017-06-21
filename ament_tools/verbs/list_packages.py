@@ -103,6 +103,7 @@ def main(options):
     for line in lines:
         print(line)
 
+
 # meta information of the entry point
 entry_point_data = dict(
     verb='list_packages',

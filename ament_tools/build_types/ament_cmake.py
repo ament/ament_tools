@@ -16,15 +16,15 @@
 
 import os
 
-from ament_tools.helper import extract_argument_group
-
+from ament_tools.build_types.cmake import CmakeBuildType
 from ament_tools.build_types.cmake_common import cmakecache_exists_at
 from ament_tools.build_types.cmake_common import makefile_exists_at
 from ament_tools.build_types.cmake_common import ninjabuild_exists_at
-from ament_tools.build_types.cmake import CmakeBuildType
 
 from ament_tools.build_types.common import get_cached_config
 from ament_tools.build_types.common import set_cached_config
+
+from ament_tools.helper import extract_argument_group
 
 IS_WINDOWS = os.name == 'nt'
 
