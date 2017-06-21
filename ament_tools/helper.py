@@ -14,12 +14,11 @@
 
 import argparse
 import filecmp
+from multiprocessing import cpu_count
 import os
 import re
 import shutil
 import stat
-
-from multiprocessing import cpu_count
 
 from ament_tools.package_types import package_exists_at
 

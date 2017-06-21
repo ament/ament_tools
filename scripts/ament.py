@@ -79,12 +79,14 @@ def list_verbs(group):
     ]
     return verbs
 
+
 verb_pattern.list_verbs = list_verbs
 
 
 def load_verb_description(verb_name, group):
     verb_module = importlib.import_module('ament_tools.verbs.%s' % verb_name)
     return verb_module.entry_point_data
+
 
 verb_pattern.load_verb_description = load_verb_description
 

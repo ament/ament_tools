@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from collections import Counter
+
 import pkg_resources
 
 AMENT_PACKAGE_TYPES_ENTRY_POINT = 'ament.package_types'
