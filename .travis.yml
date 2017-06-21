@@ -5,7 +5,7 @@ python:
 sudo: false
 install:
   - pip install nose
-  - pip install pep8 pydocstyle pyflakes
+  - pip install flake8 pydocstyle
 # For now install ament_package from git
   - git clone https://github.com/ament/ament_package.git
   - cd ament_package
@@ -16,18 +16,15 @@ install:
   - cd osrf_pycommon
   - python setup.py install
   - cd ..
-# For now install ament_copyright / ament_pep8 / ament_pyflakes from git
+# For now install ament_copyright / ament_flake8 / ament_pep257 from git
   - git clone https://github.com/ament/ament_lint.git
   - cd ament_lint/ament_copyright
   - python setup.py install
   - cd ../..
+  - cd ament_lint/ament_flake8
+  - python setup.py install
+  - cd ../..
   - cd ament_lint/ament_pep257
-  - python setup.py install
-  - cd ../..
-  - cd ament_lint/ament_pep8
-  - python setup.py install
-  - cd ../..
-  - cd ament_lint/ament_pyflakes
   - python setup.py install
   - cd ../..
 script:
