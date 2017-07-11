@@ -100,14 +100,14 @@ class CmakeBuildType(BuildType):
 
     def extend_context(self, options):
         ce = ContextExtender()
-        force_cmake_configure = options.force_cmake_configure
+        force_cmake_configure = getattr(options, 'force_cmake_configure', False)
         if getattr(options, 'force_configure', False):
             force_cmake_configure = True
         ce.add('force_cmake_configure', force_cmake_configure)
-        ce.add('cmake_args', options.cmake_args)
-        ce.add('ctest_args', options.ctest_args)
+        ce.add('cmake_args', getattr(options, 'cmake_args', []))
+        ce.add('ctest_args', getattr(options, 'ctest_args', []))
         ce.add('use_xcode', getattr(options, 'use_xcode', False))
-        ce.add('use_ninja', options.use_ninja)
+        ce.add('use_ninja', getattr(options, 'use_ninja', False))
         return ce
 
     def on_build(self, context):
