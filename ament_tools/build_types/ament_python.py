@@ -185,7 +185,17 @@ class AmentPythonBuildType(BuildType):
             if context['setup.py']['data_files']:
                 cmd += ['install_data', '--install-dir', context.install_space]
             self._add_install_layout(context, cmd)
-            yield BuildAction(prefix + cmd, cwd=context.build_space)
+
+            env = dict(os.environ)
+            # Ensure that develop packages in an overlay workspace will get preference in the event
+            # of collision. For setuptools versions < 25.0.0, there is no impact. In version
+            # 25.0.0, the default behavior changed from 'rewrite' to 'raw'. Specifying 'rewrite' is
+            # necessary due to a bug in the processing of devlop packages when 'raw' is used:
+            # https://github.com/pypa/setuptools/issues/447
+            if 'SETUPTOOLS_SYS_PATH_TECHNIQUE' not in env:
+                env['SETUPTOOLS_SYS_PATH_TECHNIQUE'] = 'rewrite'
+
+            yield BuildAction(prefix + cmd, cwd=context.build_space, env=env)
 
     def _undo_develop(self, context, prefix):
         # Undo previous develop if .egg-info is found and develop symlinks
