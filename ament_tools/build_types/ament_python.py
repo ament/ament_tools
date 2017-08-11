@@ -289,6 +289,8 @@ class AmentPythonBuildType(BuildType):
         self._undo_install(context)
 
         items = ['setup.py']
+        if os.path.exists(os.path.join(context.source_space, 'setup.cfg')):
+            items.append('setup.cfg')
         # add all first level packages
         items += [p for p in context['setup.py']['packages'] if '.' not in p]
         # relative python-ish paths are allowed as entries in py_modules, see:
