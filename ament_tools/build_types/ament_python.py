@@ -159,7 +159,6 @@ class AmentPythonBuildType(BuildType):
                 'build', '--build-base', os.path.join(
                     context.build_space, 'build'),
                 'install', '--prefix', context.install_space,
-                '--install-scripts', os.path.join(context.install_space, 'bin'),
                 '--record', os.path.join(context.build_space, 'install.log'),
                 # prevent installation of dependencies specified in the setup.py file
                 '--single-version-externally-managed',
@@ -179,7 +178,6 @@ class AmentPythonBuildType(BuildType):
             cmd = [
                 context.python_interpreter, 'setup.py',
                 'develop', '--prefix', context.install_space,
-                '--script-dir', os.path.join(context.install_space, 'bin'),
                 '--no-deps',
             ]
             if context['setup.py']['data_files']:
@@ -291,6 +289,8 @@ class AmentPythonBuildType(BuildType):
         self._undo_install(context)
 
         items = ['setup.py']
+        if os.path.exists(os.path.join(context.source_space, 'setup.cfg')):
+            items.append('setup.cfg')
         # add all first level packages
         items += [p for p in context['setup.py']['packages'] if '.' not in p]
         # relative python-ish paths are allowed as entries in py_modules, see:
