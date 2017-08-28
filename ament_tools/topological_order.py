@@ -17,7 +17,7 @@ import copy
 from .packages import find_unique_packages as _find_unique_packages
 
 
-class _PackageDecorator(object):
+class _PackageDecorator:
 
     def __init__(self, package, path):
         self.package = package

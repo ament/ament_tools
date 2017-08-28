@@ -19,7 +19,7 @@ from .context import ContextExtender
 IS_WINDOWS = os.name == 'nt'
 
 
-class BuildAction(object):
+class BuildAction:
     """
     Represent an action to do at build time, either a command or a functor.
 
@@ -89,7 +89,7 @@ class BuildAction(object):
         return type_str
 
 
-class DefaultBuildTypeLogger(object):
+class DefaultBuildTypeLogger:
     def info(self, *args):
         print(*args)
 
@@ -97,7 +97,7 @@ class DefaultBuildTypeLogger(object):
         print(*args)
 
 
-class BuildType(object):
+class BuildType:
     """
     Base class interface for building a ``build_type`` with ament tools.
 

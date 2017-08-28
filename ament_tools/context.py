@@ -67,7 +67,7 @@ class Context(dict):
         self[name] = value
 
 
-class ContextExtender(object):
+class ContextExtender:
     """
     Store a series of extensions for a Context which can be applied later.
 

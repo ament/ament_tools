@@ -100,7 +100,7 @@ known_build_types = {
 
 
 def yield_supported_build_types(name=None):
-    class Loader(object):
+    class Loader:
         def __init__(self, build_type, entry_point):
             self.build_type = build_type
             self.entry_point = entry_point
