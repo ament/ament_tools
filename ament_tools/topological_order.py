@@ -41,7 +41,7 @@ class _PackageDecorator:
 
         :param packages: dict of name to ``_PackageDecorator``
         """
-        self.depends_for_topological_order = set([])
+        self.depends_for_topological_order = set()
         # skip external dependencies, meaning names that are not known packages
         deps = (self.package.build_depends +
                 self.package.buildtool_depends +
@@ -54,7 +54,7 @@ class _PackageDecorator:
     def _add_recursive_run_depends(
         self,
         packages,
-        depends_for_topological_order
+        depends_for_topological_order,
     ):
         """
         Update the dependencies with the recursive run dependencies.
@@ -85,7 +85,7 @@ def topological_order(
     root_dir,
     whitelisted=None,
     blacklisted=None,
-    underlay_workspaces=None
+    underlay_workspaces=None,
 ):
     """
     Crawl the filesystem and order the found packages topologically.
@@ -112,7 +112,7 @@ def topological_order(
         packages,
         whitelisted=whitelisted,
         blacklisted=blacklisted,
-        underlay_packages=dict(underlay_packages.values())
+        underlay_packages=dict(underlay_packages.values()),
     )
 
 
@@ -120,7 +120,7 @@ def topological_order_packages(
     packages,
     whitelisted=None,
     blacklisted=None,
-    underlay_packages=None
+    underlay_packages=None,
 ):
     """
     Order packages topologically.
@@ -153,7 +153,7 @@ def topological_order_packages(
                                    for p, v in packages.items()
                                    if v == packages_with_same_name[0]]
             raise RuntimeError("Two packages with the same name '%s' in "
-                               "the workspace:\n- %s\n- %s" %
+                               'the workspace:\n- %s\n- %s' %
                                (package.name, path_with_same_name[0], path))
         decorators_by_name[package.name] = _PackageDecorator(package, path)
 
@@ -196,7 +196,7 @@ def _reduce_cycle_set(packages_orig):
     packages = copy.copy(packages_orig)
     last_depended = None
     while len(packages) > 0:
-        depended = set([])
+        depended = set()
         for name, decorator in packages.items():
             if decorator.depends_for_topological_order:
                 depended = depended.union(

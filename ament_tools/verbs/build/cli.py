@@ -87,7 +87,7 @@ def prepare_arguments(parser, args):
     parser.add_argument(
         '-C', '--directory',
         default=os.curdir,
-        help="The base path of the workspace (default '%s')" % os.curdir
+        help="The base path of the workspace (default '%s')" % os.curdir,
     )
     parser.add_argument(
         'basepath',
@@ -114,17 +114,17 @@ def prepare_arguments(parser, args):
     parser.add_argument(
         '--only-packages',
         nargs='+', default=[],
-        help='Only process a particular set of packages'
+        help='Only process a particular set of packages',
     )
     parser.add_argument(
         '--skip-packages',
         nargs='*', default=[],
-        help='Set of packages to skip'
+        help='Set of packages to skip',
     )
     parser.add_argument(
         '--parallel',
         action='store_true',
-        help='Enable building packages in parallel'
+        help='Enable building packages in parallel',
     )
 
     # Allow all available build_type's to provide additional arguments
@@ -191,8 +191,8 @@ def check_opts(opts, package_names):
             # The argprase mutually exclusive mechanism is broken for subparsers
             # See: http://bugs.python.org/issue10680
             # So we'll check it manually here
-            sys.exit("The --start-with and --end-with options cannot be used with "
-                     "the --only-packages option.")
+            sys.exit('The --start-with and --end-with options cannot be used with '
+                     'the --only-packages option.')
         for only_package in opts.only_packages:
             if only_package not in package_names:
                 sys.exit("Package '{0}' specified with --only-packages was not found."
@@ -243,7 +243,7 @@ def print_topological_order(opts, package_names):
 
 def iterate_packages(opts, packages, per_package_callback):
     install_space_base = opts.install_space
-    package_dict = dict([(path, package) for path, package, _ in packages])
+    package_dict = {path: package for path, package, _ in packages}
     workspace_package_names = [pkg.name for pkg in package_dict.values()]
     jobs = OrderedDict()
     for (path, package, depends) in packages:

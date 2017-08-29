@@ -19,10 +19,10 @@ from ament_package import parse_package
 __all__ = ('entry_point_data')
 
 # meta information of the entry point
-entry_point_data = dict(
-    name='ament',
-    description="A package containing a '%s' manifest file." % PACKAGE_MANIFEST_FILENAME,
-    package_exists_at=package_exists_at,
-    parse_package=parse_package,
-    depends=[],
-)
+entry_point_data = {
+    'name': 'ament',
+    'description': "A package containing a '%s' manifest file." % PACKAGE_MANIFEST_FILENAME,
+    'package_exists_at': package_exists_at,
+    'parse_package': parse_package,
+    'depends': [],
+}

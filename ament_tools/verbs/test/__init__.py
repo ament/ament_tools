@@ -20,10 +20,10 @@ from .cli import prepare_arguments
 __all__ = ('entry_point_data')
 
 # meta information of the entry point
-entry_point_data = dict(
-    verb='test',
-    description='Test packages in a workspace',
-    main=main,
-    prepare_arguments=prepare_arguments,
-    argument_preprocessor=argument_preprocessor,
-)
+entry_point_data = {
+    'verb': 'test',
+    'description': 'Test packages in a workspace',
+    'main': main,
+    'prepare_arguments': prepare_arguments,
+    'argument_preprocessor': argument_preprocessor,
+}

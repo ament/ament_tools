@@ -84,7 +84,7 @@ def get_cached_config(build_space, name):
 def set_cached_config(build_space, name, value):
     if not os.path.isdir(build_space):
         assert not os.path.isfile(build_space), \
-            ("build_space cannot be a file: {build_space}"
+            ('build_space cannot be a file: {build_space}'
              .format(build_space=build_space))
         os.makedirs(build_space, exist_ok=True)
     path = os.path.join(build_space, '{name}.cache'.format(name=name))

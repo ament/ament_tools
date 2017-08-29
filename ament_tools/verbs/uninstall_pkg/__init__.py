@@ -18,11 +18,11 @@ from .cli import prepare_arguments
 __all__ = ('entry_point_data')
 
 # meta information of the entry point
-entry_point_data = dict(
-    verb='uninstall_pkg',
-    description='Uninstall a package',
+entry_point_data = {
+    'verb': 'uninstall_pkg',
+    'description': 'Uninstall a package',
     # Called for execution, given parsed arguments object
-    main=main,
+    'main': main,
     # Called first to setup argparse, given argparse parser
-    prepare_arguments=prepare_arguments,
-)
+    'prepare_arguments': prepare_arguments,
+}

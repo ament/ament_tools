@@ -47,7 +47,7 @@ def prepare_arguments(parser, args):
         '--verbose',
         action='store_true',
         default=False,
-        help='Show all test result file (even without errors / failures)'
+        help='Show all test result file (even without errors / failures)',
     )
 
     return parser

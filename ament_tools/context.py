@@ -53,10 +53,10 @@ class Context(dict):
 
     def __str__(self):
         lines = []
-        max_key_length = str(max([len(k) for k in self.keys()]))
+        max_key_length = str(max(len(k) for k in self.keys()))
         for k, v in self.items():
-            lines.append(("{0:<" + max_key_length + "} => {1}").format(k, v))
-        return "\n".join(lines)
+            lines.append(('{0:<' + max_key_length + '} => {1}').format(k, v))
+        return '\n'.join(lines)
 
     def __getattribute__(self, name):
         if name in list(dict.keys(self)):
@@ -179,8 +179,7 @@ class ContextExtender:
         """
         if [ex for ex in self.__extensions if ex[1] == key]:
             raise ContextAddExtensionException(
-                "Context key '{0}' will already exist.".format(key)
-            )
+                "Context key '{0}' will already exist.".format(key))
         self.__extensions.append(['add', key, value])
 
     def replace(self, key, value):

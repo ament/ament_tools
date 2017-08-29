@@ -35,8 +35,7 @@ def main(sysargs=None):
 
     # Create a top level parser
     parser = argparse.ArgumentParser(
-        description="{0} command".format(COMMAND_NAME)
-    )
+        description='{0} command'.format(COMMAND_NAME))
 
     # Generate a list of verbs available
     verbs = list_verbs(VERBS_ENTRY_POINT)
@@ -61,7 +60,7 @@ def main(sysargs=None):
     # Error on no verb provided
     if verb is None:
         print(parser.format_usage())
-        sys.exit("Error: No verb provided.")
+        sys.exit('Error: No verb provided.')
     # Error on unknown verb provided
     if verb not in verbs:
         print(parser.format_usage())

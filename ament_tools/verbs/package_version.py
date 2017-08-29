@@ -33,15 +33,15 @@ def main(options):
     try:
         path = argparse_existing_package(path)
     except argparse.ArgumentTypeError as exc:
-        sys.exit("Error: {0}".format(exc))
+        sys.exit('Error: {0}'.format(exc))
     package = parse_package(path)
     print(package.version)
 
 
 # meta information of the entry point
-entry_point_data = dict(
-    verb='package_version',
-    description='Output the version of a package',
-    main=main,
-    prepare_arguments=prepare_arguments,
-)
+entry_point_data = {
+    'verb': 'package_version',
+    'description': 'Output the version of a package',
+    'main': main,
+    'prepare_arguments': prepare_arguments,
+}
