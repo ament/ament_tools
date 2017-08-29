@@ -230,7 +230,7 @@ class AmentPythonBuildType(BuildType):
                 pass
 
         ext = '.sh' if not IS_WINDOWS else '.bat'
-        # deploy PATH environment hook
+        # deploy AMENT_PREFIX_PATH environment hook
         app_template_path = get_environment_hook_template_path('ament_prefix_path' + ext)
         deploy_file(
             context, os.path.dirname(app_template_path), os.path.basename(app_template_path),
