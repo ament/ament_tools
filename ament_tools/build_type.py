@@ -53,8 +53,15 @@ class BuildAction:
     the optional ``env`` parameter.
     """
 
-    def __init__(self, cmd, type='command', title=None, dry_run_cmd=None,
-                 cwd=None, env=None):
+    def __init__(
+        self,
+        cmd,
+        type='command',  # noqa: A002
+        title=None,
+        dry_run_cmd=None,
+        cwd=None,
+        env=None,
+    ):
         self.cmd = cmd
         self.type = self.__validate_type(type, cmd, dry_run_cmd)
         self.title = title
@@ -68,28 +75,29 @@ class BuildAction:
         if cmd is None:
             return type_str
         if type_str == 'command' and not hasattr(cmd, '__iter__'):
-            raise ValueError("BuildAction cmd is expected to be list or tuple "
+            raise ValueError('BuildAction cmd is expected to be list or tuple '
                              "when type is 'command', got '{0}' of type "
                              "'{1}' instead.".format(cmd, type(cmd)))
         if type_str == 'function' and not callable(cmd):
-            raise ValueError("BuildAction cmd is expected to be callable "
+            raise ValueError('BuildAction cmd is expected to be callable '
                              "when type is 'function', but '{0}' is not "
-                             "callable.".format(cmd))
+                             'callable.'.format(cmd))
         if dry_run_cmd is None:
             return type_str
         if type_str == 'command' and not hasattr(dry_run_cmd, '__iter__'):
-            raise ValueError("BuildAction dry_run_cmd is expected to be list "
+            raise ValueError('BuildAction dry_run_cmd is expected to be list '
                              "or tuple when type is 'command', got '{0}' of "
                              "type '{1}' instead."
                              .format(dry_run_cmd, type(dry_run_cmd)))
         if type_str == 'function' and not callable(dry_run_cmd):
-            raise ValueError("BuildAction cmd is expected to be callable "
+            raise ValueError('BuildAction cmd is expected to be callable '
                              "when type is 'function', but '{0}' is not "
-                             "callable.".format(dry_run_cmd))
+                             'callable.'.format(dry_run_cmd))
         return type_str
 
 
 class DefaultBuildTypeLogger:
+
     def info(self, *args):
         print(*args)
 

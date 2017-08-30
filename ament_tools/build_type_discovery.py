@@ -42,10 +42,9 @@ def get_class_for_build_type(build_type):
     entry_points = list(yield_supported_build_types(build_type))
     if len(entry_points) > 1:
         # Shouldn't happen, defensive
-        raise RuntimeError("More than one build_type entry_point.")
+        raise RuntimeError('More than one build_type entry_point.')
     if len(entry_points) == 0:
         raise MissingPluginError(
             "No plugin to handle a package with build_type '{0}'"
-            .format(build_type)
-        )
+            .format(build_type))
     return entry_points[0].load()

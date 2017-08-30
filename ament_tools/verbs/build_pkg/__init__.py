@@ -19,13 +19,13 @@ from .cli import prepare_arguments
 __all__ = ('entry_point_data')
 
 # meta information of the entry point
-entry_point_data = dict(
-    verb='build_pkg',
-    description='Build a package',
+entry_point_data = {
+    'verb': 'build_pkg',
+    'description': 'Build a package',
     # Called for execution, given parsed arguments object
-    main=main,
+    'main': main,
     # Called first to setup argparse, given argparse parser
-    prepare_arguments=prepare_arguments,
+    'prepare_arguments': prepare_arguments,
     # Called after prepare_arguments, but before argparse.parse_args
-    argument_preprocessor=argument_preprocessor,
-)
+    'argument_preprocessor': argument_preprocessor,
+}

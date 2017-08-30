@@ -42,7 +42,7 @@ IS_WINDOWS = os.name == 'nt'
 
 class AmentPythonBuildType(BuildType):
     build_type = 'ament_python'
-    description = "ament package built with Python"
+    description = 'ament package built with Python'
 
     def on_build(self, context):
         self._update_context_with_setup_arguments(context)
@@ -107,9 +107,9 @@ class AmentPythonBuildType(BuildType):
         assert nose, 'Could not find nosetests'
         # Use the -m module option for executing nose, to ensure we get the desired version.
         # Looking for just nosetest or nosetest3 on the PATH was not reliable in virtualenvs.
-        NOSETESTS_CMD = [context.python_interpreter, '-m', nose.__name__]
+        nosetests_cmd = [context.python_interpreter, '-m', nose.__name__]
         coverage_xml_file = os.path.join(context.build_space, 'coverage.xml')
-        cmd = NOSETESTS_CMD + [
+        cmd = nosetests_cmd + [
             '--nocapture',
             '--with-xunit', '--xunit-file=%s' % xunit_file,
             '--with-coverage', '--cover-erase',

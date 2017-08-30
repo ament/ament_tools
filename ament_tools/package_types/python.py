@@ -57,12 +57,12 @@ def extract_data(**kwargs):
 
 
 # meta information of the entry point
-entry_point_data = dict(
-    name='python',
-    description="A package containing a 'setup.py' file.",
-    package_exists_at=package_exists_at,
-    parse_package=parse_package,
+entry_point_data = {
+    'name': 'python',
+    'description': "A package containing a 'setup.py' file.",
+    'package_exists_at': package_exists_at,
+    'parse_package': parse_package,
     # other package types must be checked before
     # since they might also contain a setup.py file
-    depends=['ament', 'cmake'],
-)
+    'depends': ['ament', 'cmake'],
+}

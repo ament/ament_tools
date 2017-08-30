@@ -101,6 +101,7 @@ known_build_types = {
 
 def yield_supported_build_types(name=None):
     class Loader:
+
         def __init__(self, build_type, entry_point):
             self.build_type = build_type
             self.entry_point = entry_point
@@ -147,6 +148,7 @@ known_package_types = [
 
 def get_package_types():
     return known_package_types
+
 
 from ament_tools import package_types  # noqa
 package_types.get_package_types = get_package_types

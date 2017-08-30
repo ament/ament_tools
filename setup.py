@@ -67,5 +67,5 @@ and provides tooling to build these federated packages together.""",
             'cmake = ament_tools.package_types.cmake:entry_point_data',
             'python = ament_tools.package_types.python:entry_point_data',
         ],
-    }
+    },
 )

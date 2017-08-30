@@ -29,27 +29,27 @@ def prepare_arguments(parser):
     parser.add_argument(
         '--build-deps',
         action='store_true',
-        help='Show only build dependencies of a given package'
+        help='Show only build dependencies of a given package',
     )
     parser.add_argument(
         '--doc-deps',
         action='store_true',
-        help='Show only dependencies to generate documentation of a given package'
+        help='Show only dependencies to generate documentation of a given package',
     )
     parser.add_argument(
         '--run-deps',
         action='store_true',
-        help='Show only dependencies needed to run a given package'
+        help='Show only dependencies needed to run a given package',
     )
     parser.add_argument(
         '--test-deps',
         action='store_true',
-        help='Show only test dependencies of a given package'
+        help='Show only test dependencies of a given package',
     )
     parser.add_argument(
         'package',
         metavar='PACKAGE',
-        help='Package to process'
+        help='Package to process',
     )
     return parser
 
@@ -66,18 +66,14 @@ def main(options):
     for (path, package) in packages.items():
         if package.name == options.package:
             if options.build_deps:
-                deps.extend(
-                    package.build_depends +
-                    package.buildtool_depends
-                )
+                deps.extend(package.build_depends + package.buildtool_depends)
             if options.doc_deps:
                 deps.extend(package.doc_depends)
             if options.run_deps:
                 deps.extend(
                     package.build_export_depends +
                     package.buildtool_export_depends +
-                    package.exec_depends
-                )
+                    package.exec_depends)
             if options.test_deps:
                 deps.extend(package.test_depends)
             # Remove duplicate entries, sort output
@@ -88,11 +84,11 @@ def main(options):
     return -1
 
 
-entry_point_data = dict(
-    verb='list_dependencies',
-    description='List names of dependencies of a package',
+entry_point_data = {
+    'verb': 'list_dependencies',
+    'description': 'List names of dependencies of a package',
     # Called for execution, given parsed arguments object
-    main=main,
+    'main': main,
     # Called first to setup argparse, given argparse parser
-    prepare_arguments=prepare_arguments,
-)
+    'prepare_arguments': prepare_arguments,
+}

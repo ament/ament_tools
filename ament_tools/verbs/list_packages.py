@@ -49,22 +49,22 @@ def prepare_arguments(parser):
     )
     parser.add_argument(
         '--depends-on',
-        help='Only show packages which depend on the given package'
+        help='Only show packages which depend on the given package',
     )
     return parser
 
 
 def get_unique_depend_names(package):
-    return list(set(
-        [d.name for d in
-         package.build_depends +
-         package.buildtool_depends +
-         package.build_export_depends +
-         package.buildtool_export_depends +
-         package.exec_depends +
-         package.test_depends +
-         package.doc_depends]
-    ))
+    return list({
+        d.name for d in
+        package.build_depends +
+        package.buildtool_depends +
+        package.build_export_depends +
+        package.buildtool_export_depends +
+        package.exec_depends +
+        package.test_depends +
+        package.doc_depends
+    })
 
 
 def main(options):
@@ -105,11 +105,11 @@ def main(options):
 
 
 # meta information of the entry point
-entry_point_data = dict(
-    verb='list_packages',
-    description='List names and relative paths of packages',
+entry_point_data = {
+    'verb': 'list_packages',
+    'description': 'List names and relative paths of packages',
     # Called for execution, given parsed arguments object
-    main=main,
+    'main': main,
     # Called first to setup argparse, given argparse parser
-    prepare_arguments=prepare_arguments,
-)
+    'prepare_arguments': prepare_arguments,
+}

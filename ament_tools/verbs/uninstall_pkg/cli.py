@@ -20,7 +20,7 @@ from ament_tools.build_type_discovery import get_class_for_build_type
 from ament_tools.context import Context
 from ament_tools.helper import determine_path_argument
 
-from ament_tools.verbs.build_pkg.cli import __get_cached_package_manifest
+from ament_tools.verbs.build_pkg.cli import _get_cached_package_manifest
 from ament_tools.verbs.build_pkg.cli import get_build_type
 from ament_tools.verbs.build_pkg.cli import handle_build_action
 from ament_tools.verbs.build_pkg.cli import validate_package_path
@@ -102,14 +102,14 @@ def update_options(opts):
     try:
         validate_package_path(opts.path)
     except ValueError as exc:
-        sys.exit("Error: {0}".format(exc))
+        sys.exit('Error: {0}'.format(exc))
 
 
 def create_context(opts):
     # Setup build_pkg common context
     context = Context()
     context.source_space = os.path.abspath(os.path.normpath(opts.path))
-    context.package_manifest = __get_cached_package_manifest(opts.path)
+    context.package_manifest = _get_cached_package_manifest(opts.path)
     pkg_name = context.package_manifest.name
     context.build_space = os.path.join(opts.build_space, pkg_name)
     context.install_space = opts.install_space
@@ -117,17 +117,17 @@ def create_context(opts):
         if 'build_dependencies' in opts else []
     print('')
     print("Process package '{0}' with context:".format(pkg_name))
-    print("-" * 80)
+    print('-' * 80)
     keys = [
         'source_space',
         'build_space',
     ]
-    max_key_len = str(max([len(k) for k in keys]))
+    max_key_len = str(max(len(k) for k in keys))
     for key in keys:
         value = context[key]
         if isinstance(value, list):
-            value = ", ".join(value) if value else "None"
-        print(("{0:>" + max_key_len + "} => {1}").format(key, value))
-    print("-" * 80)
+            value = ', '.join(value) if value else 'None'
+        print(('{0:>' + max_key_len + '} => {1}').format(key, value))
+    print('-' * 80)
 
     return context

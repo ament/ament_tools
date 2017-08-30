@@ -99,12 +99,12 @@ def extract_build_dependencies(content):
 
 
 # meta information of the entry point
-entry_point_data = dict(
-    name='cmake',
-    description="A package containing a 'CMakeLists.txt' file.",
-    package_exists_at=package_exists_at,
-    parse_package=parse_package,
+entry_point_data = {
+    'name': 'cmake',
+    'description': "A package containing a 'CMakeLists.txt' file.",
+    'package_exists_at': package_exists_at,
+    'parse_package': parse_package,
     # other package types must be checked before
     # since they might also contain a CMakeLists.txt file
-    depends=['ament'],
-)
+    'depends': ['ament'],
+}

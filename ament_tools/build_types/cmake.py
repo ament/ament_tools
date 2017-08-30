@@ -56,7 +56,7 @@ IS_WINDOWS = os.name == 'nt'
 
 class CmakeBuildType(BuildType):
     build_type = 'cmake'
-    description = "plain cmake project"
+    description = 'plain cmake project'
 
     def prepare_arguments(self, parser):
         parser.add_argument(
@@ -67,20 +67,20 @@ class CmakeBuildType(BuildType):
             '--cmake-args',
             nargs='*',
             default=[],
-            help="Arbitrary arguments which are passed to all CMake projects. "
+            help='Arbitrary arguments which are passed to all CMake projects. '
                  "Argument collection can be terminated with '--'.")
         parser.add_argument(
             '--ctest-args',
             nargs='*',
             default=[],
-            help="Arbitrary arguments which are passed to all CTest invocations. "
+            help='Arbitrary arguments which are passed to all CTest invocations. '
                  "The option is only used by the 'test*' verbs. "
                  "Argument collection can be terminated with '--'.")
         if IS_MACOSX:
             parser.add_argument(
                 '--use-xcode',
                 action='store_true',
-                help="Use Xcode instead of Make")
+                help='Use Xcode instead of Make')
         parser.add_argument(
             '--use-ninja',
             action='store_true',
@@ -132,7 +132,7 @@ class CmakeBuildType(BuildType):
         }
         if cmake_config != cached_cmake_config:
             should_run_configure = True
-            self.warn("Running cmake because arguments have changed.")
+            self.warn('Running cmake because arguments have changed.')
         # Store the cmake_args for next invocation
         set_cached_config(context.build_space, 'cmake_args',
                           cmake_config)
@@ -175,7 +175,7 @@ class CmakeBuildType(BuildType):
         if should_run_configure:
             cmake_args = [context.source_space]
             cmake_args.extend(extra_cmake_args)
-            cmake_args += ["-DCMAKE_INSTALL_PREFIX=" + context.install_space]
+            cmake_args += ['-DCMAKE_INSTALL_PREFIX=' + context.install_space]
             if IS_WINDOWS:
                 vsv = get_visual_studio_version()
                 if vsv is None:
@@ -221,12 +221,12 @@ class CmakeBuildType(BuildType):
                 cmd += msbuild_flags
                 # If there is a parallelism flag in msbuild_flags and it's not /m1,
                 # then turn on /MP for the compiler (intra-project parallelism)
-                if any([x.startswith('/m') for x in msbuild_flags]) and \
+                if any(x.startswith('/m') for x in msbuild_flags) and \
                    '/m:1' not in msbuild_flags:
                     env = dict(os.environ)
                     if 'CL' in env:
                         # make sure env['CL'] doesn't include an /MP already
-                        if not any([x.startswith('/MP') for x in env['CL'].split(' ')]):
+                        if not any(x.startswith('/MP') for x in env['CL'].split(' ')):
                             env['CL'] += ' /MP'
                     else:  # CL not in environment; let's add it with our flag
                         env['CL'] = '/MP'
@@ -292,8 +292,7 @@ class CmakeBuildType(BuildType):
         # also pass the exec dependencies into the command prefix file
         prefix = self._get_command_prefix(
             'test', context,
-            additional_dependencies=context.exec_dependency_paths_in_workspace
-        )
+            additional_dependencies=context.exec_dependency_paths_in_workspace)
         if IS_LINUX:
             build_action = self._make_test(context, build_type, prefix)
             if build_action:
@@ -396,8 +395,7 @@ class CmakeBuildType(BuildType):
             destination_path = compute_deploy_destination(
                 context,
                 os.path.basename(destination),
-                os.path.dirname(os.path.relpath(destination, context.build_space))
-            )
+                os.path.dirname(os.path.relpath(destination, context.build_space)))
             if os.path.exists(destination_path) or os.path.islink(destination_path):
                 os.remove(destination_path)
 

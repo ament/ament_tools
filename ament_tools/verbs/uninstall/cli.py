@@ -42,7 +42,7 @@ def prepare_arguments(parser, args):
     parser.add_argument(
         '-C', '--directory',
         default=os.curdir,
-        help="The base path of the workspace (default '%s')" % os.curdir
+        help="The base path of the workspace (default '%s')" % os.curdir,
     )
     parser.add_argument(
         'basepath',
@@ -63,12 +63,12 @@ def prepare_arguments(parser, args):
     parser.add_argument(
         '--only-packages',
         nargs='+', default=[],
-        help='Only process a particular set of packages'
+        help='Only process a particular set of packages',
     )
     parser.add_argument(
         '--skip-packages',
         nargs='*', default=[],
-        help='Set of packages to skip'
+        help='Set of packages to skip',
     )
 
     return parser
@@ -108,7 +108,7 @@ def main(opts, per_package_main=uninstall_pkg_main):
 
 
 def iterate_packages(opts, packages, per_package_callback):
-    package_dict = dict([(path, package) for path, package, _ in packages])
+    package_dict = {path: package for path, package, _ in packages}
     for (path, package, depends) in reversed(packages):
         if package.name in opts.skip_packages:
             print('# Skipping: %s' % package.name)

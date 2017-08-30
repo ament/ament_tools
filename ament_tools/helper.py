@@ -106,7 +106,7 @@ def ensure_make_job_flags(input_make_args):
     # If no -j/--jobs/-l/--load-average flags are in make_args
     if not extract_jobs_flags(' '.join(make_args)):
         # If -j/--jobs/-l/--load-average are in MAKEFLAGS
-        if extract_jobs_flags(os.environ.get('MAKEFLAGS', "")):
+        if extract_jobs_flags(os.environ.get('MAKEFLAGS', '')):
             # Do not extend make arguments, let MAKEFLAGS set things
             pass
         else:
@@ -235,7 +235,7 @@ def deploy_file(
     filename,
     dst_subfolder='',
     executable=False,
-    skip_if_exists=False
+    skip_if_exists=False,
 ):
     # copy the file if not already there and identical
     source_path = os.path.join(source_base_path, filename)

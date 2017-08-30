@@ -19,9 +19,9 @@ __all__ = ('entry_point_data')
 
 
 # meta information of the entry point
-entry_point_data = dict(
-    verb='test_results',
-    description='Summary of test results',
-    main=main,
-    prepare_arguments=prepare_arguments,
-)
+entry_point_data = {
+    'verb': 'test_results',
+    'description': 'Summary of test results',
+    'main': main,
+    'prepare_arguments': prepare_arguments,
+}

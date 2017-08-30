@@ -31,7 +31,7 @@ IS_WINDOWS = os.name == 'nt'
 
 class AmentCmakeBuildType(CmakeBuildType):
     build_type = 'ament_cmake'
-    description = "ament package built with cmake"
+    description = 'ament package built with cmake'
 
     def prepare_arguments(self, parser):
         parser.add_argument(
@@ -87,7 +87,7 @@ class AmentCmakeBuildType(CmakeBuildType):
         }
         if ament_cmake_config != cached_ament_cmake_config:
             should_run_configure = True
-            self.warn("Running cmake because arguments have changed.")
+            self.warn('Running cmake because arguments have changed.')
         # Store the ament_cmake_args for next invocation
         set_cached_config(context.build_space, 'ament_cmake_args',
                           ament_cmake_config)
@@ -96,7 +96,7 @@ class AmentCmakeBuildType(CmakeBuildType):
         # Calculate any extra cmake args which are not common between cmake build types
         extra_cmake_args = []
         if should_run_configure:
-            extra_cmake_args += ["-DBUILD_TESTING=%d" % int(context.build_tests)]
+            extra_cmake_args += ['-DBUILD_TESTING=%d' % int(context.build_tests)]
             if context.symlink_install:
                 extra_cmake_args += ['-DAMENT_CMAKE_SYMLINK_INSTALL=1']
             extra_cmake_args += context.cmake_args

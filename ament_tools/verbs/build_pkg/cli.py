@@ -73,7 +73,7 @@ def argument_preprocessor(args):
     try:
         validate_package_path(opts.path)
     except (MissingPluginError, ValueError) as exc:
-        sys.exit("{0}".format(exc))
+        sys.exit('{0}'.format(exc))
     build_type = get_build_type(opts.path)
     build_type_impl = get_class_for_build_type(build_type)()
     # Let detected build type plugin do argument preprocessing
@@ -127,7 +127,7 @@ def prepare_arguments(parser, args):
         build_type_impl = get_class_for_build_type(build_type)()
         # Let the detected build type plugin add arguments
         group = parser.add_argument_group(
-            "{0} (detected) options".format(build_type_impl.build_type))
+            '{0} (detected) options'.format(build_type_impl.build_type))
         call_prepare_arguments(
             build_type_impl.prepare_arguments,
             group,
@@ -138,7 +138,7 @@ def prepare_arguments(parser, args):
     except (MissingPluginError, ValueError) as exc:
         # If system exit AND -h or --help are used, show the error
         if '-h' in args or '--help' in args:
-            print("Error: Could not detect package build type:", exc)
+            print('Error: Could not detect package build type:', exc)
     return parser
 
 
@@ -161,7 +161,7 @@ def add_arguments(parser):
         '--make-flags',
         nargs='*',
         default=[],
-        help='Flags to be passed to make by build types which invoke make'
+        help='Flags to be passed to make by build types which invoke make',
     )
     parser.add_argument(
         '--skip-build',
@@ -188,7 +188,7 @@ def add_arguments(parser):
     parser.add_argument(
         '--python-interpreter',
         default=sys.executable,
-        help="Use a different Python interpreter for invoking subprocesses"
+        help='Use a different Python interpreter for invoking subprocesses'
              " (default '%s')" % sys.executable,
     )
 
@@ -196,7 +196,7 @@ def add_arguments(parser):
 package_manifest_cache_ = {}
 
 
-def __get_cached_package_manifest(path):
+def _get_cached_package_manifest(path):
     global package_manifest_cache_
     if path not in package_manifest_cache_:
         package_manifest_cache_[path] = parse_package(path)
@@ -210,7 +210,7 @@ def get_build_type(path):
     :param str path: path to a package manifest file
     :returns: build_type as a string
     """
-    package = __get_cached_package_manifest(path)
+    package = _get_cached_package_manifest(path)
 
     build_type_exports = [e for e in package.exports
                           if e.tagname == 'build_type']
@@ -243,7 +243,7 @@ def run_command(build_action, context):
     cwd = build_action.cwd
     if cwd is None:
         cwd = context.build_space
-    print("==> '{0}' in '{1}'".format(" ".join(build_action.cmd), cwd))
+    print("==> '{0}' in '{1}'".format(' '.join(build_action.cmd), cwd))
     # flush Python output before letting the external command write to the pipe
     sys.stdout.flush()
     try:
@@ -354,14 +354,14 @@ def update_options(opts):
     try:
         validate_package_path(opts.path)
     except ValueError as exc:
-        sys.exit("Error: {0}".format(exc))
+        sys.exit('Error: {0}'.format(exc))
 
 
 def create_context(opts):
     # Setup build_pkg common context
     context = Context()
     context.source_space = os.path.abspath(os.path.normpath(opts.path))
-    context.package_manifest = __get_cached_package_manifest(opts.path)
+    context.package_manifest = _get_cached_package_manifest(opts.path)
     pkg_name = context.package_manifest.name
     context.build_space = os.path.join(opts.build_space, pkg_name)
     context.install_space = opts.install_space
@@ -377,7 +377,7 @@ def create_context(opts):
     context.python_interpreter = opts.python_interpreter
     print('')
     print("Process package '{0}' with context:".format(pkg_name))
-    print("-" * 80)
+    print('-' * 80)
     keys = [
         'source_space',
         'build_space',
@@ -385,13 +385,13 @@ def create_context(opts):
         'make_flags',
         'build_tests',
     ]
-    max_key_len = str(max([len(k) for k in keys]))
+    max_key_len = str(max(len(k) for k in keys))
     for key in keys:
         value = context[key]
         if isinstance(value, list):
-            value = ", ".join(value) if value else "None"
-        print(("{0:>" + max_key_len + "} => {1}").format(key, value))
-    print("-" * 80)
+            value = ', '.join(value) if value else 'None'
+        print(('{0:>' + max_key_len + '} => {1}').format(key, value))
+    print('-' * 80)
 
     # Load up build type plugin class
     build_type = get_build_type(opts.path)
