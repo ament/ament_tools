@@ -24,6 +24,7 @@ import sys
 from threading import Lock
 
 from ament_tools.build_type import get_command_prefix
+from ament_tools.helper import quote_shell_command
 
 setup_lock = None
 
@@ -56,9 +57,10 @@ def get_setup_arguments_with_context(build_type, context):
         "print(repr(get_setup_arguments('%s')))" % setuppy]
 
     # invoke get_setup_arguments() in a separate interpreter
-    cmd = prefix + [sys.executable, '-c', '"%s"' % ';'.join(code_lines)]
+    cmd = prefix + [sys.executable, '-c', ';'.join(code_lines)]
+    cmd = quote_shell_command(cmd)
     result = subprocess.run(
-        ' '.join(cmd), stdout=subprocess.PIPE, shell=True, check=True)
+        cmd, stdout=subprocess.PIPE, shell=True, check=True)
     output = result.stdout.decode()
 
     return ast.literal_eval(output)
