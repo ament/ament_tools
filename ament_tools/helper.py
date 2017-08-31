@@ -17,6 +17,7 @@ import filecmp
 from multiprocessing import cpu_count
 import os
 import re
+import shlex
 import shutil
 import stat
 
@@ -285,3 +286,14 @@ def deploy_file(
         new_mode = mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
         if new_mode != mode:
             os.chmod(destination_path, new_mode)
+
+
+def quote_shell_command(cmd):
+    if os.name != 'nt':
+        return ' '.join([(shlex.quote(c) if c != '&&' else c) for c in cmd])
+    quoted = []
+    for c in cmd:
+        if ' ' in c:
+            c = '"%s"' % (c.replace('"', r'\"'))
+        quoted.append(c)
+    return ' '.join(quoted)
