@@ -283,8 +283,8 @@ class CmakeBuildType(BuildType):
                 cmd.append('ARGS=%s' % ' '.join(args))
             return BuildAction(cmd)
         else:
-            self.warn("Could not run tests for '{0}' package because it has no "
-                      "'test' target".format(build_type))
+            self.warn("Could not run tests for package '{0}' because it has no "
+                      "'test' target".format(context.package_manifest.name))
 
     def _common_cmake_on_test(self, context, build_type):
         assert context.build_tests
@@ -439,8 +439,8 @@ class CmakeBuildType(BuildType):
                     raise VerbExecutionError("Could not find 'make' executable")
                 return BuildAction(prefix + [MAKE_EXECUTABLE, 'install'])
             else:
-                self.warn('Could not run installation for package because it has no '
-                          "'install' target")
+                self.warn("Could not run installation for package '{0}' because it has no "
+                          "'install' target".format(context.package_manifest.name))
 
     def _common_cmake_on_install(self, context):
         # Figure out if there is a setup file to source
@@ -497,8 +497,8 @@ class CmakeBuildType(BuildType):
             cmd = prefix + [MAKE_EXECUTABLE, 'uninstall']
             return BuildAction(cmd)
         else:
-            self.warn("Could not run uninstall for '{0}' package because it has no "
-                      "'uninstall' target".format(build_type))
+            self.warn("Could not run uninstall for package '{0}' because it has no "
+                      "'uninstall' target".format(context.package_manifest.name))
 
     def _common_cmake_on_uninstall(self, context, build_type):
         # Figure out if there is a setup file to source
