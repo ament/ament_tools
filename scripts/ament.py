@@ -95,6 +95,7 @@ verb_pattern.load_verb_description = load_verb_description
 known_build_types = {
     'ament_cmake': 'AmentCmakeBuildType',
     'ament_python': 'AmentPythonBuildType',
+    'bazel': 'BazelBuildType',
     'cmake': 'CmakeBuildType',
 }
 
