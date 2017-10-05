@@ -269,7 +269,11 @@ def deploy_file(
         else:
             if not os.path.islink(destination_path) or \
                     not os.path.samefile(source_path, destination_path):
-                os.remove(destination_path)
+                # try-catch to guard against a TOCTOU error that can happen during parallel build.
+                try:
+                    os.remove(destination_path)
+                except OSError:
+                    pass
 
     if not os.path.exists(destination_path):
         if not context.symlink_install:
@@ -278,7 +282,11 @@ def deploy_file(
             # while the destination might not exist it can still be a symlink
             if os.path.islink(destination_path):
                 os.remove(destination_path)
-            os.symlink(source_path, destination_path)
+            # try-catch to guard against a TOCTOU error that can happen during parallel build
+            try:
+                os.symlink(source_path, destination_path)
+            except OSError:
+                pass
 
     # set executable bit if necessary
     if executable and not context.symlink_install:
