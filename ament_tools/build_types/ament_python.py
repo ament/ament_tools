@@ -90,7 +90,6 @@ class AmentPythonBuildType(BuildType):
             context.package_manifest.name, 'pytest.xunit.xml')
         os.makedirs(os.path.dirname(xunit_file), exist_ok=True)
         args = [
-            '--capture=no',
             '-o cache_dir=' + os.path.join(context.build_space, '.cache'),
             '--junit-xml=' + xunit_file,
             '--junit-prefix=' + context.package_manifest.name,
