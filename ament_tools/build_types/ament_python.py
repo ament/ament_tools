@@ -109,7 +109,7 @@ class AmentPythonBuildType(BuildType):
             additional_lines.append('set "PYTEST_ADDOPTS=%s"' % ' '.join(args))
         for l in additional_lines:
             print(l)
-        additional_lines[0] = additional_lines[0].replace('\\', '/')
+        additional_lines[0] = additional_lines[0].replace('\\', '\\\\')
         for l in additional_lines:
             print(l)
         # also pass the exec dependencies into the command prefix file
