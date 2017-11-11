@@ -107,6 +107,8 @@ class AmentPythonBuildType(BuildType):
                 'export PYTEST_ADDOPTS="%s"' % ' '.join(args))
         else:
             additional_lines.append('set "PYTEST_ADDOPTS=%s"' % ' '.join(args))
+        for l in additional_lines:
+            print(l)
         # also pass the exec dependencies into the command prefix file
         prefix = self._get_command_prefix(
             'test', context,
