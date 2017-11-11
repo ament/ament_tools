@@ -15,7 +15,6 @@
 """Implements the BuildType support for cmake based ament packages."""
 
 from distutils.sysconfig import get_python_lib
-from distutils.version import LooseVersion
 import os
 import re
 import shutil
@@ -31,11 +30,9 @@ from ament_tools.setup_arguments import get_data_files_mapping
 from ament_tools.setup_arguments import get_setup_arguments_with_context
 
 try:
-    import nose
+    import pytest
 except ImportError:
-    nose = None
-
-import setuptools
+    pytest = None
 
 IS_WINDOWS = os.name == 'nt'
 
@@ -86,50 +83,44 @@ class AmentPythonBuildType(BuildType):
         expand_package_level_setup_files(context, environment_hooks, environment_hooks_path)
 
     def on_test(self, context):
-        # Execute nosetests
+        # Execute pytest
         # and avoid placing any files in the source space
+        xunit_file = os.path.join(
+            context.build_space, 'test_results',
+            context.package_manifest.name, 'pytest.xunit.xml')
+        os.makedirs(os.path.dirname(xunit_file), exist_ok=True)
+        args = [
+            '-o cache_dir=' + os.path.join(context.build_space, '.cache'),
+            '--junit-xml=' + xunit_file,
+            '--junit-prefix=' + context.package_manifest.name,
+        ]
+        # coverage arguments
         coverage_file = os.path.join(context.build_space, '.coverage')
+        args += [
+            '--cov=' + context.source_space,
+            '--cov-report=xml:' + coverage_file,
+            '--cov-branch',
+        ]
         additional_lines = []
         if not IS_WINDOWS:
-            additional_lines.append('export COVERAGE_FILE="%s"' % coverage_file)
+            additional_lines.append(
+                'export PYTEST_ADDOPTS="%s"' % ' '.join(args))
         else:
-            additional_lines.append('set "COVERAGE_FILE=%s"' % coverage_file)
+            # backslashes need to be escaped to be passed through env var
+            args = [a.replace('\\', '\\\\') for a in args]
+            additional_lines.append('set "PYTEST_ADDOPTS=%s"' % ' '.join(args))
         # also pass the exec dependencies into the command prefix file
         prefix = self._get_command_prefix(
             'test', context,
             additional_lines=additional_lines,
             additional_dependencies=context.exec_dependency_paths_in_workspace,
         )
-        xunit_file = os.path.join(
-            context.build_space, 'test_results',
-            context.package_manifest.name, 'nosetests.xunit.xml')
-        os.makedirs(os.path.dirname(xunit_file), exist_ok=True)
-        assert nose, 'Could not find nosetests'
-        # Use the -m module option for executing nose, to ensure we get the desired version.
-        # Looking for just nosetest or nosetest3 on the PATH was not reliable in virtualenvs.
-        nosetests_cmd = [context.python_interpreter, '-m', nose.__name__]
-        coverage_xml_file = os.path.join(context.build_space, 'coverage.xml')
-        cmd = nosetests_cmd + [
-            '--nocapture',
-            '--with-xunit', '--xunit-file=%s' % xunit_file,
-            '--with-coverage', '--cover-erase',
-            '--cover-tests', '--cover-branches',
-            '--cover-inclusive',
-            '--cover-xml', '--cover-xml-file=%s' % coverage_xml_file,
+        assert pytest, 'Could not find pytest'
+        cmd = [
+            context.python_interpreter,
+            'setup.py', 'pytest',
+            'egg_info', '--egg-base', context.build_space,
         ]
-        if LooseVersion(nose.__version__) >= LooseVersion('1.3.5'):
-            cmd += [
-                '--xunit-testsuite-name=%s.nosetests' %
-                context.package_manifest.name]
-            if LooseVersion(nose.__version__) >= LooseVersion('1.3.8'):
-                cmd += ['--xunit-prefix-with-testsuite-name']
-        # coverage for all root-packages
-        packages = setuptools.find_packages(
-            context.source_space, exclude=['*.*'])
-        for package in packages:
-            if package in ['test', 'tests']:
-                continue
-            cmd += ['--cover-package=%s' % package]
         yield BuildAction(prefix + cmd, cwd=context.source_space)
 
     def on_install(self, context):
