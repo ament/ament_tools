@@ -273,9 +273,12 @@ def iterate_packages(opts, packages, per_package_callback):
                 package_opts.build_dependencies.append(package_share)
 
             # get the package share folder for each exec depend of the package
+            # also consider group dependencies
             package_opts.exec_dependency_paths_in_workspace = []
-            for dep_object in package.exec_depends:
-                dep_name = dep_object.name
+            dep_names = [d.name for d in package.exec_depends]
+            for g in package.group_depends:
+                dep_names += g.members
+            for dep_name in dep_names:
                 if dep_name not in workspace_package_names:
                     # do not add to this list if the dependency is not in the workspace
                     continue

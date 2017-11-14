@@ -55,7 +55,7 @@ def prepare_arguments(parser):
 
 
 def get_unique_depend_names(package):
-    return list({
+    names = {
         d.name for d in
         package.build_depends +
         package.buildtool_depends +
@@ -64,27 +64,41 @@ def get_unique_depend_names(package):
         package.exec_depends +
         package.test_depends +
         package.doc_depends
-    })
+        if d.evaluated_condition
+    }
+    for g in package.group_depends:
+        if g.evaluated_condition:
+            names |= set(g.members)
+    return names
 
 
 def main(options):
     lines = []
     if not options.topological_order:
         package_paths = find_package_paths(options.basepath)
+        # parse package manifests
+        packages = {}
         for package_path in package_paths:
-            package = None
             package_abs_path = os.path.join(options.basepath, package_path)
+            package = parse_package(package_abs_path)
+            packages[package_path] = package
+        # evaluate conditions
+        for package in packages.values():
+            package.evaluate_conditions(os.environ)
+        # expand group dependencies
+        for package in packages.values():
+            for group in package.group_depends:
+                if group.evaluated_condition:
+                    group.extract_group_members(packages.values())
+        for package_path, package in packages.items():
             if options.depends_on is not None:
-                package = parse_package(package_abs_path)
                 if options.depends_on not in get_unique_depend_names(package):
                     continue
             if options.names_only:
-                package = package or parse_package(package_abs_path)
                 lines.append(package.name)
             elif options.paths_only:
                 lines.append(package_path)
             else:
-                package = package or parse_package(package_abs_path)
                 lines.append(package.name + ' ' + package_path)
         lines.sort()
     else:

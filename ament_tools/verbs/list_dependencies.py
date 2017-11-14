@@ -47,6 +47,11 @@ def prepare_arguments(parser):
         help='Show only test dependencies of a given package',
     )
     parser.add_argument(
+        '--group-deps',
+        action='store_true',
+        help='Show only group dependencies of a given package',
+    )
+    parser.add_argument(
         'package',
         metavar='PACKAGE',
         help='Package to process',
@@ -55,16 +60,20 @@ def prepare_arguments(parser):
 
 
 def main(options):
-    deps = []
     packages = find_packages(options.basepath)
     # show all dependencies if no options are given
-    if not (options.build_deps or options.doc_deps or options.run_deps or options.test_deps):
+    if not (
+        options.build_deps or options.doc_deps or options.run_deps or
+        options.test_deps or options.group_deps
+    ):
         options.build_deps = True
         options.doc_deps = True
         options.run_deps = True
         options.test_deps = True
+        options.group_deps = True
     for (path, package) in packages.items():
         if package.name == options.package:
+            deps = []
             if options.build_deps:
                 deps.extend(package.build_depends + package.buildtool_depends)
             if options.doc_deps:
@@ -76,8 +85,21 @@ def main(options):
                     package.exec_depends)
             if options.test_deps:
                 deps.extend(package.test_depends)
+            # evaluate conditions
+            package.evaluate_conditions(os.environ)
+            # reduce dependencies to their names
+            deps = [d.name for d in deps if d.evaluated_condition]
+            # extract group memberships
+            if options.group_deps:
+                for g in package.group_depends:
+                    if not g.evaluated_condition:
+                        continue
+                    g.extract_group_members(packages.values())
+                    deps.append(
+                        '%s (group members: %s)' %
+                        (g.name, ', '.join(sorted(g.members))))
             # Remove duplicate entries, sort output
-            for line in sorted(set(map(lambda dep: dep.name, deps))):
+            for line in sorted(set(deps)):
                 print(line)
             return
     print('No package with name {!r} found'.format(options.package), file=sys.stderr)
