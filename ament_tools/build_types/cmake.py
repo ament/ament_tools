@@ -385,6 +385,12 @@ class CmakeBuildType(BuildType):
             environment_hooks_to_be_deployed.append(library_template_path)
             environment_hooks.append(os.path.join(environment_hooks_path, 'library_path.sh'))
 
+        # Prepare to deploy PKG_CONFIG_PATH environment hook
+        ext = '.sh' if not IS_WINDOWS else '.bat'
+        template_path = get_environment_hook_template_path('pkg_config_path' + ext)
+        environment_hooks_to_be_deployed.append(template_path)
+        environment_hooks.append(os.path.join(environment_hooks_path, 'pkg_config_path' + ext))
+
         # Expand package level setup files
         destinations = \
             expand_package_level_setup_files(context, environment_hooks, environment_hooks_path)
@@ -413,6 +419,26 @@ class CmakeBuildType(BuildType):
             os.makedirs(os.path.dirname(marker_file), exist_ok=True)
             with open(marker_file, 'w'):  # "touching" the file
                 pass
+
+        # check if install space has any pkg-config files
+        has_pkg_config_files = False
+        pkg_config_path = os.path.join(context.install_space, 'lib', 'pkgconfig')
+        if os.path.isdir(pkg_config_path):
+            for name in os.listdir(pkg_config_path):
+                if name.endswith('.pc'):
+                    has_pkg_config_files = True
+                    break
+        if not has_pkg_config_files:
+            # remove pkg_config_path hook if not needed
+            environment_hooks_to_be_deployed = [
+                h for h in environment_hooks_to_be_deployed
+                if os.path.splitext(os.path.basename(h))[0] != 'pkg_config_path']
+            environment_hooks = [
+                h for h in environment_hooks
+                if os.path.splitext(os.path.basename(h))[0] != 'pkg_config_path']
+            # regenerate package level setup files
+            destinations = expand_package_level_setup_files(
+                context, environment_hooks, environment_hooks_path)
 
         # Deploy environment hooks
         for environment_hook in environment_hooks_to_be_deployed:
