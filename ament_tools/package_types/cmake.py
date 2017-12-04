@@ -60,7 +60,7 @@ def remove_cmake_comments(content):
 
 
 def remove_cmake_comments_from_line(line):
-    # match coments starting with # which are not within a string enclosed in double quotes
+    # match comments starting with # which are not within a string enclosed in double quotes
     # strings:  vvvvvvvvv
     # comments:           vvvvv
     # other:                    vvvvvvvv
