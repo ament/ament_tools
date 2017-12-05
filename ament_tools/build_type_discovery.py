@@ -33,7 +33,7 @@ def get_class_for_build_type(build_type):
     Get the class for a given package build type.
 
     :param str build_type: name of build_type plugin, e.g. 'ament_cmake'
-    :returns: class for the requirest build_type plugin
+    :returns: class for the requested build_type plugin
     :raises: RuntimeError if there are more than one plugins for a requested
         build type.
     :raises: MissingPluginError if there is no plugin for the requested

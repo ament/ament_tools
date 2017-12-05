@@ -93,7 +93,7 @@ def prepare_arguments(parser, args):
     to get the positional ``path`` argument from the arguments, falling back
     to the default ``os.curdir``. Then it searches for a package manifest in
     that path. If it finds the package manifest it then determines the build
-    type of the package, e.g. ``ament_cmake``. It then trys to load a build
+    type of the package, e.g. ``ament_cmake``. It then tries to load a build
     type plugin for that build type. If the loading is successful it will allow
     the plugin to add additional arguments to the parser in a new
     :py:class:`argparse.ArgumentGroup` for that build type.
