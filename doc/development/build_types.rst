@@ -10,7 +10,7 @@ This also allows you to build workspaces with non-homogeneous types of packages 
 Adding build support for new ``build_type``'s
 ---------------------------------------------
 
-The :py:mod:`ament_tools.build_type` modules provides a partially abstract base class, :py:class:`ament_tools.build_type.BuildType`, from which a new class can be derived in order to add support for additional ``build_type``'s.
+The :py:mod:`ament_tools.build_type` module provides a partially abstract base class, :py:class:`ament_tools.build_type.BuildType`, from which a new class can be derived in order to add support for additional ``build_type``'s.
 
 .. autoclass:: ament_tools.build_type.BuildType
 
@@ -41,7 +41,7 @@ Some of the operations are external, shown here for your edification of the proc
 First the functions related to command line processing are called to allow the developer to hook into the command line interface and the argument processing.
 Then the ``on_build`` and ``on_install`` methods are called to execute the build and install of the package, respectively.
 
-The command line processing related functions (``prepare_arguments``, ``argument_preprocessor``, ``parse_args``, and ``extend_context``) are called once per invocation of the command, i.e. either ``ament build`` or ``ament build_pkg``.
+The command line processing related functions (``prepare_arguments``, ``argument_preprocessor``, ``parse_args``, and ``extend_context``) are called once per invocation of the command, i.e., either ``ament build`` or ``ament build_pkg``.
 However, the build processing related functions (``on_build`` and ``on_install``) are called once for each package.
 
 Command Line Processing
