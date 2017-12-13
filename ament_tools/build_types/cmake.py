@@ -24,8 +24,10 @@ from ament_tools.build_type import BuildAction
 from ament_tools.build_type import BuildType
 
 from ament_tools.build_types.cmake_common import CMAKE_EXECUTABLE
+from ament_tools.build_types.cmake_common import CMAKE_EXECUTABLE_ENV
 from ament_tools.build_types.cmake_common import cmakecache_exists_at
 from ament_tools.build_types.cmake_common import CTEST_EXECUTABLE
+from ament_tools.build_types.cmake_common import CTEST_EXECUTABLE_ENV
 from ament_tools.build_types.cmake_common import get_visual_studio_version
 from ament_tools.build_types.cmake_common import has_make_target
 from ament_tools.build_types.cmake_common import MAKE_EXECUTABLE
@@ -196,7 +198,9 @@ class CmakeBuildType(BuildType):
                 else:
                     cmake_args += ['-G', 'Unix Makefiles']
             if CMAKE_EXECUTABLE is None:
-                raise VerbExecutionError("Could not find 'cmake' executable")
+                raise VerbExecutionError(
+                    "Could not find 'cmake' executable, try setting the "
+                    'environment variable' + CMAKE_EXECUTABLE_ENV)
             yield BuildAction(prefix + [CMAKE_EXECUTABLE] + cmake_args)
         elif IS_LINUX:  # Check for reconfigure if available.
             if MAKE_EXECUTABLE is None:
@@ -299,7 +303,9 @@ class CmakeBuildType(BuildType):
                 yield build_action
         elif IS_WINDOWS:
             if CTEST_EXECUTABLE is None:
-                raise VerbExecutionError("Could not find 'ctest' executable")
+                raise VerbExecutionError(
+                    "Could not find 'ctest' executable, try setting the "
+                    'environment variable ' + CTEST_EXECUTABLE_ENV)
             # invoke CTest directly in order to pass arguments
             # it needs a specific configuration and currently there are no conf. specific tests
             cmd = prefix + [

@@ -18,8 +18,25 @@ import subprocess
 
 from osrf_pycommon.process_utils import which
 
-CMAKE_EXECUTABLE = which('cmake')
-CTEST_EXECUTABLE = which('ctest')
+CMAKE_EXECUTABLE_ENV = 'CMAKE_COMMAND'
+CTEST_EXECUTABLE_ENV = 'CTEST_COMMAND'
+
+
+def which_executable(env_var, executable_names):
+    env_value = os.getenv(env_var)
+    if env_value:
+        executable = which(env_value)
+        if executable:
+            return executable
+    for executable_name in executable_names:
+        executable = which(executable_name)
+        if executable:
+            return executable
+    return None
+
+
+CMAKE_EXECUTABLE = which_executable(CMAKE_EXECUTABLE_ENV, ['cmake3', 'cmake'])
+CTEST_EXECUTABLE = which_executable(CTEST_EXECUTABLE_ENV, ['ctest3', 'ctest'])
 MAKE_EXECUTABLE = which('make')
 MSBUILD_EXECUTABLE = which('msbuild')
 NINJA_EXECUTABLE = which('ninja')
