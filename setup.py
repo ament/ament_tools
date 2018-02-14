@@ -12,7 +12,7 @@ if sys.version_info < (3, 5):
 setup(
     name='ament_tools',
     version='0.4.0',
-    packages=find_packages(exclude=['test']),
+    packages=find_packages(exclude=['test', 'test.*']),
     install_requires=['ament-package', 'osrf_pycommon'],
     data_files=[
         ('share/ament_tools/environment',
