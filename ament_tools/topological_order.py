@@ -194,6 +194,7 @@ def topological_order_packages(
     pkgs = [d.package for d in decorators_by_name.values()]
     for pkg in pkgs:
         pkg.evaluate_conditions(os.environ)
+    for pkg in pkgs:
         for group_depend in pkg.group_depends:
             if group_depend.evaluated_condition:
                 group_depend.extract_group_members(pkgs)
