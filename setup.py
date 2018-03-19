@@ -14,6 +14,7 @@ setup(
     version='0.4.0',
     packages=find_packages(exclude=['test', 'test.*']),
     install_requires=['ament-package', 'osrf_pycommon'],
+    zip_safe=False,
     data_files=[
         ('share/ament_tools/environment',
             [
