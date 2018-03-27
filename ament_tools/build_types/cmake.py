@@ -143,6 +143,7 @@ class CmakeBuildType(BuildType):
         # Calculate any extra cmake args which are not common between cmake build types
         extra_cmake_args = []
         if should_run_configure:
+            extra_cmake_args += ['-DBUILD_TESTING=%d' % int(context.build_tests)]
             extra_cmake_args += context.cmake_args
         if context.use_ninja:
             extra_cmake_args += ['-G', 'Ninja']
