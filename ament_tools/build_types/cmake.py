@@ -361,8 +361,8 @@ class CmakeBuildType(BuildType):
                             continue
                         build_type = line[index + 1:]
                         break
-        if build_type in ['Debug']:
-            return 'Debug'
+        if build_type in ['Debug', 'MinSizeRel', 'RelWithDebInfo']:
+            return build_type
         return 'Release'
 
     def on_install(self, context):
