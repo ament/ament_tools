@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ament_package import package_exists_at
-from ament_package import PACKAGE_MANIFEST_FILENAME
-from ament_package import parse_package
+from catkin_pkg.package import package_exists_at
+from catkin_pkg.package import PACKAGE_MANIFEST_FILENAME
+from catkin_pkg.package import parse_package
 
 __all__ = ('entry_point_data')
 

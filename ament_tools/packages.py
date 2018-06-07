@@ -57,7 +57,7 @@ def find_packages(basepath, exclude_paths=None):
     :param str basepath: The path to search in
     :param list exclude_paths: A list of paths which should not be searched
     :returns: A dict mapping relative paths to
-        :py:class:`ament_package.package.Package` objects
+        :py:class:`catkin_pkg.package.Package` objects
     :rtype: dict
     """
     packages = {}
@@ -74,7 +74,7 @@ def find_unique_packages(basepath, exclude_paths=None):
     :param str basepath: The path to search in
     :param list exclude_paths: A list of paths which should not be searched
     :returns: A dict mapping relative paths to
-        :py:class:`ament_package.package.Package` objects
+        :py:class:`catkin_pkg.package.Package` objects
     :rtype: dict
     :raises: :exc:RuntimeError` If multiple packages have the same name
     """

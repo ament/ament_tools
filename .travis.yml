@@ -6,6 +6,7 @@ sudo: false
 install:
   - pip install nose
   - pip install flake8 pydocstyle
+  - pip install catkin_pkg
 # For now install ament_package from git
   - git clone https://github.com/ament/ament_package.git
   - cd ament_package

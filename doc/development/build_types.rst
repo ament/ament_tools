@@ -122,7 +122,7 @@ In all cases the context contains some common configurations which need to be ut
 This is a list of the configurations which are provided by default in the build Context object:
 
 - ``source_space``: This is the absolute path to the root of the source code for this package, directly under this should be the package's manifest file (``package.xml``).
-- ``package_manifest``: This is the object representation of the package manifest (:py:class:`ament_package.package.Package`) for this package. This is set for every package, so changing it will not affect other packages.
+- ``package_manifest``: This is the object representation of the package manifest (:py:class:`catkin_pkg.package.Package`) for this package. This is set for every package, so changing it will not affect other packages.
 - ``build_space``: This is the absolute path to the root of the build folder for this package, it is not guaranteed to exist yet, but it is guaranteed to be unique to this package for this build (file operations need not be atomic).
 - ``install_space``: This is the target location for the installation step, this would map directly to the ``CMAKE_INSTALL_PREFIX``. This value may or may not be shared with other packages. Therefore file operations in this location should be atomic if possible, and they should be aware that other packages could possibly overwrite files installed by this package at any time.
 - ``install``: This is ``True`` if the installation of the package should be carried out, if ``False`` then the package should only be built if that distinction is possible. If there is no build step separate from the install step, then nothing should be done when this is ``False``.

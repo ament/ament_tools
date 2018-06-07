@@ -15,9 +15,9 @@
 import os
 import re
 
-from ament_package.dependency import Dependency
-from ament_package.export import Export
-from ament_package.package import Package
+from catkin_pkg.package import Dependency
+from catkin_pkg.package import Export
+from catkin_pkg.package import Package
 
 __all__ = ('entry_point_data')
 
